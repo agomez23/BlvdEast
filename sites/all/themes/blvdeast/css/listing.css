@@ -1,0 +1,207 @@
+/* building and listing detail css */
+
+/* following migrated from blvd.css */
+.pane-property-group-basic-tab .field-field-address-line-1,
+.pane-property-group-basic-tab .field-field-city,
+.pane-property-group-basic-tab .field-field-state,
+.pane-property-group-basic-tab .field-field-zipcode
+{ display:none; }
+.node-type-property .panel-pane { clear:left; }
+.node-type-property .panel-pane.building-address, .node-type-property .panel-pane.building-town { padding:0; }
+
+/* panel layout - listing */
+.panels-flexible-region-listing-left-inside{padding:0}
+
+/* set main tabs height */
+.panels-listing #tabs-listing-left .tabpage-container-inner{height:425px}
+
+/* position share links in left tab container */
+.panels-listing #tabs-listing-left .addthis_toolbox{position:absolute;right:8px;top:11px}
+.panels-listing #tabs-listing-left .addthis_toolbox .addthis_button_facebook_like{width:46px;overflow:hidden}
+
+/* shrink margin on h1 to move subtitle closer */
+.node-type-property h1.title, .node-type-listing h1.title, .node-type-home h1.title{margin-bottom:5px}
+
+/* set slideshow height */
+.panels-listing .view-node-slideshow .views_slideshow_thumbnailhover_teaser_section{height:350px}
+
+/* listing details - rightcol */
+.panel-pane.listing-details ul{margin:0}
+.panel-pane.listing-details li{list-style-type:none;text-align:right;padding:.2em .4em;clear:left}
+.panel-pane.listing-details li.odd{background:#F3F4EF}
+.panel-pane.listing-details .field-label-inline-first,
+.panel-pane.listing-details .views-label-name{float:left; font-weight:bold}
+
+/* mini availabilities - community and building pages, related listings */
+.availabilities-mini .row{clear:both}
+.availabilities-mini .title{font-weight:bold;font-size:1.2em}
+.availabilities-mini .photo{float:left;margin-right:5px}
+.availabilities-mini .rent{float:none;font-size:1em;font-weight:normal} /* overriding main availabilities view styles, this needs to be cleaned up */
+
+/* listing details - map */
+.panels-listing .left .view-node-map .view-content{width:624px;height:425px}
+
+/* listing details - streetview */
+.panels-listing .left .streetview{width:624px;height:425px}
+
+/* request appt and add to favorites block */
+.view-block-req-appt .form-button,
+.pane-flag-links .flag-favorites .flag-link-toggle{font-size:1.7em;margin:10px auto 0;width:155px}
+
+.pane-flag-links ul{margin:0}
+.pane-flag-links .flag-favorites{text-align:center}
+.pane-flag-links .flag-favorites .flag-throbber, .pane-flag-links .flag-favorites .flag-message{display:none}
+
+/* correct padding on photo/maps tabs */
+.panels-listing #tabs-listing-left.drupal-tabs .tabpage {padding:0}
+.panels-listing #tabs-listing-left.drupal-tabs .panel-pane {padding:.6em}
+.panels-listing #tabs-listing-left.drupal-tabs .pane-node-slideshow,
+.panels-listing #tabs-listing-left.drupal-tabs .pane-slideshow,
+.panels-listing #tabs-listing-left.drupal-tabs .pane-street-view,
+.panels-listing #tabs-listing-left.drupal-tabs .pane-node-map-panel-pane-1{padding:0}
+
+/* set height on lower tabs to fix tabswitch jumping up */
+.panels-listing #tabs-left2 .tabpage-container-inner{height:425px;}
+.panels-listing #tabs-left2 .tabpage{height:380px;overflow:auto; padding:15px; }
+.panels-listing #tabs-left2 .tabpage .tabpage { height:auto}
+
+/* remove height from sub tabs */
+.panels-listing #tabs-left2 .tabpage-container-inner .tabpage-container-inner{height:auto}
+.panels-listing #tabs-left2 .tabpage .tabpage{ }
+
+/* amenities tab styles */
+.panel-pane { }
+.pane-node-building-amenities,
+.pane-home-group-unit-amenities,
+.pane-home-group-facilities{clear:both; margin-top:20px;}
+
+.panels-listing .pane-amenities .panel-region-separator{display:none}
+.panels-listing .pane-amenities .fieldgroup .content{padding:0}
+.panels-listing .pane-amenities .field-label{clear:both}
+.panels-listing .pane-amenities .field-item{width:187px;float:left;padding:0 10px 3px 0}
+
+.panels-listing .pane-amenities .field-item{padding-left:22px;padding-top:3px;width:165px;background:url('../images/checkmark.gif') no-repeat 0 3px;line-height:16px}
+
+.panels-listing .pane-amenities .field-label{padding-top:8px}
+
+
+/*
+.fieldgroup .field { position:relative; padding-bottom:10px; clear:left; float:none; overflow: auto; width: 100% }
+.fieldgroup .field .field-label { }
+.fieldgroup .field .field-item { display:block; position:relative; float:left; width:150px; margin-right:10px; padding:5px 0 5px 25px; background:url('../images/checkmark.gif') no-repeat left center; }
+.fieldgroup .field.field-field-long-description .field-item { background:none; padding:0; width:auto; }
+*/
+
+/* post listing css */
+textarea, .form-item input, .form-item select, #content-region input.form-text { max-width:none;}
+.page-post-listing .form-item{float:left;margin:0 0 0 0}
+#edit-profile-terms-wrapper,
+#edit-field-rent-0-wrapper { float:none;clear:left}
+#edit-field-rent-0-wrapper .description { width:auto }
+.page-post-listing .form-item .form-item{float:none}
+
+.page-post-listing form fieldset, .page-post-home form fieldset { margin-top:10px; padding:10px; }
+.page-post-listing form fieldset fieldset, .page-post-home form fieldset fieldset { margin:0; padding:0; }
+.page-post-listing form fieldset fieldset legend, .page-post-home form fieldset fieldset legend { padding-top:10px; }
+fieldset fieldset { border:none}
+fieldset legend { clear:both }
+fieldset fieldset legend { font-weight:bold; padding-left:0; }
+.page-post-listing #node-form .form-item .form-text,
+.page-post-listing #node-form .form-item .form-select,
+.page-post-home #node-form .form-item .form-text,
+.page-post-home #node-form .form-item .form-select
+	{margin-bottom:0}
+#edit-field-address-line-1-0-value { background:url('../images/home-post-addr-bg.gif') right center no-repeat; width:57px; padding-right:150px; text-align:right }
+#edit-field-sqft-0-value { float:left; margin-right:10px;}
+.page-post-listing .form-select { float:left; margin-top:.4em; margin-right:1em;}
+.page-post-listing #node-form .form-item .description{margin:.2em 0 1em 0; }
+.page-post-listing #node-form #edit-field-date-0-value-wrapper.form-item .description{margin:0; font-weight:bold}
+.page-post-listing #node-form #edit-field-date-0-value-wrapper.form-item .form-item .description{margin:0; font-weight:normal}
+
+#edit-name-1-wrapper, #edit-mail-wrapper, #edit-conf-mail-wrapper, 
+#edit-profile-firstname-wrapper, #edit-profile-lastname-wrapper, #edit-profile-phone-wrapper { width:220px; float:left; margin-right:10px; margin-bottom:15px;}
+#edit-pass-pass1-wrapper, #edit-pass-pass2-wrapper { width:220px;float:left; margin-right:10px;}
+#edit-name-1-wrapper input, #edit-mail-wrapper input, #edit-conf-mail-wrapper input, #edit-pass-pass1-wrapper input, #edit-pass-pass2-wrapper input,
+#edit-profile-firstname-wrapper input, #edit-profile-lastname-wrapper input, #edit-profile-phone-wrapper input { width:100%; margin-right:10px;  }
+#edit-pass-pass1-wrapper { clear:left;}
+#edit-profile-firstname-wrapper, #edit-profile-lastname-wrapper, 
+#edit-profile-phone-wrapper {  width:180px;float:left; margin-right:10px;}
+#edit-profile-firstname-wrapper .description, #edit-profile-lastname-wrapper .description, 
+#edit-profile-phone-wrapper .description { display:none}
+#edit-profile-firstname, #edit-profile-lastname { }
+#edit-field-propertyid-nid-nid-wrapper,#edit-field-address-line-1-0-value-wrapper{width:220px; margin-right:10px;}
+
+#field_b_photos_values { width:100%; }
+#field_b_photos_values tr.even, #field_b_photos_values tr.odd { background:none; border-width:0 0 0 0; }
+#field_b_photos_values thead th { border-width:0 0 0 0;}
+
+.group-unit-details .form-item,
+.body-field-wrapper,
+#field-b-photos-items {clear:float; margin-top:10px; }
+.group-unit-details .form-item .form-item { margin:0}
+#edit-field-bedroom-value-wrapper,#edit-field-bathrooms-value-wrapper, #edit-field-sqft-0-value-wrapper { margin-top:0; margin-right:10px;}
+#field-b-photos-items, .body-field-wrapper {border: 8px solid #E6E6DC; border-radius: 16px; padding: 10px; height:auto; overflow:hidden; }
+
+.group-unit .form-item { margin-right:0; margin-top:0}
+#edit-field-unit-number-0-value-wrapper { border-left-width:0; }
+#edit-field-bedroom-value-wrapper, #field-b-photos-items, #edit-field-unit-parking-value-wrapper, #edit-field-home-parking-value-wrapper, .group-fee { clear:left}
+#edit-field-b-photos-0-upload-wrapper .description { display:none}
+.group-fee label.option { display:block; font-weight:bold;} 
+td.content-multiple-drag { vertical-align:middle; text-align:center}
+.node-form .content-multiple-table td.content-multiple-drag a.tabledrag-handle { padding:0; margin:0; float:none }
+/*#edit-field-fee-type-value-110-wrapper, #edit-field-fee-type-value-111-wrapper, #edit-field-fee-type-value-112-wrapper { float:left; width:150px; margin-right:10px;}*/
+.group-fee .form-radios { float:left; width:130px;}
+.page-post-listing #node-form .group-fee .form-item .description { float:left; margin:10px 0 0 0 ; line-height:1.9; max-width:450px; }
+#edit-field-rent-0-currency{display:none}
+
+#edit-profile-terms-wrapper { margin:10px 0; }
+.not-logged-in.page-post-listing .form-submit-wrapper { display:none;}
+.page-post-listing .form-submit-wrapper input { font-size:1.2em;margin-top:15px;}
+
+#main { position:relative}
+.single_building { display:none; padding:10px; }
+/*.single_building { display:none; position:fixed; top:280px; margin-left:660px; width:260px; }*/
+.panels-building .panel-topright { padding-top:10px;}
+
+/* building ajax */
+.single_building { background:url('../images/loading.gif') center center no-repeat; min-height:200px; margin-bottom:20px;}
+.single_building div { background-color:#fff; }
+.single_building .view-header { font-size:1.1em; font-weight:bold; }
+.single_building .view-header button { float:right}
+.single_building .view-content label { display:block; font-weight:bold; padding-top:10px; }
+.single_building .view-content .field-content { display:block; height:auto; padding:6px 8px; background:#f4f4f4; }
+.single_building .view-content .field-content div {background:#f4f4f4;}
+
+div.home-post { display:block; position:absolute; top:5px; left:450px; }
+a.home-post { font-size:11px; white-space:nowrap; }
+#edit-field-propertyid-nid-nid-wrapper { clear:left}
+.group-unit .description { clear:both}
+
+.group-fee label, .group-fee .rental-fee-desc {}
+ .group-fee .rental-fee-desc { font-size:11px; color:#3391D8;  }
+ 
+#ui-datepicker-div { background:#FCFCF9; border:8px solid #E6E6DC; padding:10px; 
+	-webkit-border-radius: 16px; 
+	-moz-border-radius: 16px; 
+	border-radius:16px;
+/*
+	-webkit-box-shadow: 2px 2px 5px #ccc;
+	-moz-box-shadow: 2px 2px 5px #ccc;
+	box-shadow: 2px 2px 5px #ccc; 
+*/
+}
+
+.more-box { position: relative; padding-bottom:20px; overflow:hidden }
+.more-box .expand { display:block; background:#fff; text-align:right; position:absolute; bottom:0; width:100%; }
+.more-box p { margin-bottom:0; }
+
+.panels-search .pane-beast-result {background:url("../images/loading.gif") no-repeat scroll center 40px transparent}
+.panels-search .pane-beast-result .view-availabilities { background:#fff; }
+.opacity2 {
+	-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
+	filter: alpha(opacity=20);
+	-moz-opacity:0.2;
+	-khtml-opacity: 0.2;
+	opacity: 0.2;
+	-webkit-opacity:0.2;
+}

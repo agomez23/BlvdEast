@@ -1,0 +1,481 @@
+<?php
+	
+	drupal_add_css(drupal_get_path('module', 'ue_specific') . '/ue_specific.css');
+	
+	$globalForm = array();
+	
+	require_once 'includes/cron.inc';
+	//require_once 'includes/block.inc';
+	
+	/**
+	* Implementation of hook_form_alter().
+	*/
+	function ue_specific_form_alter(&$form, $form_state, $form_id)
+	{
+		global $user, $globalForm;
+		if($form_id == 'property_node_form' || $form_id == 'listing_node_form')
+			$globalForm = $form;
+		
+		$roletype = (array_key_exists(6,$user->roles) || array_key_exists(7,$user->roles) || $user->uid == 1) ? "ueuser":"other";
+		//print_r($form_id);
+		switch($form_id)
+		{
+			case 'views_exposed_form':
+				//drupal_add_js(drupal_get_path('theme', 'ue') .'/script/manage_all.js', 'theme');
+				break;
+			case 'proprole_node_form':
+				//$form['body_field']='';
+				$form['title']=array('#type' => 'hidden', '#title' => 'Subject', '#required' => 1, '#default_value' => 'Permissions request', '#maxlength' => 255, '#weight' => -5);
+				$form['field_propuser']=array('#type' => 'hidden', '#default_value' => $form['uid']['#value']);
+				
+				break;
+			
+			case 'listing_node_form':
+			
+				//parent_node can be an array in some cases.
+				$propNode = node_load(is_array($form['#node']->parent_node) ? $form['#node']->parent_node[0] : $form['#node']->parent_node);
+				
+				drupal_set_title(($form['#node']->nid > 0 ? 'Edit' : 'Create') . ' Listing for '.$propNode->title);
+				drupal_set_breadcrumb(array(l(t("Home"), $base_url),'<a href="/'.$propNode->path.'">'.$propNode->title.'</a>',($form['#node']->nid > 0 ? 'Edit' : 'Create') . ' Listing'));
+				
+				drupal_add_js(drupal_get_path('theme', 'ue') .'/script/listing-form.js', 'theme');
+				drupal_add_css(drupal_get_path('theme', 'ue') .'/css/listing-form.css', 'theme');
+				//if ($roletype=="ueuser") drupal_add_css(drupal_get_path('theme', 'ue') .'/css/listing-form-ue.css', 'theme');
+				
+				$form['title']['#size'] = 10;
+				
+				if ($roletype == 'other') :
+				unset($form['group_listing_details']['field_syndication_paid']);
+				unset($form['group_listing_details']['field_syndication_premium']);
+				endif;
+				
+				//hiding free syndication field.
+				unset($form['group_listing_details']['field_syndication_free']);
+				
+				//hide new money field.
+				unset($form['field_price_money']);
+				
+				//hide property field.
+				$form['field_property_neighborhood']['#type'] = 'value';
+				
+				//if(empty($form['nid']['#value']))
+					//unset($form['group_listing_details']['field_mainphoto']);
+				//$form['body_field']='';
+				//$form['taxonomy']['#title'] = 'Listing Details';
+				
+				// show building images within listing main_img field
+				variable_set('parentnode', $form['#node']->nid . ',' . $propNode->nid);
+				//print $form['#node']->parent_node;
+				//Redirect after insert/update listing
+				if(!variable_get('ue_custom_singleowner', false))
+				
+					$form['buttons']['submit']['#submit'][] = 'ue_specific_setredirect';
+				
+				break;
+			
+			case 'property_node_form':
+				//print $roletype;
+				//print array_key_exists(6,$user->roles);
+				
+				//print_r($user);
+				
+				drupal_add_js(drupal_get_path('theme', 'ue') .'/script/property-form.js', 'theme', 'footer');
+				if ($user->uid!=475) drupal_add_js(drupal_get_path('theme', 'ue') .'/script/property-form-contact-val.js', 'theme', 'footer');
+				drupal_add_css(drupal_get_path('theme', 'ue') .'/css/property-form.css', 'theme');
+				
+				/*
+				if ($form['group_basic_tab']['field_property_neighborhood']['#default_value'][0]['value']) {
+					$form['group_basic_tab']['stored_neigh'] = array('#title'=>$form['group_basic_tab']['field_property_neighborhood']['#default_value'][0]['value'], '#type'=>'textfield');
+				}
+				*/
+				
+				//hide 'authorization to advertise' after it's been checked - dw
+				//print_r($form['group_basic_tab']['field_authorization']);
+				if (arg(1)!="add") :
+					if($roletype=="other") drupal_add_js('$(function(){$("body.page-node-add-property a.propInstr").trigger("click");});', 'inline');
+					if(!(empty($form['group_basic_tab']['field_authorization']['#default_value'][0]['value']))) unset($form['group_basic_tab']['field_authorization']);
+				endif;
+				//MAIN PHOTO CHANGES - dw
+				unset($form['group_basic_tab']['field_mainphoto']);
+				unset($form['group_multimedia']['field_b_floorplans']);
+				
+				if ($roletype=="other") :
+				unset($form['group_basic_tab']['field_contact_build_owner']);
+				unset($form['group_basic_tab']['field_contact_build_mgr']);
+				unset($form['group_basic_tab']['field_contact_lease_mgr']);
+				endif;
+				
+				break;
+			case 'company_node_form':
+				drupal_add_js(drupal_get_path('theme', 'ue') .'/script/company-form.js', 'theme', 'footer');
+				drupal_add_css(drupal_get_path('theme', 'ue') .'/css/company-form.css', 'theme');
+				if ($roletype=="other")
+				{
+					unset($form['field_is_broker']);
+					unset($form['field_syndication_email']);
+				}
+				break;
+			case 'photo_node_form':
+			case 'floorplan_node_form':
+			case 'openhouse_node_form':
+				drupal_add_css(drupal_get_path('theme', 'ue') .'/css/modal.css', 'theme');
+				drupal_add_css(drupal_get_path('theme', 'ue') .'/css/openhouse-form.css', 'theme');
+				drupal_add_js('$(function(){$("#node-form").attr("target", "_top")});', 'inline', 'footer');
+				$form['title']['#default_value']="oh-".date("Gis");
+				break;
+			case 'metroad_node_form':
+				/*
+				variable_set('parentnode', arg(4));
+				drupal_add_js(drupal_get_path('theme', 'ue') .'/script/metroad-form.js', 'theme', 'footer');
+				drupal_add_css(drupal_get_path('theme', 'ue') .'/css/metroad-form.css', 'theme');
+				unset($form['field_mainphoto']);
+				//if ($user->uid=="1") print_r($form);
+				$form['title']['#maxlength']="27";
+				$form['title']['#size']="40";
+				*/
+				break;
+			case 'contact_mail_page':
+				$form['#submit'][] = 'ue_specific_thxredirect';
+				break;
+			case 'user_register':
+				$form['#submit'][] = 'ue_specific_registerredirect';
+				break;
+			case 'user_profile_form':
+				drupal_set_title('Update Profile');
+				//drupal_set_breadcrumb(array(l(t("Home"), $base_url),l(t("Update Profile"),"manage-listings2")));
+				break;
+			case 'user_login_block':
+			case 'user_login':
+				//print_r($form);
+				//$form["#description"] = "hello";
+				break;
+		}
+	}
+	
+	function ue_specific_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+		global $user; 
+		//$profile = user_load($user->uid);
+		$roletype = (array_key_exists(6,$user->roles) || array_key_exists(7,$user->roles) || $user->uid == 1) ? "ueuser":"other";
+		
+		$resourcesTree = array();
+			switch($node->nid) :
+				case 39: $treeStart=1462; break;	// resources
+				case 100: $treeStart=1455; $pTerm = taxonomy_get_term(1455); $text = $pTerm->description; break;	// renters
+				case 264: $treeStart=1459; $pTerm = taxonomy_get_term(1459); $text = $pTerm->description; break;	// buyers
+				case 136: $treeStart=1464; break;	// owners
+			endswitch;
+			
+		if(isset($treeStart))
+		{
+			$resourcesTree = (taxonomy_get_tree(21,$treeStart, $depth = -1, $max_depth = 1));
+			$treeStartTerm = taxonomy_get_term($treeStart);
+			//print_r($resourcesTree);
+			
+			if (is_array($resourcesTree)) :
+				$body = $node->body;
+				$node->body = '';
+				$output = '';
+				
+				if ($roletype=="ueuser" && $node->nid==39) $output .= '<div style="text-align:right">Admin: '.l(t('resources taxonomy'),'admin/content/taxonomy/21',array('attributes' => array('style'=>'font-size:12px;','class'=>'blue'))).'</div>';
+				$output .= '<dl>';
+	
+				//print_r($resourcesTree);
+				
+				$output .= '<h2>'.$treeStartTerm->name.'</h2>';
+				//print_r($treeStartTerm);
+				//if ($treeStartTerm->weight>0) $output .= '<dt style="margin: 5px 0pt 0px 0px;"><a class="blue" style="font-size: 12px; font-weight: normal;" href="/resources/resource-centers/types-apartments">Types of Apartments</a></dt>';
+				foreach ($resourcesTree as $leaf) {
+					//print $leaf->depth;
+					$output .= '<dt style=" margin:5px 0 0px '.($leaf->depth*30).'px;">'.l($leaf->name,'taxonomy/term/'.$leaf->tid,array('attributes' => array('style'=>'font-size:12px; font-weight:normal;','class'=>''))).'</dt>';	
+					$output .= '<dd style=" margin:0 0 0 '.($leaf->depth*30).'px;">'.$leaf->description.'</dd>';
+		
+				}
+				$output .= '</dl>';
+				$node->body = $text.$output;
+	
+				
+			endif;
+		}
+		
+		//update lat/long from location module.
+		if($node->type == 'property' && ($op == 'update' || $op == 'insert') && (empty($node->field_latitude[0]['value']) || empty($node->field_longitude[0]['value'])))
+		{
+			if($op == 'insert')
+			{
+				$propNode = node_load($node->nid);
+				$propNode->field_latitude[0]['value'] = $node->field_location[0]['latitude'];
+				$propNode->field_longitude[0]['value'] = $node->field_location[0]['longitude'];
+				content_update($propNode);
+			}
+			elseif($op == 'update')
+			{
+				$node->field_latitude[0]['value'] = $node->field_location[0]['latitude'];
+				$node->field_longitude[0]['value'] = $node->field_location[0]['longitude'];
+				content_update($node);
+			}
+		}
+		
+		switch($op)
+		{
+			case 'insert':
+				//$node->title = trim($node->title);
+				$profile = user_load($user->uid);
+				if ($node->type == 'property' && !$profile->profile_canpost) :
+					drupal_set_message('<strong>Thank you for adding this building to our database.</strong>  Please add any available listings at this time.  Because your account is new, the information you enter will now will not be published online until we verify your account, which happens within 48 hours.  Once your account has been verified, all information you enter in the future will be published immediately.','warning');
+				endif;
+				
+			case 'presave':
+				$profile = user_load($user->uid);
+				//trim title whitespace
+				$node->title = trim($node->title);
+				
+				// ******************************************************************************
+				// DONT change this or else we won't be able to leave things unpublished
+				// if UE content role or canPost then force publish, if not UE editor unpublish
+				// for some reason drupal stores the canpost checkbox as a string??? uhh cool
+				if(!variable_get('ue_custom_singleowner', false))
+				{
+					if(!array_key_exists(6, $user->roles) && (array_key_exists(7, $user->roles)) || $profile->profile_canpost === '1')
+						$node->status = true; 
+					elseif(!array_key_exists(6, $user->roles))
+						$node->status = false;
+				}
+				
+				//$node->status = intval($profile->profile_canpost);
+				
+				//if(array_key_exists(6, $user->roles)) $node->status = true;
+				//if(array_key_exists(7, $user->roles)) $node->status = true;
+				
+				//assign value to hidden currency field.
+				if($node->type == 'listing')
+					$node->field_price_money = array(array('amount' => $node->field_price[0]['value'], 'currency' => 'USD'));
+				
+				
+			break;
+			case 'validate':
+				// validate metro ads - must be on a wednesday, deadline is 3 days before.
+				if($node->type == 'metroad' && (date('D', strtotime($node->field_metroad_date[0]['value'])) != 'Wed' || strtotime($node->field_metroad_date[0]['value']) < strtotime('+3 days')))
+					form_set_error('field_metroad_date', t('You must choose a Wednesday at least three days from now.'));
+			break;
+			/*case 'insert':
+				if($user->uid == 1)
+				{
+					print '<pre>' . print_r($node, true) . '</pre>';
+					exit();
+				}
+			break;*/
+		}
+	}
+	
+	function ue_specific_block($op = 'list', $delta = 0, $edit = array())
+	{
+		global $node;
+		switch ($op)
+		{
+			case 'list':
+				$blocks[] = array('info'=>t('Featured Listings'));
+				$blocks[] = array('info'=>t('Property Progress'));
+				$blocks[] = array('info'=>t('NOTHING'));
+				$blocks[] = array('info'=>t('Listing Manage'));
+				$blocks[] = array('info'=>t('Recently Added'));
+				$blocks[] = array('info'=>t('Related Listings'));
+				$blocks[] = array('info'=>t('Parent Neigh Listings'));
+				$blocks[] = array('info'=>t('metro ad button'));
+				$blocks[] = array('info'=>t('NOTHING'));
+				$blocks[] = array('info'=>t('Broker List'));
+				$blocks[] = array('info'=>t('User Attach'));
+				$blocks[] = array('info'=>t('Ads'));
+				$blocks[] = array('info'=>t('Related Neighborhoods'));
+				$blocks[] = array('info'=>t('Select Neighborhoods'));
+				return $blocks;
+			case 'configure':
+				$form = array();
+				if ($delta == 0) {
+				/*$form['block_example_string'] = array(
+				'#type' => 'textfield',
+				'#title' => t('Block contents'),
+				'#size' => 60,
+				'#description' => t('This string will appear in the example block.'),
+				'#default_value' => variable_get('block_example_string',  t('Some example content.')),
+				);*/
+				}
+				return $form;
+			case 'save':
+				if ($delta == 0)
+				{
+					// Have Drupal save the string to the database.
+					//variable_set('block_example_string', $edit['block_example_string']);
+				}
+				return;
+			case 'view': default:
+				$block['subject'] = '';
+				switch ($delta)
+				{
+					case 0:
+						require_once 'blocks/featured.php';
+						$block['content'] = ue_specific_featured_listings();
+						break;
+					case 1:
+						require_once 'blocks/property.php';
+						$block['content'] = ue_specific_property_progress();
+						break;
+					case 2:
+						$block['content'] = '';
+						break;
+					case 3:
+						require_once 'blocks/manage.php';
+						$block['content'] = ue_specific_block_manage();
+						break;
+					case 4:
+						require_once 'blocks/recent.php';
+						$block['content'] = ue_specific_recent_listings();
+						break;
+					case 5:
+						require_once 'blocks/related.php';
+						$block['content'] = ue_specific_related_listings();
+						break;
+					case 6:
+						//require_once 'blocks/parent_neigh.php';
+						//$block['content'] = ue_specific_parent_neigh();
+						break;
+					case 7:
+						$block['content'] ='<div style="text-align:right; line-height:11px; padding-right:3px;"><a href="/node/add/metroad/parent/'.arg(1).'"><img src="/sites/all/themes/ue/images/metro-ad-button.jpg"/></a> <a class="blue" target="_blank" href="/owner-services/metro-new-york">What\'s this</a></div>';
+						break;
+					case 8:
+						$block['content'] = '';
+						break;
+					case 9:
+						require_once 'blocks/brokerblast.php';
+						$block['content'] = ue_specific_broker_form();
+						break;
+					case 10:
+						require_once 'blocks/userattach.php';
+						$block['content'] = ue_specific_userattach();
+						break;
+					case 11:
+						require_once 'blocks/ads.php';
+						$block['content'] = ue_specific_ads();
+						break;
+					case 12:
+						require_once 'blocks/related_neighborhoods.php';
+						$block['content'] = ue_specific_related_neighborhoods();
+						break;
+					case 13:
+						require_once 'blocks/select_neigh.php';
+						$block['content'] = ue_specific_select_neigh();
+						break;
+				}
+			return $block;
+		}
+	}
+	
+	function ue_specific_user($op, &$edit, &$account, $category)
+	{
+		switch($op)
+		{
+			case 'login':
+				//print ($account->uid); //exit;
+				if(!variable_get('ue_custom_singleowner', false))
+				{
+					$view = views_get_view('getMyProperties');
+					$view->execute();
+					if(count($view->result) > 0) {
+						$_SESSION['hasProperties'] = true; 
+						ue_specific_redirect('manage-listings', true);
+					} elseif ($account->uid=="73") { //lmag
+						ue_specific_redirect('', true);
+					} else {
+						$_SESSION['hasProperties'] = false; 
+						//ue_specific_redirect('', true);
+					}
+				}
+				else if(user_access('access manage listings'))
+				{
+					ue_specific_redirect('manage-listings', true);
+				}
+			break;
+		}
+	}
+	
+	function ue_specific_setredirect($form, &$form_state)
+	{
+		$form_state['redirect'] = 'manage-listings';
+	}
+	
+	function ue_specific_thxredirect($form, &$form_state)
+	{
+		$form_state['redirect'] = 'thank-you';
+	}
+	
+	function ue_specific_registerredirect($form, &$form_state)
+	{
+		$form_state['redirect'] = 'user';
+	}
+	
+	function ue_specific_redirect($url, $exit = false)
+	{
+		if($exit)
+		{
+			header('Location: http://' . $_SERVER['SERVER_NAME'] . url($url));
+			exit();
+		}
+		else
+		{
+			drupal_goto($url);
+		}
+	}
+	
+	function ue_specific_theme_functions($hook, $view, $display = NULL)
+	{
+		require_once './' . drupal_get_path('module', 'views') . "/theme/theme.inc";
+		return _views_theme_functions($hook, $view, $display);
+	}
+	
+	function ue_specific_menu()
+	{
+		$items = array();
+		
+		$items['user/%/manage'] = array(
+			'title' => 'Manage Listings',
+			'description' => 'Manage listings',
+			'page callback' => 'ue_custom_manage',
+			'access callback' => 'ue_custom_manage_access',
+			'file' => 'includes/ue_custom.manage.inc',
+			'weight' => '-8',
+			'type' => MENU_LOCAL_TASK,
+		);
+		
+		$items['ue/cron/expire'] = array(
+			'page callback' => 'ue_specific_cron_expire',
+			'access callback' => 'ue_custom_autocomplete_node_access',
+			'file' => 'includes/expire.inc',
+			'type' => MENU_CALLBACK,
+		);
+		
+		/*
+		$items['admin/subversion'] = array(
+			'title' => 'Subversion',
+			'description' => 'Subversion operations.',
+			'page callback' => 'ue_specific_status_svn',
+			'access callback' => 'ue_specific_status_svn_access',
+			'file' => 'includes/svn.inc',
+		);
+		*/
+		
+		return $items;
+	}
+	
+	function ue_specific_status_svn_access()
+	{
+		global $user;
+		return $user->uid == 1;
+	}
+	
+	function ue_specific_menu_alter(&$items)
+	{
+		$items['user/%user/view']['title'] = 'Profile';
+		$items['user/%user_category/edit']['title'] = 'Update';
+		$items['user/%user_category/edit']['weight'] = '-9';
+	}
+?>

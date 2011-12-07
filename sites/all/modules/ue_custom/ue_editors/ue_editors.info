@@ -1,0 +1,8 @@
+name = UE Editors
+version = 6.x-1.0
+description = Simple 'manage editors' page and functions to enforce property permissions propagating to listings.
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom
+dependencies[] = nodeaccess
+dependencies[] = relativity

@@ -1,0 +1,228 @@
+<?php
+	
+	//drupal_add_css(drupal_get_path('module', 'ue_custom') . '/ue_custom.css');
+	
+	$globalForm = array();
+	
+	require_once 'includes/token.inc'; 
+	
+	function ue_custom_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+		global $user; 
+		
+		//update lat/long from location module.
+		if($node->type == 'property' && ($op == 'update' || $op == 'insert') && (empty($node->field_latitude[0]['value']) || empty($node->field_longitude[0]['value'])))
+		{
+			if($op == 'insert')
+			{
+				$propNode = node_load($node->nid);
+				$propNode->field_latitude[0]['value'] = $node->field_location[0]['latitude'];
+				$propNode->field_longitude[0]['value'] = $node->field_location[0]['longitude'];
+				content_update($propNode);
+			}
+			elseif($op == 'update')
+			{
+				$node->field_latitude[0]['value'] = $node->field_location[0]['latitude'];
+				$node->field_longitude[0]['value'] = $node->field_location[0]['longitude'];
+				content_update($node);
+			}
+		}
+		
+		switch($op)
+		{
+			case 'presave':
+				$node->title = trim($node->title);
+			break;
+		}
+	}
+	
+	function ue_custom_user($op, &$edit, &$account, $category)
+	{
+			switch($op)
+			{
+				case 'login':
+					if(!variable_get('ue_custom_singleowner', false))
+					{
+						$view = views_get_view('getMyProperties');
+						$view->execute();
+						if(count($view->result) > 0) {
+							$_SESSION['hasProperties'] = true; 
+							ue_custom_redirect('manage-listings', true);
+						} elseif ($account->uid=="73") { //lmag
+							ue_custom_redirect('', true);
+						} else {
+							$_SESSION['hasProperties'] = false; 
+							//ue_custom_redirect('', true);
+						}
+					}
+					else if(user_access('access manage listings'))
+					{
+						ue_custom_redirect('manage-listings', true);
+					}
+				break;
+			}
+	}
+	
+	function ue_custom_redirect($url, $exit = false)
+	{
+		if($exit)
+		{
+			header('Location: http://' . $_SERVER['SERVER_NAME'] . url($url));
+			exit();
+		}
+		else
+		{
+			drupal_goto($url);
+		}
+	}
+	
+	function ue_custom_theme_functions($hook, $view, $display = NULL) {
+		require_once './' . drupal_get_path('module', 'views') . "/theme/theme.inc";
+		return _views_theme_functions($hook, $view, $display);
+	}
+	
+	function ue_custom_menu()
+	{
+		$items = array();
+		
+		$items['ue/autocomplete/node'] = array(
+			'page callback' => 'ue_custom_autocomplete_node',
+			'access callback' => 'ue_custom_autocomplete_node_access',
+			'file' => 'includes/ue_custom.autocomplete.inc',
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/settings/urban-edge'] = array(
+			'title' => 'Urban Edge',
+			'description' => 'Settings for custom Urban Edge functionality.',
+			'access arguments' => array('access administration pages'),
+			'type' => MENU_NORMAL_ITEM,
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('ue_custom_admin'),
+		);
+		
+		return $items;
+	}
+	
+	function ue_custom_autocomplete_node_access()
+	{
+		return true;
+	}
+	
+	function ue_custom_user_logged_access()
+	{
+		global $user;
+		
+		return $user->uid;
+	}
+
+	function ue_custom_admin()
+	{
+		$form = array();
+		
+		$form['ue_custom'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Urban Edge'),
+			'#collapsible' => TRUE,
+			'#weight' => -1
+		);
+		
+		$form['ue_custom']['ue_custom_singleowner'] = array(
+			'#type' => 'checkbox',
+			'#title' => t('Single-owner installation'),
+			'#default_value' => variable_get('ue_custom_singleowner', false),
+			'#description' => t('Check this box for single-owner installations (without company nodes)'),
+			'#required' => TRUE
+		);
+		
+		return system_settings_form($form);
+		
+	}
+	
+	//returns an array of listings as nodes, based on property.
+	//pass true for second argument to get ids instead of loading nodes (much faster in most cases)
+	function ue_custom_get_listings($propid, $ids = FALSE)
+	{
+		$result = db_query("SELECT n.nid FROM {relativity} r INNER JOIN {node} n ON n.nid = r.nid AND n.type = '%s' WHERE r.parent_nid = %d", 'listing', $propid);
+		
+		if($ids)
+			while($nid = db_result($result)) $listings[] = $nid;
+		else
+			while($nid = db_result($result)) $listings[] = node_load($nid);
+		
+		return $listings;
+	}
+	
+	function ue_custom_get_companies()
+	{
+		$result = db_query('
+		SELECT
+			c.nid,
+			n.title
+		FROM
+			content_type_company c
+		INNER JOIN node n ON
+			n.nid = c.nid
+		WHERE
+			c.nid IN (SELECT field_contact_build_mgr_nid FROM content_type_property)
+			OR c.nid IN (SELECT field_contact_build_owner_nid FROM content_type_property)
+			OR c.nid IN (SELECT field_contact_lease_mgr_nid FROM content_type_property)
+		ORDER BY n.title');
+		
+		while($node = db_fetch_object($result))
+			$companies[] = $node;
+		return $companies;
+	}
+	
+	function ue_custom_get_properties($orderby = 'n.title', $companyID = NULL, $propID = NULL, $paged = false)
+	{
+		global $user;
+		
+		$superuser = array_key_exists(6, $user->roles) || array_key_exists(7, $user->roles) || variable_get('ue_custom_singleowner', false);
+		
+		$query = 'SELECT p.nid, n.title FROM content_type_property p INNER JOIN node n ON n.nid = p.nid WHERE 1 ';
+		
+		if($superuser && count($companyID) > 0) //superuser and company filter used
+		{
+			if ($companyID[0]!="all") : // "all filter" added by ze 20100715
+				$query .= 'AND (0 ';
+				foreach($companyID AS $company)
+					if($company > 0)
+						$query .= 'OR ' . intval($company) . ' IN (field_contact_build_mgr_nid, field_contact_build_owner_nid, field_contact_lease_mgr_nid) ';
+					elseif($company == 0) // 'no company'
+						$query .= 'OR (field_contact_build_mgr_nid IS NULL AND field_contact_build_owner_nid IS NULL AND field_contact_lease_mgr_nid IS NULL) ';
+				$query .= ') ';
+			endif; // all filter
+		}
+		elseif(module_exists('nodeaccess')) // show assigned properties
+		{
+			$query .= 'AND (';
+			$query .= '(n.uid = ' . $user->uid . ' OR p.nid IN (SELECT nid FROM {nodeaccess} WHERE realm = \'nodeaccess_uid\' AND gid = ' . $user->uid . '))';
+			$query .= 'OR p.nid IN (SELECT parent_nid FROM {relativity} r WHERE r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ' OR r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ')))';
+			$query .= ')';
+		}
+		elseif(!variable_get('ue_custom_singleowner', false))
+		{
+			$query .= 'AND (';
+			$query .= '(n.uid = ' . $user->uid . ')';
+			$query .= 'OR p.nid IN (SELECT parent_nid FROM {relativity} r WHERE r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ' OR r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ')))';
+			$query .= ')';
+		}
+		
+		// property filter
+		if(count($propID) > 0) $query .= 'AND p.nid IN (' . implode(',', $propID) . ') ';
+		
+		if($paged)//array(450,9819,1295,1204);
+			$result = pager_query($query . 'ORDER BY %s', 10, 0, NULL, $orderby);
+		else
+			$result = db_query($query . 'ORDER BY %s', $orderby);
+		
+		while($node = db_fetch_object($result))
+			if(!$paged)
+				$properties[$node->nid] = $node;
+			else
+				$properties[] = $node;
+		
+		return $properties;
+	}
+?>

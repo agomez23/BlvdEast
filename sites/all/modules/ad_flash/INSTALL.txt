@@ -1,0 +1,18 @@
+﻿INSTALLATION
+
+ Due to the need for some extra elements to get this module working, and some of
+these elements not falling under the relevant licences, it is not possible to 
+include them for download within this module.
+
+• Visit http://www.adobe.com/devnet/activecontent/articles/devletter.html
+• Scroll down to ‘Requirements’ and download the sample archive.
+• Create a subdirectory inside the ad_flash directory, called ‘scripts’.
+• Extract AC_ActiveX.js and AC_RunActiveContent.js into this directory. The
+  paths to these files should be ad_flash/scripts/AC_ActiveX.js and
+  ad_flash/scripts/AC_RunActiveContent.js.
+
+Because of licence issues, flash video (FLV) content is not supported at the
+moment.
+Dependecies:
+1. Install, enable, configure and verify the getID3 module and getid3 php library 
+2. Install and enable Advertisment

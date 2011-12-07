@@ -1,0 +1,212 @@
+<?php
+// $Id: pathfilter.test,v 1.2.2.1 2009/10/17 10:01:13 mrfelton Exp $
+
+/**
+ * @file
+ * Tests for Path Filter
+ * 
+ * Credits:
+ * @author Tom Kirkpatrick (drupal.org user "mrfelton"), www.kirkdesigns.co.uk
+ */
+
+define(PATHFILTER_OK, 1);
+define(PATHFILTER_NOT_OK, 0);
+
+class PathfilterTestCase extends DrupalWebTestCase {
+    
+  public static function getInfo() {
+    return array(
+      'name' => t('Path Filter tests'),
+      'desc' => t('Tests Path Filter link parsing'),
+      'group' => t('Path Filter')
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  public function setUp() {
+    parent::setUp('pathfilter');
+    $privileged_user = $this->drupalCreateUser(array('create story'));
+    $this->drupalLogin($privileged_user);
+  }
+  
+  /**
+   * Get a sample file of the specified type.
+   */
+/*  function getTestFile($type, $size = NULL) {
+    // Get a file to upload.
+    $file = current($this->drupalGetTestFiles($type, $size));
+
+    // SimpleTest files incorrectly use "filename" instead of "filepath".
+    $file->filepath = $file->filename;
+    $file->filename = basename($file->filepath);
+    $file->filesize = filesize($file->filepath);
+
+    return $file;
+  }
+  
+  /**
+   * Upload a file to a node.
+   */
+/*  function uploadNodeFile($file, $field_name, $nid_or_type, $new_revision = TRUE) {
+    $edit = array(
+      'title' => $this->randomName(),
+      'revision' => (string) (int) $new_revision,
+    );
+
+    if (is_numeric($nid_or_type)) {
+      $node = node_load($nid_or_type);
+      $delta = isset($node->$field_name) ? count($node->$field_name) : 0;
+      $edit['files[' . $field_name . '_' . $delta . ']'] = realpath($file->filepath);
+      $this->drupalPost('node/' . $nid_or_type . '/edit', $edit, t('Save'));
+    }
+    else {
+      $edit['files[' . $field_name . '_0]'] = realpath($file->filepath);
+      $type = str_replace('_', '-', $nid_or_type);
+      $this->drupalPost('node/add/' . $type, $edit, t('Save'));
+    }
+
+    $matches = array();
+    preg_match('/node\/([0-9]+)/', $this->getUrl(), $matches);
+    return $matches[1];
+  }
+*/
+  function CompareSnippets($snippets) {
+    foreach ($snippets as $before => $after) {
+      $result = pathfilter_filter('process', 0, 1, $before);    
+      if ($after) {
+        $this->assertTrue($result == $after, 'Parsing: '.$before .'<br/> Expected: '. $after. '<br/> But got: '. $result);
+      }
+      else {
+        $this->assertTrue($result == $before, 'Pathfilter should not parse: '. $before.'<br/> But got: '.$result);
+      }
+    }
+  }
+  
+  /**
+  * test_pathfilter
+  **/
+  public function testInternalRelative() {
+    variable_set('pathfilter_link_absolute_1', 0);
+    
+    $settings = array(
+     'type' => 'story',
+     'language' => '',
+     'uid' => '1',
+     'status' => '1',
+     'promote' => '1',
+     'moderate' => '0',
+     'sticky' => '0',
+     'tnid' => '0',
+     'translate' => '0',
+     'title' => 'Test Pathfilter',
+     'body' => '',
+     'log' => '',
+     'format' => '1',
+    );
+    
+    // Create node for testing.
+    $node = $this->drupalCreateNode($settings);
+
+/*    $snippets = array(      
+      '"internal:admin/user"'                 => '"/admin/user"',
+      '\'internal:admin/user\''               => "'/admin/user'", // single quotes
+      '"internal:node/nid"'                   => '"/node/nid"',
+      '"internal:node/'. $node->nid .'"'        => '"'. drupal_get_path_alias('/node/'. $node->nid) .'"',
+      '"internal:node/nid?page=1#section2"'   => '"/node/nid?page=1#section2"',
+    );
+    $this->CompareSnippets($snippets);*/
+  }
+  
+/**
+  * test_pathfilter
+  * 
+  * TODO: Write a description of the tests!
+  **/
+ /* function testInternalAbsolute() {
+    global $base_url;
+    variable_set('pathfilter_link_absolute_1', 1);
+    
+    // Create node for testing.
+    $node = $this->drupalCreateNode();
+    
+    $snippets = array(
+      '"internal:admin/user"'                 => '"'. $base_url .'/admin/user"',
+      '\'internal:admin/user\''               => '\''. $base_url .'/admin/user\'', // single quotes
+      '"internal:node/nid"'                   => '"'. $base_url .'/node/nid"',
+      '"internal:node/'. $node->nid .'"'        => '"'. $base_url .'/'. drupal_get_path_alias('node/'. $node->nid) .'"',
+      '"internal:node/nid?page=1#section2"'   => '"'. $base_url .'/node/nid?page=1#section2"',
+    );
+    $this->CompareSnippets($snippets);
+  }
+
+  /**
+  * test_pathfilter
+  * 
+  * TODO: Write a description of the tests!
+  **/
+/*  function testFiles() {
+    global $base_url;
+
+    $snippets = array(
+      "'files:images/somefile.jpg'" => "'". file_create_url('images/somefile.jpg') ."'", // single quotes
+      '"files:images/somefile.jpg"' => '"'. file_create_url('images/somefile.jpg') .'"', // double quotes
+    );
+    $this->CompareSnippets($snippets);
+  }
+  
+  
+  /**
+  * test_pathfilter
+  * 
+  * TODO: Write a description of the tests!
+  **/
+ /* function testFilesInvalidMatches() {
+    $snippets = array(
+      '"internal:admin/user\''              => PATHFILTER_NOT_OK, // mismatched quotes
+      '\'internal:admin/user"'              => PATHFILTER_NOT_OK, // mismatched quotes
+      '"files:images/somefile.jpg'."'"      => PATHFILTER_NOT_OK, // mismatched quotes
+    );
+    $this->CompareSnippets($snippets);
+  }
+  
+
+    
+  /**
+  * testFid
+  * 
+  * TODO: Write a description of the tests!
+  **/
+/*  function testFid() {
+    global $base_url;
+
+    $field_name = 'field_' . strtolower($this->randomName());
+    $type = $this->drupalCreateContentType();
+    
+    $test_file = $this->getTestFile('text');
+
+    // Create a new node with the uploaded file.
+    // FIXME: How can we attach files to a node? (this was taken from filefield tests, but needs adapting)
+    $nid = $this->uploadNodeFile($test_file, 'files', $type->name);
+
+    // Check that the file exists on disk and in the database.
+    $node = node_load($nid, NULL, TRUE);
+    $node_file = $node->files[0];
+    
+    $snippets = array(
+      '"fid::1"' => PATHFILTER_NOT_OK,
+      '"fid:'. $test_file->fid .'"' => '"'. $base_url .'/'. $test_file->filepath.'"',
+    );
+    
+    foreach ($snippets as $before => $after) {
+      $result = pathfilter_filter('process', 0, -1, $before);    
+      if ($after) {
+        $this->assertTrue($result == $after, 'Parsing: '.$before .'<br/> Expected: '. $after. '<br/> But got: '. $result);
+      }
+      else {
+        $this->assertTrue($result == $before, 'Pathfilter should not parse: '. $before.'<br/> But got: '.$result);
+      }
+    }
+  }  */
+}

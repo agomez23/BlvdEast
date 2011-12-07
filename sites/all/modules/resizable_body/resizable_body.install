@@ -1,0 +1,23 @@
+<?php
+// $Id: resizable_body.install,v 1.1.2.6 2009/03/06 13:32:13 george2 Exp $
+
+/**
+ * @file
+ * Provide uninstall file to remove any vars created by the module
+*/
+
+/*
+ * Implementation of hook_uninstall()
+*/
+function resizable_body_uninstall() {
+  foreach (array_keys(node_get_types()) as $nodetype) {
+    variable_del('resizable_body_rows_' . $nodetype);
+    variable_del('resizable_body_cols_' . $nodetype);
+    variable_del('resizable_body_resizable_' . $nodetype);
+    variable_del('resizable_body_split_' . $nodetype);
+
+    variable_del('resizable_body_crows_' . $nodetype);
+    variable_del('resizable_body_ccols_' . $nodetype);
+    variable_del('resizable_body_cresizable_' . $nodetype);
+  }
+}

@@ -1,0 +1,53 @@
+<?php
+
+	/* This module is a straight copy of the cookie functionality of boost, to use it without the other unncessary functionality. */
+	/* Only useful with installations where nginx is serving up pages straight from memcache */
+	
+	define('BOOST_TIME',				time());
+	define('BOOST_COOKIE',				variable_get('BOOST_COOKIE', 'DRUPAL_UID'));
+	define('BOOST_AGGRESSIVE_COOKIE', 	variable_get('boost_aggressive_cookie', TRUE));
+	
+	function ue_cache_init()
+	{
+		global $user, $base_path;
+		
+		//remove cookie, no longer needed on pressflow.
+		if(isset($_COOKIE[BOOST_COOKIE]))
+			setcookie(BOOST_COOKIE, '', time() - 3600);
+	
+		/*
+		
+		$uid = isset($user->uid) ? $user->uid : 0;
+		// Remove Boost cookie at logout if it still exists
+		if (BOOST_AGGRESSIVE_COOKIE && isset($_COOKIE[BOOST_COOKIE]) && $uid == 0) {
+			ue_cache_set_cookie($uid, BOOST_TIME - 86400);
+		}
+		// Remove Boost cookie if set to -1
+		elseif (isset($_COOKIE[BOOST_COOKIE]) && $_COOKIE[BOOST_COOKIE] == '-1') {
+			ue_cache_set_cookie($uid, BOOST_TIME - 86400);
+		}
+		// Set Boost cookie if it doesn't exists and user is logged in
+		elseif (BOOST_AGGRESSIVE_COOKIE && !isset($_COOKIE[BOOST_COOKIE]) && $uid != 0) {
+			ue_cache_set_cookie($uid);
+		}
+		*/
+		
+	}
+	
+	function ue_cache_set_cookie($uid, $expires = NULL)
+	{
+		if (!$expires) {
+			// Let the old way still work, in case user object was passed
+			$uid = is_object($uid) ? $uid->uid : $uid;
+			
+			$expires = ini_get('session.cookie_lifetime');
+			$expires = (!empty($expires) && is_numeric($expires)) ? BOOST_TIME + (int)$expires : 0;
+			setcookie(BOOST_COOKIE, strval($uid), $expires, ini_get('session.cookie_path'), ini_get('session.cookie_domain'), ini_get('session.cookie_secure') == '1');
+		}
+		else {
+			setcookie(BOOST_COOKIE, '0', $expires, ini_get('session.cookie_path'), ini_get('session.cookie_domain'), ini_get('session.cookie_secure') == '1');
+		}
+		$GLOBALS['_boost_cache_this'] = FALSE;
+	}
+
+?>

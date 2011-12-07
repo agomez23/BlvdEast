@@ -1,0 +1,43 @@
+<?php
+// $Id: pathfilter.install,v 1.2 2009/09/27 16:07:48 mrfelton Exp $
+
+/**
+ * @file
+ * Provides install and uninstall functions for pathfilter.
+ *
+ * Credits:
+ * @author Tom Kirkpatrick (drupal.org user "mrfelton"), www.kirkdesigns.co.uk
+ */
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function pathfilter_uninstall() {
+  // Delete all pathfilter variables
+  db_query("DELETE FROM {variable} WHERE name like 'pathfilter_%%'");
+  
+  // Disable pathfilter from all formats
+  db_query("DELETE FROM {filters} WHERE module = '%s'", 'pathfilter');
+  
+  cache_clear_all('variables', 'cache');
+  watchdog('pathfilter', 'Path filter module removed');
+}
+
+/**
+ * Fix absolute/relative setting isn't input format-specific
+ */
+function pathfilter_update_6101() {
+  // If old variable is different to default
+  // for each input format set new variable only if pathfilter is enabled
+  if (variable_get('pathfilter_link_type', 'absolute') != 'absolute') {
+    foreach (filter_formats() as $format) {
+      $filters = filter_list_format($format->format);
+      if (isset($filters['pathfilter/0'])) {
+        variable_set('pathfilter_link_absolute_'. $format->format, 0);
+      }
+    }
+  }
+  
+  variable_del('pathfilter_link_type');
+  return array();
+}

@@ -1,0 +1,5 @@
+name = Node Reference Inherit
+description = A plugin to allow a node to inherit term IDs/content taxonomy settings and locations from referenced nodes.
+core = 6.x
+dependencies[] = nodereference
+dependencies[] = taxonomy

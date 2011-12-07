@@ -1,0 +1,643 @@
+<?php
+// $Id: ad_flash.module,v 1.9 2010/09/19 15:48:27 alexandrascu Exp $
+
+/**
+ * @file
+ * Enhances the ad module to support flash ads.
+ *
+ * Based on the ad_image.module by Jeremy Andrews
+ *
+ * Contributed by 
+ * 
+ * 2007
+ *   Fabio Varesano <fvaresano at yahoo dot it> 
+ *
+ * 2005-2007.
+ *   Jeremy Andrews <jeremy@kerneltrap.org>.
+ * 
+ * 2010 
+ *    Alexandru Mihnea Andrascu | Visual Candy <office@visualcandy.eu>
+ */
+
+
+/**
+ * Implementation of hook_theme().
+ */
+
+function ad_flash_theme() {
+  return array(
+    'ad_flash_render' => array(
+      'file' => 'ad_flash.module',
+      'arguments' => array(
+        'ad' => NULL,
+				'flash' => NULL
+      ),
+    ),
+		'ad_flash_swf_render' => array(
+      'file' => 'ad_flash.module',
+      'arguments' => array(
+        'ad' => NULL,
+				'flash' => NULL
+      ),
+    ),
+		'ad_flash_player_settings' => array(
+      'file' => 'ad_flash.module',
+      'arguments' => array(
+        'ad' => NULL,
+				'flash' => NULL
+      ),
+    ),
+		'ad_flash_flv_render' => array(
+      'file' => 'ad_flash.module',
+      'arguments' => array(
+        'ad' => NULL,
+				'flash' => NULL
+      ),
+    ),
+	);
+}
+
+
+/**
+ * Function used to display the selected ad.
+ */
+function ad_flash_display_ad($ad, $hostid = NULL) {
+	
+  //$flash = db_fetch_object(db_query('SELECT a.fid, a.url, a.width, a.height, f.filepath FROM {ad_flash} a INNER JOIN {files} f ON a.fid = f.fid WHERE a.aid = %d AND f.nid = %d', $ad->aid, $ad->aid));
+  $flash = db_fetch_object(db_query('SELECT a.fid, a.url, a.width, a.height, f.filepath FROM {ad_flash} a INNER JOIN {files} f ON a.fid = f.fid WHERE a.aid = %d', $ad->aid));
+
+	// Strip module path from flash path if serving flash files from adserve.php.
+  $flash->path = preg_replace('&'. drupal_get_path('module', 'ad') .'/&', '', file_create_url($flash->filepath));
+
+  return theme('ad_flash_render', $ad, $flash);
+}
+
+
+/**
+ * Drupal _init hook.  Include ad_flash_views.inc if the views.module is
+ * enabled. */
+function ad_flash_init() {
+	drupal_add_js(drupal_get_path('module', 'ad_flash') . '/scripts/AC_RunActiveContent.js');
+} 
+
+/**
+ * Implementation of hook_help().
+ */
+function ad_flash_help($path) {
+  switch ($path) {
+    case 'node/add/ad#flash':
+      $output = t('A flash based banner advertisement.');
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+// function ad_flash_menu($may_cache) {
+//   drupal_add_js(drupal_get_path('module', 'ad_flash') . '/scripts/AC_RunActiveContent.js');
+// 
+//   $items = array();
+// 
+//   if ($may_cache) {
+//     $items[] = array(
+//       'path' => 'admin/content/ad/configure/ad_flash',
+//       'title' => t('Flash ads'),
+//       'callback' => 'drupal_get_form',
+//       'callback arguments' => array('ad_flash_group_settings'),
+//       'type' => MENU_LOCAL_TASK,
+//       'weight' => 3,
+//     );
+//   }
+// 	else {
+// 		if (function_exists('drupal_set_content')) {
+// 			if (module_exists('views')) {
+// 				include drupal_get_path('module', 'ad_flash'). '/ad_flash_views.inc';
+// 			}
+// 		}
+// 	}
+// 
+// 	return $items;
+// }
+
+// function ad_flash_group_settings($edit = array()) {
+function ad_flash_global_settings($edit = array()) {
+	
+  $form = array();
+
+  $groups = module_invoke('ad', 'groups_list', TRUE);
+  foreach ($groups as $tid => $group) {
+    $form["group-$tid"] = array(
+      '#type' => 'fieldset',
+      '#title' => $group->name,
+      '#collapsible' => TRUE,
+    );
+
+    $form["group-$tid"]["description-$tid"] = array(
+      '#type' => 'markup',
+      '#prefix' => '<div>',
+      '#suffix' => '</div>',
+      '#value' => theme_placeholder("$group->description"),
+    );
+
+    $format = db_fetch_object(db_query('SELECT * FROM {ad_flash_format} WHERE gid = %d', $tid));
+    $form["group-$tid"]["min-height-$tid"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Minimum height'),
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#default_value' => $format->min_height ? $format->min_height : 0,
+      '#description' => t('Optionally specify a minimum height in pixels for flash files in this group.  To specify no minimum height, enter <em>0</em>.'),
+    );
+    $form["group-$tid"]["min-width-$tid"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Minimum width'),
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#default_value' => $format->min_width ? $format->min_width : 0,
+      '#description' => t('Optionally specify a minimum width in pixels for flash files in this group.  To specify no minimum width, enter <em>0</em>.'),
+    );
+    $form["group-$tid"]["max-height-$tid"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Maximum height'),
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#default_value' => $format->max_height ? $format->max_height : 0,
+      '#description' => t('Optionally specify a maximum height in pixels for flash files in this group.  To specify no maximum height, enter <em>0</em>.'),
+    );
+    $form["group-$tid"]["max-width-$tid"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Maximum width'),
+      '#size' => 5,
+      '#maxlength' => 5,
+      '#default_value' => $format->max_width ? $format->max_width : 0,
+      '#description' => t('Optionally specify a maximum width in pixels for flash files in this group.  To specify no maximum width, enter <em>0</em>.'),
+    );
+  }
+
+  $form['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+/**
+ * Save min and max flash width and height values for ad groups.
+ */
+// function ad_flash_group_settings_submit($form_id, $form_values) {
+function ad_flash_global_settings_submit($form, &$form_state) {
+  $groups = module_invoke('ad', 'groups_list', TRUE);
+  foreach ($groups as $group) {
+    // TODO: Update the database schema, convert gid to tid.
+    $gid = db_result(db_query('SELECT gid FROM {ad_flash_format} WHERE gid = %d', $group->tid));
+    if (is_numeric($gid)) {
+      //db_query("UPDATE {ad_flash_format} SET min_width = %d, max_width = %d, min_height = %d, max_height = %d WHERE gid = %d", $form_values["min-width-$group->tid"], $form_values["max-width-$group->tid"], $form_values["min-height-$group->tid"], $form_values["max-height-$group->tid"], $group->tid);
+    	db_query("UPDATE {ad_flash_format} SET min_width = %d, max_width = %d, min_height = %d, max_height = %d WHERE gid = %d", $form_state['values']["min-width-$group->tid"], $form_state['values']["max-width-$group->tid"], $form_state['values']["min-height-$group->tid"], $form_state['values']["max-height-$group->tid"], $group->tid);
+		}
+    else {
+      // db_query("INSERT INTO {ad_flash_format} (gid, min_width, max_width, min_height, max_height) VALUES (%d, %d, %d, %d, %d)", $group->tid, $form_values["min-width-$group->tid"], $form_values["max-width-$group->tid"], $form_values["min-height-$group->tid"], $form_values["max-height-$group->tid"]);
+    	db_query("INSERT INTO {ad_flash_format} (gid, min_width, max_width, min_height, max_height) VALUES (%d, %d, %d, %d, %d)", $group->tid, $form_state['values']["min-width-$group->tid"], $form_state['values']["max-width-$group->tid"], $form_state['values']["min-height-$group->tid"], $form_state['values']["max-height-$group->tid"]);
+		}
+  }
+  drupal_set_message('Flash ad global settings updated.');
+}
+
+/**
+ * Adapi implementation.
+ */
+function ad_flash_adapi($op, $node) {
+  $output = NULL;
+
+  switch ($op) {
+
+    case 'load':
+      return db_fetch_array(db_query("SELECT * FROM {ad_flash} WHERE aid = %d", $node['aid']));
+
+    case 'validate':
+      if (!valid_url($node->url, TRUE)) {
+        form_set_error('url', t('You must specify a valid %field.', array('%field' => t('Destination URL'))));
+      }
+      break;
+
+    case 'submit':
+
+      break;
+
+    case 'insert':
+    case 'update':	
+      $flash = ad_flash_load_flash($node);
+
+			// $file = (object) ad_flash_active_file($node->files);
+			// $fid = (int) $file->fid;
+			$fid = (int) ad_flash_active_file($node->files);	
+
+      // This is ugly, but as "a" comes before "u" we don't seem to be able
+      // to modify the upload module's form.  Instead, we check after the fact
+      // if someone is editing flash files when they're not allowed, and if so we
+      // prevent the ad from being saved.
+      if ($op == 'update' && !ad_permission($node->nid, 'manage active image')) {
+        // See if fid is changing -- it's okay if new flash files are uploaded, it's
+        // just not okay if the active fid is changed.
+        if ($fid != $flash->fid) {
+          drupal_set_message('You do not have the necessary permissions to change the active advertisement.', 'error');
+          // This causes upload_save() to simply return without making any
+          // changes to the files attached to this node.
+          unset($node->files);
+        }
+      }
+      else {
+       // Check that all values are valid -- this is a kludge to work around bug #146147 until
+        // the problem is better understood.
+        if ($flash !== FALSE && $flash->type == 'swf' && (int)$flash->width != 0 && (int)$flash->height != 0 && (int)$flash->fid != 0) {
+          $node->fid = $flash->fid;
+          $node->width = $flash->width;
+          $node->height = $flash->height;
+        } else if ($flash !== FALSE && $flash->type == 'flv') {
+          $node->fid = $flash->fid;
+          $node->width = 0;
+          $node->height = 0;
+				} else {
+          $flash = FALSE;
+        }  	         
+      }
+	  
+      if ($op == 'insert') {
+        db_query("INSERT INTO {ad_flash} (aid, fid, url, width, height) VALUES(%d, %d, '%s', %d, %d)", $node->nid, $fid, $node->url, $node->width, $node->height);
+      }
+      else {
+        db_query("UPDATE {ad_flash} SET fid = %d, url = '%s', width = %d, height = %d WHERE aid = %d", $fid, $node->url, $node->width, $node->height, $node->nid);
+      }
+	  
+      // No valid flash has been uploaded, don't allow ad to be 'active'.
+      if ($flash === FALSE || !ad_flash_active_file(($node->files))) {
+        db_query("UPDATE {ads} SET adstatus = '%s' WHERE aid = %d AND adstatus = '%s'", t('pending'), $node->nid, t('active'));
+        if (db_affected_rows()) {
+          drupal_set_message(t('Unable to mark ad as %active as you have not uploaded any valid flash files.  Setting ad as %pending.', array('%active' => t('active'), '%pending' => t('pending'))), 'error');
+        }
+      }
+      else if (!$fid) {
+        db_query("UPDATE {ads} SET adstatus = '%s' WHERE aid = %d AND adstatus = '%s'", t('pending'), $node->nid, t('active'));
+        if (db_affected_rows()) {
+          drupal_set_message(t('Unable to mark ad as <em>active</em> until uploaded flash is validated.  If you do not see any more errors, you should now be able to set your ad as <em>active</em>.'), 'error');
+        }
+      }
+      break;
+
+    case 'delete':
+      db_query('DELETE FROM {ad_flash} WHERE aid = %d', $node->nid);
+      break;
+
+    case 'form':
+      return ad_flash_node_form($node);
+
+    case 'view':
+      return ad_flash_node_view($node);
+
+    case 'redirect':
+      return db_result(db_query('SELECT url FROM {ad_flash} WHERE aid = %d', $node->nid));
+
+    case 'type':
+			return array(
+        'flash' => array(
+          'name' => t('Flash ad'),
+          'module' => 'ad_flash',
+          'description' => t('A Flash advertisement.'),
+          'help' => t('A Flash advertisement.'),
+        ),
+      );
+      // return 'flash';
+
+    case 'permissions':
+      if (!isset($node->adtype) || $node->adtype == 'flash') {
+        return array(t('manage active ad'));
+      }
+
+    case 'check_install':
+      if (!module_exists('upload')) {
+        drupal_set_message(t("The required <em>upload module</em> is not enabled, you will not be able to upload flash ads.  Please %enable the upload module, or %disable the ad_flash module.", array('%enable' => l('enable', 'admin/modules'), '%disable' => l('disable', 'admin/modules'))), 'error');
+      }
+      break;
+
+  }
+
+  return $output;
+}
+
+/**
+ * Determine the currently active ad.
+ */
+function ad_flash_active_file($files = array()) {
+	
+	if (is_array($files)) {
+    foreach ($files as $fid => $data) {
+      if (is_array($data)) {
+        if ($data['list'] && !$data['remove']) {
+          return $fid;
+        }
+      }
+      else if ($data->list && !$data->remove) {
+        return $fid;
+      }
+    }
+  }
+  return 0;
+	
+  // foreach ($files as $fid => $data) {
+  //   if (is_array($data)) {
+  //     if ($data['list'] && !$data['remove']) {
+  //       return $data;
+  //     }
+  //   }
+  //   else if ($data->list && !$data->remove) {
+  //     return $data;
+  //   }
+  // }
+}
+
+function ad_flash_format_load($gid) {
+  static $format;
+  if (!is_null($format[$gid])) {
+    return $format[$gid];
+  }
+  $format[$gid] = db_fetch_object(db_query('SELECT * FROM {ad_flash_format} WHERE gid = %d', $gid));
+  return $format[$gid];
+}
+
+/**
+ * Validate that the size of the uploaded flash is within the defined limits.
+ */
+function ad_flash_validate_size($file, $nid) {
+  $size = NULL;
+  $error = FALSE;
+  $edit = isset($_POST['edit']) ? $_POST['edit'] : array();
+  if (is_object($file)) {
+    // TODO: Detect if new terms have been set, and if so validate against
+    // them, not the old ones.  See what's in $edit['taxonomy'].
+    $node = node_load($nid);
+    $terms = module_invoke('taxonomy', 'node_get_terms', $node);
+    if (count($terms) == 0) {
+      // We need at least a single (NULL) term to be ensure we still get the
+      // default flash size.
+      $terms[] = NULL;
+    }
+    getid3_load(); 
+    foreach ($terms as $tid => $term) {
+    $getID3 = new getID3;
+    $fid_info=$getID3->analyze($file->filepath);
+    $size->width = $fid_info['video']['resolution_x'];
+    $size->height = $fid_info['video']['resolution_y'];
+      $size->bytes = strlen(join('', file($file->filepath)));
+      if ($format = ad_flash_format_load($tid)) {
+    if ($size->width < $format->min_width) {
+          drupal_set_message(t('The flash %name is only %current pixels wide, which is less than the minimum of %minimum pixels allowed in the %group ad group.', array('%name' => $file->filename, '%current' => $size->width, '%minimum' => $format->min_width, '%group' => isset($term->name) ? $term->name : t('default'))), 'error');
+      $error = TRUE;
+    }
+    else if ($format->max_width && ($size->width > $format->max_width)) {
+          drupal_set_message(t('The flash %name is %current pixels wide, which is more than the maximum of %maximum pixels allowed in the %group ad group.', array('%name' => $file->filename, '%current' => $size->width, '%maximum' => $format->max_width, '%group' => isset($term->name) ? $term->name : t('default'))), 'error');
+      $error = TRUE;
+    }
+    if ($size->height < $format->min_height) {
+          drupal_set_message(t('The flash %name is only %current pixels high, which is less than the minimum of %minimum pixels allowed in the %group ad group.', array('%name' => $file->filename, '%current' => $size->height, '%minimum' => $format->min_height, '%group' => isset($term->name) ? $term->name : t('default'))), 'error');
+      $error = TRUE;
+    }
+    else if ($format->max_height && $size->height > $format->max_height) {
+          drupal_set_message(t('The flash %name is %current pixels high, which is more than the maximum of %maximum pixels allowed in the %group ad group.', array('%name' => $file->filename, '%current' => $size->height, '%maximum' => $format->max_height, '%group' => isset($term->name) ? $term->name : t('default'))), 'error');
+      $error = TRUE;
+    }
+        if ($format->max_size && $size->bytes > $format->max_size) {
+          drupal_set_message(t('The flash %name is %current bytes in size, which is more than the maximum of %maximum bytes allowed in the %group ad group.', array('%name' => $file->filename, '%current' => $size->bytes, '%maximum' => $format->max_size, '%group' => isset($term->name) ? $term->name : t('default'))), 'error');
+          $error = TRUE;
+        }
+      }
+    }
+  }
+  else {
+    $error = TRUE;
+    drupal_set_message('Please report error: $file is not an object, bug #146147.');
+  }
+  if ($error) {
+    return FALSE;
+  }
+  else {
+    return $size;
+  }
+}
+
+/**
+ *
+ */
+function ad_flash_update_node(&$data) {
+}
+
+/**
+ *
+ */
+function ad_flash_load_flash($node) {
+  if (is_array($node->files)) {
+    foreach ($node->files as $file) {
+      if (is_array($file)) {
+        if ($file['list'] && file_exists($file['filepath'])) {
+          $flash = ad_flash_validate_size((object)$file, $node->nid);
+          if ($flash !== FALSE) {
+            $flash->fid = $file['fid'];
+						$flash->type = strtolower(pathinfo($file['filepath'], PATHINFO_EXTENSION));
+            return $flash;
+          }
+        }
+      }
+      else {
+        if ($file->list && file_exists($file->filepath)) {
+          $flash = ad_flash_validate_size($file, $node->nid);
+          if ($flash !== FALSE) {
+            $flash->fid = $file->fid;
+						$flash->type = strtolower(pathinfo($file->filepath, PATHINFO_EXTENSION));
+            return $flash;
+          }
+        }
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Adapi helper function for displaying a node form.
+ */
+function ad_flash_node_form(&$node) {
+  $form = array();
+
+  ad_flash_adapi('check_install', $node);
+
+  $form['ad_flash'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Flash File'),
+    '#collapsible' => TRUE,
+  );
+
+  if (is_array($node->files)) {
+    $files = $node->files;
+  }
+  else {
+    $files = module_invoke('upload', 'load', $node);
+  }
+  $num = sizeof($files);
+
+  $path = NULL;
+  $active = 0;
+  if ($num) {
+    getid3_load(); 
+    foreach ($files as $file) {
+      if ($file->list && file_exists($file->filepath)) {
+        $getID3 = new getID3;
+        $fid_info=$getID3->analyze($file->filepath);
+        $flash->width = $fid_info['video']['resolution_x'];
+        $flash->height = $fid_info['video']['resolution_y'];
+        $flash->bgcolor=$fid_info['swf']['bgcolor'];
+        $flash->path = file_create_url($file->filepath);
+        $path .= theme('ad_flash_render', null, $flash);
+        $flash = ad_flash_validate_size($file, $node->nid);
+        if ($flash === FALSE) {
+          $path .= t('(invalid flash file)'). '<br />';
+         }
+        else if (!$active++) {
+          $path .= t('(active)'). '<br />';
+        }
+        else {
+          $path .= t('(inactive)'). '<br />';
+        }
+      }
+      else if (!file_exists($file->filepath)) {
+        drupal_set_message(t('Unable to locate flash %flash.', array('%flash' => "$file->filepath")));
+        $path .= t('Unable to locate the uploaded flash.');
+      }
+    }
+  }
+  if ($path == NULL) {
+    $path = t('No flash files have been uploaded.  Please upload an flash file via the <em>File attachments</em> form section below.<br />');
+    // Only set error if node has been previewed or submitted.
+    if (isset($_POST['edit'])) {
+      form_set_error('upload', t('It is required that you upload an flash for your flash advertisement.'));
+    }
+  }
+
+  $path .= t('<br />Only the first uploaded flash file that has <em>List</em> checked in the <em>File attachments</em> form section below will be displayed as an advertisement.  The flash that will be displayed is marked as <em>active</em> above.');
+
+  $form['ad_flash']['flash'] = array(
+    '#type' => 'markup',
+    '#value' => $path,
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+
+  $form['ad_flash']['flash'] = array(
+    '#type' => 'markup',
+    '#value' => $path,
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+
+  $form['ad_flash']['url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Destination URL'),
+    '#required' => TRUE,
+    '#default_value' => $node->url,
+    '#description' => t('Enter the complete URL where you want people to be redirected when they click on this advertisement.  The URL must begin with http:// or https://.  For example, %url.', array('%url' => t('http://www.sample.org/'))),
+  );
+
+  return $form;
+}
+
+function ad_flash_node_view(&$node) {
+  $ad = db_fetch_object(db_query('SELECT aid, redirect FROM {ads} WHERE aid = %d', $node->nid));
+  $node->content['ad'] = array(
+    '#value' => ad_flash_display_ad($ad)
+      .'<br />'. t('Links to %url.', array('%url' => $node->url)),
+    '#weight' => -1,
+  );
+}
+
+function ad_flash_player_conf($settings) {
+	if (empty($settings) && !is_array($settings)) return '';
+	
+	$conf = '';
+		
+	foreach ($settings as $option => $value) {
+		if (!empty($conf)) $conf .= ', ';
+		$conf .= (string)$option . ': ';
+		if (is_numeric($value)) $conf .= $value;
+		else if (is_bool($value)) $conf .= $value ? 'true' : 'false';
+		else $conf .= "'{$value}'";
+	}
+	
+	return $conf;
+}
+
+/* Themeable functions */
+
+/**
+ * Displays a flash advertisement
+*/
+function theme_ad_flash_render($ad, $flash) {
+	
+	// Get the groups (terms) this ad belongs to and use the first one
+    $node = node_load($ad->aid);
+    $terms = module_invoke('taxonomy', 'node_get_terms', $node);
+    $term = reset($terms);
+    $term = strtolower($term->name);
+
+	$flash->type = strtolower(pathinfo($flash->path, PATHINFO_EXTENSION));
+	//jrm addition
+	$flash_path = preg_replace('&'. drupal_get_path('module', 'ad') .'/&', '', file_create_url($flash->filepath));
+	$target = variable_get('ad_link_target', '_self');
+	$output = "<div class=\"flash-advertisement flash-advertisement-{$flash->type} ad-group-{$term}\" id=\"ad-{$ad->aid}\">";
+    $output .= theme('ad_flash_' . $flash->type . '_render', $ad, $flash);
+	$output .="</div>";
+	return $output;
+}
+
+function theme_ad_flash_swf_render($ad, $flash) {
+		$output .= '<object type="application/x-shockwave-flash" data="' . $flash->path . '" width="'. $flash->width .'" height="'. $flash->height .'" id="ad'.$ad->id.'">';
+		$output .= '<param name="allowScriptAccess" value="sameDomain" />';
+		$output .= '<param name="allowFullScreen" value="false" />';
+		$output .= '<param name="movie" value="' . $flash->path . '" />';
+		$output .= '<param name="quality" value="high" />';
+		$output .= '<param name="wmode" value="opaque" />';
+		$output .= '<param name="bgcolor" value="'.$flash->bgcolor.'"/>';
+		$output .= '<param name="flashvars" value="clickTAG='.$ad->redirect.'/@HOSTID___&clickTag='.$ad->redirect.'/@HOSTID___" />';
+		$output .= '</object>';
+		
+    return $output;
+}
+
+function theme_ad_flash_player_settings($ad, $flash) {
+	return array(
+		'autoBuffering' => true,
+		'bufferLength' => 1,
+		'startingBufferLength' => 1,
+		'hideControls' => false,
+		'showMenu' => false,
+		'initialScale' => 'fit',
+		'hideControls' => false,
+		'linkUrl' => $flash->url
+	);
+}
+
+function theme_ad_flash_flv_render($ad, $flash) {
+    $player = '/' . drupal_get_path('module', 'ad_flash') . '/player/FlowPlayerWhite.swf';
+    $url = $flash->path;
+
+    if ($flash->url) {
+        $output = '<div class="info">' . l(!empty($ad->title) ? $ad->title : $flash->url, $flash->url, array('target' => '_blank')) . '</div>';
+    }
+  
+    $settings = theme('ad_flash_player_settings', $ad, $flash);
+    $settings = array_merge(array('videoFile' => $url), $settings);
+    $conf = ad_flash_player_conf($settings);
+
+    $output .= "<object type=\"application/x-shockwave-flash\" data=\"{$player}\"  width=\"520\" height=\"440\" id=\"FlowPlayer\"><param name=\"allowScriptAccess\" value=\"sameDomain\" /><param name=\"movie\" value=\"{$player}\" /><param name=\"quality\" value=\"high\" /><param name=\"scale\" value=\"noScale\" /><param name=\"wmode\" value=\"opaque\" /><param name=\"flashvars\" value=\"clickTAG=" . $ad->redirect . "/@HOSTID___&config={" . $conf . "}\" /></object>";
+
+    return $output;
+}

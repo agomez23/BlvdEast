@@ -1,0 +1,227 @@
+<?php
+
+/*
+ * @file
+ * The Node Quick Find module provides a block which contains an autocompleting textfield which matches user input
+ * against the beginning of node titles. This means if a user enters 'test', NQF will match 'test node' but NOT 'node test'.
+ *
+ * Once a user selects the node title and submits, they are taken to the node.
+ *
+ * This is a handy module if the user knows exactly what they're looking for.
+ */
+
+
+/**
+ * Implementation of hook_block().
+ */
+function node_quick_find_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list' :
+      return array(
+        array('info' => t('Node Quick Find'))
+      );
+
+    case 'configure' :
+      return _node_quick_find_block_configuration($delta);
+
+
+    case 'save' :
+      $edit['settings']['node_types'] = array_filter($edit['settings']['node_types']);
+      variable_set('node_quick_find_'. $delta, $edit['settings']);
+      break;
+
+    case 'view' :
+      return array(
+        'subject' => t('Quick Find'),
+        'content' => drupal_get_form('node_quick_find_block_contents_form', $delta),
+      );
+  }
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function node_quick_find_menu() {
+  $items = array();
+
+  $items['node_quick_find/autocomplete'] = array(
+    'title' => 'Node autocomplete',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'page callback' => 'node_quick_find_autocomplete',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Wrapper function to build the settings form
+ *
+ * @param mixed $delta
+ *   The $delta represents the unique ID of the block from this module
+ *
+ * @return array
+ *   Array for use with the Drupal FAPI
+ */
+function _node_quick_find_block_configuration($delta) {
+  $form = array();
+  $settings = variable_get('node_quick_find_'. $delta, array());
+
+  $form['settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('NQF Settings'),
+    '#tree' => TRUE,
+  );
+
+  $form['settings']['node_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Node Type Filter'),
+    '#required' => TRUE,
+    '#options' => node_get_types('names'),
+    '#default_value' => isset($settings['node_types']) ? $settings['node_types'] : array(),
+  );
+
+  $form['settings']['field_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Text Field Title'),
+    '#size' => 16,
+    '#default_value' => isset($settings['field_title']) ? $settings['field_title'] : 'Title',
+  );
+
+  $form['settings']['field_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Text Field Size'),
+    '#size' => 3,
+    '#default_value' => isset($settings['field_size']) ? $settings['field_size'] : 16,
+  );
+
+  $form['settings']['field_error'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Error Message'),
+    '#size' => 25,
+    '#default_value' => isset($settings['field_error']) ? $settings['field_error'] : 'Page Not Found',
+  );
+
+  if (module_exists('search')) {
+    $form['settings']['field_search'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Search'),
+      '#description' => t('If enabled, <em>Node Quick Find</em> will fall back to a search of no node title is exactly matched.'),
+      '#default_value' => isset($settings['field_search']) ? $settings['field_search'] : 0,
+    );
+  }
+
+   return $form;
+}
+
+
+/**
+ * Block Contents Form. This provides the quick-find autocompelte area
+ */
+function node_quick_find_block_contents_form(&$form_state, $delta) {
+  $form = array();
+  $settings = variable_get('node_quick_find_'. $delta, array());
+
+  $form['title'] = array(
+    '#title' => t(isset($settings['field_title']) ? check_plain($settings['field_title']) : 'Title'),
+    '#type' => 'textfield',
+    '#autocomplete_path' => 'node_quick_find/autocomplete/'. $delta,
+    '#size' => isset($settings['field_size']) ? $settings['field_size'] : 16,
+  );
+
+  $form['delta'] = array('#type' => 'value', '#value' => $delta);
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+
+/**
+ * Submit handler for node_quick_find_block form above
+ */
+function node_quick_find_block_contents_form_submit($form, &$form_state) {
+  $delta = $form_state['values']['delta'];
+  $settings = variable_get('node_quick_find_'. $delta, array());
+
+  // If no node types, query all nodes
+  if (empty($settings['node_types'])) {
+    $args = array($form_state['values']['title']);
+    $sql = 'SELECT n.nid FROM {node} n WHERE n.title = "%s"';
+  }
+  // If there are node types, make sure the query is filtered
+  else {
+    $placeholders = db_placeholders($settings['node_types'], 'varchar');
+    $sql = "SELECT n.nid FROM {node} n WHERE n.type IN ({$placeholders}) AND n.title = '%s'";
+    $args = array_merge($settings['node_types'], array($form_state['values']['title']));
+  }
+
+  // Rewrite the SQL for Node Access
+  $sql = db_rewrite_sql($sql);
+
+  // Run the query
+  $nid = db_result(db_query_range($sql, $args, 0, 1));
+
+
+  if ($nid) {
+    $form_state['redirect'] = 'node/'. $nid;
+    return;
+  }
+  else {
+    if ($settings['field_search'] && module_exists('search')) {
+      $form_state['redirect'] = 'search/node/'. trim($form_state['values']['title']);
+      return;
+    }
+    else {
+      $settings['field_error'] = empty($settings['field_error']) ? 'Page Not Found' : $settings['field_error'];
+      drupal_set_message(t($settings['field_error'] .': %title', array('%title' => $form_state['values']['title'])), 'error');
+      drupal_not_found();
+      exit();
+    }
+  }
+}
+
+
+/**
+ * Autocomplete callback
+ *
+ * @param mixed $delta
+ *    Provides the unqiue ID for the block provided by this module
+ * @param string $string
+ *    The string to lookup
+ */
+function node_quick_find_autocomplete($delta = 0, $string = '') {
+  $settings = variable_get('node_quick_find_'. $delta, array());
+
+  $matches = array();
+  if ($string) {
+    $string = drupal_strtolower($string);
+    if (empty($settings['node_types'])) {
+      $sql = "SELECT n.title FROM {node} n WHERE n.title LIKE '%s%%'";
+      $args = array($seting);
+    }
+    else {
+      $placeholders = db_placeholders($settings['node_types'], 'varchar');
+      $sql = "SELECT n.title FROM {node} n WHERE n.type IN ({$placeholders}) AND n.title LIKE '%s%%'";
+      $args = array_merge($settings['node_types'], array($string));
+    }
+
+    // Rewrite the SQL for Node Access
+    $sql = db_rewrite_sql($sql);
+
+    // Run the query
+    $result = db_query_range($sql, $args, 0, 10);
+
+    // Build the result into an array
+    while ($node = db_fetch_object($result)) {
+      $matches[$node->title] = check_plain($node->title);
+    }
+  }
+  print drupal_to_js($matches);
+  exit();
+}

@@ -1,0 +1,368 @@
+<?php
+
+	define('BEAST_DID_BUILDING', 5);
+	define('BEAST_DID_LISTING', 6);
+	define('BEAST_PERM_FULL_LISTING', 'access full listing form');
+	
+	/**
+	 * Implementation of hook_init().
+	 */
+	function beast_init() {
+	  if (module_exists('token')) {
+		module_load_include('inc', 'beast', 'includes/beast.token');
+	  }
+	}
+
+	function beast_panels_pre_render($display)
+	{
+		switch($display->did)
+		{
+			case BEAST_DID_BUILDING:
+				drupal_add_js(drupal_get_path('module', 'beast') . '/js/building.js');
+			break;
+			case BEAST_DID_LISTING:
+				//drupal_add_js(drupal_get_path('module', 'beast') . '/js/listing.js');
+			break;
+		}
+	}
+	
+	/**
+	 * Implementation of hook_menu_alter().
+	 */
+	function beast_menu_alter(&$items)
+	{
+		//hide site search.
+		$items['search/apachesolr_search/%menu_tail']['access callback'] = FALSE;
+		$items['search/node/%menu_tail']['access callback'] = FALSE;
+		
+		//public should only see apartments tab, and default.
+		$items['search/apartments']['type'] = 128;
+		
+		//$items['search']['page callback'] = $items['search/apartments']['page callback'];
+		//$items['search']['page arguments'] = $items['search/apartments']['page arguments'];
+		//$items['search']['load arguments'] = $items['search/apartments']['load arguments'];
+		//$items['search']['file'] = $items['search/apartments']['file'];
+		//$items['search']['module'] = $items['search/apartments']['module'];
+		
+		//drupal_set_message('<pre>' . print_r($items, 1) . '</pre>');
+	}
+	
+	/**
+	 * Implements hook_perm().
+	 */
+	function beast_perm() {
+	  return array(BEAST_PERM_FULL_LISTING);
+	}
+	
+	/**
+	 * Implementation of hook_form_alter().
+	 */
+	function beast_form_alter(&$form, $form_state, $form_id) {
+		if($form_id == 'listing_node_form' || $form_id == 'home_node_form')
+		{
+			//print_r($form);
+			// hide extra CCK groups for non-admin
+			if(!user_access(BEAST_PERM_FULL_LISTING))
+			{
+				unset($form['group_u_media'], $form['group_listing_details'], $form['group_unit_amenities'], $form['group_unit_kitchen'], $form['group_unit_bathroom'], $form['group_agent'], $form['group_listing_details']['field_long_description'], $form['group_facilities'], $form['group_neighborhood_info'], $form['group_utilities'], $form['field_lease_type']);
+			}
+			
+			// hide town and parking, these auto-inherit from property.
+			unset($form['field_sqft_term'], $form['field_town'], $form['field_parking'], $form['field_prop_ownership'], $form['field_prop_style'], $form['field_building_services'], $form['field_building_amenities']);
+			
+			//hide extra options from body field
+			//$form['body_field']['teaser_include']['#type'] = 'value';
+			
+			//print_r($form['body_field']);
+			//foreach ($form['body_field']['format'] as $f) $f['description'] = '';
+			$form['body_field']['format'] = array();
+			$form['body_field']['body']['#description'] = 'Please write a brief description about the interior of your rental.<br>Please Note: Many of the features, amenities, and location of your rental have already been auto filled to your listing based on the complex or building you have selected.  You can also call us at <strong>201-868-<em>BLVD</em> (2583)</strong> if you would like our help.';
+			for ($i=1;$i<=6;$i++) $form['body_field']['format'][$i]['#description'] = '';
+			
+			//hide property except for new nodes.
+			if($form['#node']->nid) $form['group_unit']['field_propertyid']['#type'] = 'value';
+			
+			if (isset($form['register'])) { 
+				$form['register']['#weight'] = '100';
+				
+				//move register form description in post listingform.
+				$form['register']['#title'] = $form['register']['form']['account']['#title'];
+				$form['register']['form']['account']['#title'] = '';
+				
+				$form['register']['form']['account']['mail']['#description'] = '';
+				$form['register']['form']['account']['conf_mail']['#description'] = '';
+				$form['register']['form']['account']['pass']['#description'] = '';
+			}
+		}
+		
+		if($form_id == 'user_register')
+		{
+			if (isset($form['account'])) { 
+				//$form['account']['#weight'] = '100';
+				$form['account']['#title'] = 'Create a free account or login to post a listing';
+				$form['account']['mail']['#description'] = '';
+				$form['account']['conf_mail']['#description'] = '';
+				$form['account']['pass']['#description'] = '';
+			}
+		}
+		
+			//print_r($form);
+			/*
+			*/
+	}
+	
+	function beast_block($op = 'list', $delta = 0, $edit = array())
+	{
+		module_load_include('inc', 'ue_custom', 'includes/block');
+		switch ($op)
+		{
+			case 'list':
+				$blocks['search_apartments']['info'] = t('Blvd East: Search Apartments');
+				$blocks['search_apartments']['cache'] = BLOCK_CACHE_PER_USER;
+				
+				$blocks['search_homes']['info'] = t('Blvd East: Search Homes');
+				$blocks['search_homes']['cache'] = BLOCK_CACHE_PER_USER;
+				
+				$blocks['search']['info'] = t('Blvd East: Search');
+				$blocks['search']['cache'] = BLOCK_CACHE_PER_USER;
+				
+				$blocks['filter_rent']['info'] = t('Blvd East: Filter by Rent');
+				$blocks['filter_rent']['cache'] = BLOCK_CACHE_PER_USER;
+			return $blocks;
+			
+			case 'view':
+			case 'configure':
+			case 'save':
+				switch($delta)
+				{
+					case 'search_apartments':
+						require_once 'blocks/search_apartments.inc';
+						$block = new beast_block_search_apartments();
+					break;
+					
+					case 'search_homes':
+						require_once 'blocks/search_homes.inc';
+						$block = new beast_block_search_homes();
+					break;
+					
+					case 'search':
+						require_once 'blocks/search.inc';
+						$block = new beast_block_search();
+					break;
+					
+					case 'filter_rent':
+						require_once 'blocks/filter_rent.inc';
+						$block = new beast_block_filter_rent();
+					break;
+				}
+				
+				if($op == 'view') return $block->view();
+				if($op == 'configure') return $block->configure();
+				if($op == 'save') return $block->save($edit);
+		}
+	}
+	
+	function beast_add_slider_js()
+	{
+		jquery_ui_add('ui.slider');
+		drupal_add_css(drupal_get_path('module', 'jquery_ui') . '/jquery.ui/themes/default/ui.all.css');
+		drupal_add_js(drupal_get_path('module', 'beast') . '/js/slider.js');
+	}
+	
+	/**
+	 * Implementation of hook_ctools_plugin_directory().
+	 */
+	function beast_ctools_plugin_directory($module, $plugin) {
+		if ($module == 'ctools' && !empty($plugin)) {
+			return "plugins/$plugin";
+		}
+	}
+	
+	function beast_search_execute($search)
+	{
+		$results = NULL;
+		try {
+			$results = apachesolr_search_execute($search['keys'], $search['filters'], $search['sort'], $search['path'], $search['page']);
+		}
+		catch (Exception $e) {
+			watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+			apachesolr_failure(t('Solr search'), $search['keys']);
+		}
+		
+		if(!$results)
+			return;
+		
+		$nids = implode(',', beast_solr_nids($results));
+		
+		return views_embed_view('availabilities', 'panel_pane_1', $nids);
+	}
+	
+	// breaks down a solr $results array and returns the node IDs in an array.
+	function beast_solr_nids($results)
+	{
+		return array_map('beast_solr_nid', $results);
+	}
+	
+	// array_map callback function, returns node ID from apache solr result.
+	function beast_solr_nid($result)
+	{
+		if(is_object($result))
+			return $result->nid;
+		else
+			return $result['fields']['nid']['value'];
+	}
+	
+	function beast_terms_to_options($tree, $optional = true)
+	{
+		if($optional) $return[''] = t('All');
+		foreach($tree as $tid => $term)
+			$return[$term->tid] = $term->name;
+		
+		return $return;
+	}
+	
+	function beast_building_options($url = false, $optional = true)
+	{
+		$view = views_new_view();
+		$view->name = 'listing_building_dropdown';
+		$view->base_table = 'node';
+		$view->is_cacheable = FALSE;
+		$view->api_version = 2;
+		$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+		/*
+		$getSort = split(" ",$_GET['solrsort']);
+		$view->sort = array(
+			array (
+			  'tablename' => '',
+			  'field' => $getSort[0],
+			  'sortorder' => $getSort[1],
+			  'options' => '',
+			)
+		);
+		*/
+		$handler = $view->new_display('default', 'Defaults', 'default');
+		$handler->override_option('fields', array(
+		  'title' => array(
+			'label' => '',
+			'id' => 'title',
+			'table' => 'node',
+			'field' => 'title',
+			'relationship' => 'none',
+		  ),
+		));
+		$handler->override_option('sorts', array(
+		  'title' => array(
+			'id' => 'title',
+			'table' => 'node',
+			'field' => 'title',
+		  ),
+		));
+		$handler->override_option('filters', array(
+		  'status' => array(
+			'operator' => '=',
+			'value' => '1',
+			'group' => '0',
+			'exposed' => FALSE,
+			'expose' => array(
+			  'operator' => FALSE,
+			  'label' => '',
+			),
+			'id' => 'status',
+			'table' => 'node',
+			'field' => 'status',
+			'relationship' => 'none',
+		  ),
+		  'type' => array(
+			'operator' => 'in',
+			'value' => array(
+			  'property' => 'property',
+			),
+			'group' => '0',
+			'exposed' => FALSE,
+			'expose' => array(
+			  'operator' => FALSE,
+			  'label' => '',
+			),
+			'id' => 'type',
+			'table' => 'node',
+			'field' => 'type',
+			'relationship' => 'none',
+		  ),
+		));
+		$handler->override_option('items_per_page', 0);
+		$view->execute_display('default');
+		
+		if($optional) $return[''] = t('All');
+		
+		foreach($view->result as $i => $row)
+			$return[$url ? url('node/' . $row->nid) : $row->nid] = $row->node_title;
+		
+		return $return;
+	}
+	
+	function beast_menu()
+	{
+		$items = array();
+		$items['single_building'] = array(
+			'title' => 'Building',
+			'page callback' => 'beast_getBuilding',
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		
+		return $items;
+	}
+	
+	function beast_getBuilding()
+	{
+		//return arg(1);
+		//print_r($_GET); exit;
+		//return views_embed_view('single_building', array($_GET['nid']), 'default'); exit;
+		$view = views_get_view('single_building');
+			$view->set_arguments(array($_GET['nid']));
+			$view->pager['items_per_page']=1;
+			echo $view->render();
+			return NULL;
+	}
+
+function beast_filter_rent_form_submit($form, &$form_state) {
+  $keys = '';
+  $form_values = $form_state['values'];
+	
+	$min = $form_values['min'] == '' ? 0 : intval($form_values['min']);
+	$max = $form_values['max'] == '' ? '*' : intval($form_values['max']);
+  
+  if($min == 0 && $max == '*')
+  	return;
+
+  // Get the current search keys
+  if (arg(0) == 'search' && (arg(1) == 'apartments' || arg(1) == 'homes')) {
+    $keys = trim(search_get_keys());
+  }
+
+  // Clean url check
+  $base = 'search/' . arg(1);
+  if (variable_get('clean_url', '0')) {
+    $keys = str_replace('+', '%2B', $keys);
+  }
+
+  // Get the query values
+  $get = unserialize($form_values['apachesolr_money']['get']);
+  $query_values = unserialize($form_values['apachesolr_money']['queryvalues']);
+
+  // Extract (discard) and update existing price range
+  $extracted = apachesolr_money_filter_extract($query_values['filters'], $form_values['apachesolr_money']['range-field']);
+  if (!empty($query_values['filters'])) {
+    $space = ' ';
+  }
+  $query_values['filters'] = trim($query_values['filters']) . $space . $form_values['apachesolr_money']['range-field'] . ':' . '[' . $min . ' TO ' . $max . ']';
+  if ($query_values) {
+    $get = $query_values + $get;
+  }
+
+  // Retain filters
+  if (!empty($form_values['apachesolr_search']['retain-filters'])) {
+    $get['retain-filters'] = '1';
+  }
+  $form_state['redirect'] = array($base . $keys, $get);
+}

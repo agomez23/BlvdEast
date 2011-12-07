@@ -1,0 +1,25 @@
+<?php
+
+	function ue_widgets_menu()
+	{
+		$items['widgets/availability/%/%'] = array(
+			'title' => 'Availability Widget',
+			'page callback' => 'ue_widgets_availability',
+			'page arguments' => array(2, 3),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		return $items;
+	}
+	
+	function ue_widgets_availability($propID, $key)
+	{
+		if($key == md5($propID . 'availability'))
+		{
+			$view = views_get_view('widget_availability');
+			$view->set_arguments(array($propID));
+			$view->pager['items_per_page']=0;
+			echo $view->render();
+		}
+		return NULL;
+	}

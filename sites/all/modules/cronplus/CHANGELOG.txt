@@ -1,0 +1,72 @@
+$Id: CHANGELOG.txt,v 1.11 2008/12/19 10:09:27 syscrusher Exp $
+
+NOTE: Please put most recent changes at the TOP of the list.
+
+2008-12-19	Changes by Scott Courtney ("syscrusher")
+
+	Fixed accidental commit of Drupal 5 version to this
+	branch.
+
+2008-12-19	Changes by Scott Courtney ("syscrusher")
+
+	Applied change to fix issue #275299.
+
+2008-12-18	Changes by Scott Courtney ("syscrusher")
+
+	Initial port to Drupal 6.x. No known bugs, but
+	holding release pending testing in the community.
+
+2008-12-18	Changes by Scott Courtney ("syscrusher")
+
+	Applied #173855 patch to fix hooks not being invoked
+	under some circumstances. Thanks to "tom friedhof" for
+	the patch and "gestaltware" for helping to test it.
+
+2007-03-22	Changes by Scott Courtney ("syscrusher")
+
+	Ported to Drupal 5.x, with patch contributed by "darthsteven".
+	Corrected path of log view, and converted to a POST form so
+	it will be accepted by the watchdog module. Reference #117147.
+
+	The API hooks created by this module have not changed.
+
+2006-05-03	Changes by Scott Courtney ("syscrusher")
+
+	Updated to production release of Drupal 4.7. Corrected
+	missing admin menu. Corrected link to filtered log view.
+	This should fix issue #59223.
+
+2005-12-08	Changes by Scott Courtney ("syscrusher")
+
+	Updated for changes in forms API, and tested with latest
+	beta of Drupal 4.7.
+
+2005-11-03	Changes by Scott Courtney ("syscrusher")
+
+	Ported to new forms API and tested with Drupal 4.7 release
+	candidate. Wow -- that was easy!
+
+2005-11-03	Changes by Scott Courtney ("syscrusher")
+
+	First official release for Drupal 4.5 and 4.6. Module will
+	now be ported to Drupal 4.7 in the CVS branch.
+
+2005-06-06	Changes by Scott Courtney ("syscrusher")
+
+	Fixed minor bug with calculation of changed week number.
+	Added wrapper to correct cosmetic problem with log entries
+	due to Drupal version differences.
+
+2005-06-03	Changes by Scott Courtney ("syscrusher")
+
+	Back-ported to Drupal 4.5. Same code now works on 4.5.x
+	and 4.6.x.
+
+2005-06-03	Changes by Scott Courtney ("syscrusher")
+
+	Added multiplex hook {module}_cronplus() and the helper
+	function cronplus_periods().
+
+2005-06-02	Changes by Scott Courtney ("syscrusher")
+
+	Initial ALPHA TEST release

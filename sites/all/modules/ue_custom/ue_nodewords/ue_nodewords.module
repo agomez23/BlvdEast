@@ -1,0 +1,38 @@
+<?php
+	
+	// override description for property & listing based on field_long_description.
+	// this will only affect properties & listings when viewed and unfortunately overrides anything set in the edit form.
+	function ue_nodewords_nodewords_tags_alter(&$tags, $parameters)
+	{
+		if($parameters['type'] == NODEWORDS_TYPE_NODE) // && empty($tags['description'])
+		{
+			$node = node_load($parameters['ids'][0]);
+			if(in_array($node->type, array('listing', 'property')) && empty($node->body))
+			{
+				$longdesc = trim(strip_tags($node->field_long_description[0]['value']));
+				if($node->type == 'property')
+				{
+					$tagline = trim($node->field_tagline[0]['view']);
+				
+					$meta = $node->title;	
+					if($tagline) $meta .= '. ' . $tagline;
+					if($longdesc) $meta .= '. ' . $longdesc;
+				}
+				elseif($node->type == 'listing')
+				{
+					$prop = node_load($node->parent_node);
+					$br_size = taxonomy_get_term($node->field_bedroom[0]['value']);
+					$neighborhood = taxonomy_get_term($prop->field_property_neighborhood[0]['value']);
+					
+					$metadesctitle = ($node->field_unit_name_show[0]['value'] == 'Hide Unit Number in Listing') ? $prop->title : $prop->title . ', ' . $node->title;
+					$meta = '$' . number_format($node->field_price[0]['value']) . ', ' . $br_size->name . ', ' . $neighborhood->name . ', ' . $metadesctitle . '. ' . $node->field_tagline[0]['value'] . ' ' . $node->field_long_description[0]['value'] . ' brought to you by ' . variable_get('site_name', 'Urban Edge');
+				}
+				
+				$fakenode = (object)array('type' => $node->type, 'format' => 0, 'body' => $meta);
+				
+				$result = nodewords_metatag_from_node_content($fakenode, '');
+				
+				$tags['description'] = $result;
+			}
+		}
+	}

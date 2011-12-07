@@ -1,0 +1,187 @@
+<?php
+	define('UE_FACEBOOK_APPID', '140381682665264');
+	
+	function ue_facebook_menu()
+	{
+		$items['ue/facebook/test'] = array(
+			'page callback' => 'ue_facebook_test1',
+			'access callback' => 'ue_facebook_test_access',
+			'type' => MENU_CALLBACK,
+		);
+		$items['ue/facebook/suggest'] = array(
+			'page callback' => 'ue_facebook_suggest',
+			'access callback' => 'ue_facebook_test_access',
+			'type' => MENU_CALLBACK,
+		);
+		$items['node/%node/fbpost'] = array(
+			'page callback' => 'ue_facebook_publish_listing',
+			'page arguments' => array(1),
+			'access callback' => 'ue_facebook_test_access',
+			'type' => MENU_CALLBACK,
+		);
+		
+		return $items;
+	}
+	
+	function ue_facebook_test_access()
+	{
+		global $user;
+		//return $user->uid == 1;
+		return true;
+	}
+	
+	function ue_facebook_test1()
+	{
+		ue_facebook_publish_listing(node_load(26557));
+		return '';
+	}
+	
+	function ue_facebook_fb_required_perms_alter(&$perms)
+	{
+		// Require the mail and birthday extended permissions.
+		$perms[] = 'user_interests';
+		$perms[] = 'user_likes';
+		$perms[] = 'user_activities';
+	}
+	
+	function ue_facebook_suggest()
+	{
+		global $_fb;
+		$call = array(
+			'method' => 'fql.query',
+			'query' => "SELECT page_id,name,location,type FROM page WHERE page_id IN (SELECT page_id FROM page_fan WHERE uid = me()) AND location != '' AND type = 'RESTAURANTS'",
+			'callback' => ''
+		);
+		$result = $_fb->api($call);
+		foreach($result as $page)
+		{
+			if($page['location']['street'] != '' || $page['location']['latitude'] != '') // && in_array($page['location']['state'], array('NY', 'NJ')
+				$rtn .= '<pre>' . print_r($page, true) . '</pre>';
+		}
+		return $rtn;
+	}
+	
+	function ue_facebook_publish_listing($listing)
+	{
+		global $_fb;
+		//rewrite to use view: fb_post_listing with listing ID as argument
+		/*
+		$view = views_get_view('fb_post_listing');
+		$view->set_arguments(array($listing));
+		$view->render();
+		print_r($view);
+		exit();
+		*/
+		$prop = node_load($listing->parent_node);
+		
+		$bed = taxonomy_get_term($listing->field_bedroom[0]['value']);
+		$bath = taxonomy_get_term($listing->field_bathroom[0]['value']);
+		$hood = taxonomy_get_term($prop->field_property_neighborhood[0]['value']);
+		
+		if($listing->field_u_photos[0]['filepath'])
+			$photo = url(imagecache_create_path('fb_thumb', $listing->field_u_photos[0]['filepath']), array('absolute' => true));
+		elseif($prop->field_b_photos[0]['filepath'])
+			$photo = url(imagecache_create_path('fb_thumb', $prop->field_b_photos[0]['filepath']), array('absolute' => true));
+		else
+			$photo = NULL;
+		
+		setlocale(LC_MONETARY, 'en_US');
+		
+		//Set name -- [!price - !hood]
+		$name = money_format('%.0n', $listing->field_price[0]['value']) . "/mo";
+		$name .= " - " . $hood->name;
+		
+		//Set caption -- [!bed, !bath]
+		$caption = "$bed->name, $bath->name";
+		
+		//Set description
+		if($listing->field_long_description[0]['value'])
+			$description = drupal_html_to_text($listing->field_long_description[0]['value']) . "\n";
+			
+		if($prop->field_long_description[0]['value'] && strlen($description) < 100)
+			$description .= drupal_html_to_text($prop->field_long_description[0]['value']);
+		
+		//Set message -- tagline or name
+		if(strlen($listing->field_tagline[0]['value']))
+			$message = $listing->field_tagline[0]['value'];
+		elseif(strlen($prop->field_tagline[0]['value']))
+			$message = $prop->field_tagline[0]['value'];
+		else
+			$message = $name;
+		
+		$url = url($listing->path, array('absolute' => TRUE));
+		
+		$actions[] = array('text' => t('View Listing'), 'href' => url('<front>', array('absolute' => TRUE)));
+		
+		$token = fb_access_token();
+		
+		$graphpost['message'] = $message;
+		$graphpost['name'] = $name; //name is the text associated with the link.
+		$graphpost['caption'] = $caption; //caption appears under the name as the first line of 'description';
+		$graphpost['description'] = $description; //description appears under caption.
+		$graphpost['picture'] = $photo;
+		$graphpost['link'] = $url;
+		//$graphpost['source'] = UE_FACEBOOK_APPID;
+		$graphpost['access_token'] = $token;
+		
+		print_r($graphpost);
+		//exit();
+		
+		$result = $_fb->api(UE_FACEBOOK_APPID . '/feed', 'post', $graphpost);
+	}
+	
+	/* like box */
+	
+	function ue_facebook_block($op = 'list', $delta = 0, $edit = array())
+	{
+		require_once('blocks/likebox.inc');
+		require_once('blocks/connect.inc');
+		
+		$blocks[] = new ue_facebook_blocks_likebox(0);
+		$blocks[] = new ue_facebook_blocks_connect(1);
+		
+		switch ($op)
+		{
+			case 'list':
+				foreach($blocks as $block)
+				{
+					$class = get_class($block);
+					$rtn[] = array('info' => t('@name (@type)', array('@name' => 'Test block', '@type' => $class::BLOCK_NAME)));
+				}
+				return $rtn;
+				break;
+			case 'configure':
+				return $blocks[$delta]->configure();
+			case 'save':
+				$blocks[$delta]->save($edit);
+				return;
+			case 'view': default:
+				$block['subject'] = '';
+				$block['content'] = $blocks[$delta]->view();
+				return $block;
+		}
+	}
+	
+	function ue_facebook_footer()
+	{
+		global $UE_FACEBOOK_FBSDK;
+		if($UE_FACEBOOK_FBSDK)
+		{
+			/*return '
+			<div id="fb-root"></div>
+			<script>
+			  window.fbAsyncInit = function() {
+				FB.init({appId: ' . UE_FACEBOOK_APPID . ', status: true, cookie: true,
+						 xfbml: true});
+			  };
+			  (function() {
+				var e = document.createElement("script"); e.async = true;
+				e.src = document.location.protocol +
+				  "//connect.facebook.net/en_US/all.js";
+				document.getElementById("fb-root").appendChild(e);
+			  }());
+			</script>';*/
+		}
+	}
+	
+?>

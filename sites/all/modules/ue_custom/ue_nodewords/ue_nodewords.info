@@ -1,0 +1,7 @@
+name = UE Nodewords
+version = 6.x-1.0
+description = Integrates with nodewords to generate meta tags from field_long_description in listings and properties.
+core = 6.x
+package = Urban Edge
+dependencies[] = nodewords
+dependencies[] = ue_custom

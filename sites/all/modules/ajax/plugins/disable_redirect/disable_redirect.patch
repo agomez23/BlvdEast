@@ -1,0 +1,58 @@
+diff -crB ajax_disable_redirect.js ajax_disable_redirect.js
+*** ajax_disable_redirect.js	2009-07-14 17:29:09.000000000 +0300
+--- ajax_disable_redirect.js	2009-07-14 16:44:49.000000000 +0300
+***************
+*** 23,29 ****
+      if (args.options.disable_redirect === true) {
+        args.local.form[0].reset();
+        if (args.options.remove_form === true) {
+!         args.local.form.remove();
+        }
+        else {
+          $('.form-item :input', args.local.form[0])[0].focus();
+--- 23,34 ----
+      if (args.options.disable_redirect === true) {
+        args.local.form[0].reset();
+        if (args.options.remove_form === true) {
+!         args.local.form.empty();
+!         var get_response = function (data) {
+! 	        var result = Drupal.parseJson(data);
+! 	        var form = $('form').attr('id', args['form_id']).html(result['content']);
+!       	}	
+!       	$.get(Drupal.settings.basePath + "ajax_webform", {url:args['redirect']}, get_response);
+        }
+        else {
+          $('.form-item :input', args.local.form[0])[0].focus();
+diff -crB ajax_disable_redirect.module ajax_disable_redirect.module
+*** ajax_disable_redirect.module	2009-07-14 17:29:09.000000000 +0300
+--- ajax_disable_redirect.module	2009-07-14 16:45:31.000000000 +0300
+***************
+*** 34,37 ****
+--- 34,59 ----
+      '#value' => t('Remove Form After Submit')
+    );
+    return TRUE;
++ }
++ 
++ function ajax_disable_redirect_menu() {
++ 	$items = array();
++ 	$items['ajax_webform'] = array(
++ 	    'title' => 'Ajax handler',
++ 	    'page callback' => 'ajax_disable_redirect_get_response',
++ 	    'access arguments' => array('access content'),
++ 	    'type' => MENU_CALLBACK,
++   	);
++   	return $items;
++ }
++ 
++ function ajax_disable_redirect_get_response() {
++ 	$path = $_GET["url"];
++ 	if ($path) {
++ 		$path = explode('/', str_replace('http://', '', $path));
++ 		module_invoke('webform');
++ 		$response = _webform_confirmation(node_load($path[2]));
++ 		print drupal_json(array('content' => $response));
++ 	}
++ 	exit();
+  }
+\ No newline at end of file

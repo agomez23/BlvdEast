@@ -1,0 +1,6 @@
+name = UE Saved Search
+version = 6.x-1.0
+description = Adds 'saved searches' to user profiles.
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom

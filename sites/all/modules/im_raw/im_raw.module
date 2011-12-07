@@ -1,0 +1,121 @@
+<?php
+// $Id: im_raw.module,v 1.6 2009/03/11 21:16:22 adrinux Exp $
+
+/**
+ * @file
+ * An action for imagecache processing.
+ *
+ * Allows ImageMagick command line options to be entered directly
+ *
+ * @author adrian@perlucida.com
+ */
+
+/**
+ * Need to flush the cache when this module is enabled
+ */
+function im_raw_install() {
+  imagecache_action_definitions(TRUE);
+  drupal_set_message(t('The IM raw imagecache action should now be available in the presets !settings_link', array('!settings_link' => l(t('settings'), 'admin/build/imagecache'))));
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function im_raw_perm() {
+  return array('enter ImageMagick command line options');
+}
+
+/**
+ * Implementation of hook_imagecache_actions().
+ *
+ * Declare available actions, return help text about this filter.
+ */
+function im_raw_imagecache_actions() {
+	$actions = array(
+		'im_raw' => array(
+			'name' => 'IM raw',
+			'description' => 'Enter raw imagemagick command line options.'
+		)
+	);
+	return $actions;
+}
+
+/**
+ * Form to enter the command line options
+ */
+function im_raw_form($action) {
+  if (user_access('enter ImageMagick command line options')) {
+		$form['commandline'] = array(
+				'#type' => 'textarea',
+				'#title' => t('ImageMagick command line options'),
+				'#default_value' => $action['commandline'],
+				'#description' => t('Enter the command line <em>options</em> only. Remember to escape parenthesis (and remember escaping is platform specific, use \ on *nix and ^ on Windows). Do not add an input or output file. ImageAPI will add "convert" before and a "-quality" option after based on the configuration !settings_link', array('!settings_link' => l(t('settings'), 'admin/settings/imageapi/config'))),
+				'#rows' => '10',
+				'#resizable' => 'TRUE'
+		);
+		return $form;
+	}
+	else {
+		$form['commandline'] = array(
+				'#type' => 'item',
+				'#title' => t('ImageMagick command line options'),
+				'#description' => t('You do not have permission to edit these options. Please contact your site Admin or check !permissions_link', array('!permissions_link' => l(t('permissions'), 'admin/user/permissions')))
+		);
+		return $form;
+	}
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function im_raw_theme() {
+  return array(
+    'im_raw' => array(
+      'arguments' => array('element' => NULL),
+    )
+  );
+}
+
+/**
+ * Implementation of theme_hook() for imagecache_ui.module
+ * (lists the entered command in the preset's actions table)
+ */ 
+function theme_im_raw($element) {
+  $output = $element['#value']['commandline'];
+  return $output;
+}
+
+/**
+ * Function to call the action and log errors
+ */
+function im_raw_image(&$image, $action) {
+
+  $imcommands = im_raw_actions($image, $action);
+
+    if (!imcommands) {
+      watchdog('imagecache', 'IM raw failed. image: %image, data: %data.', array('%path' => $image, '%data' => print_r($data, TRUE)), WATCHDOG_ERROR);
+      return FALSE;
+    }
+  return TRUE;
+}
+
+/**
+ * Pass our action available to imagecache/imageapi
+ */
+function im_raw_actions(&$image, $action) {
+
+  $image->ops[] = $action['commandline'];
+
+  return TRUE;
+}
+
+/**
+ * clear imagecache cache
+ */
+function im_raw_enable() {
+  cache_clear_all('imagecache_actions', 'cache');
+}
+
+function im_raw_disable() {
+  cache_clear_all('imagecache_actions', 'cache');
+}

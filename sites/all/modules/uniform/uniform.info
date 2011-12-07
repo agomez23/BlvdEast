@@ -1,0 +1,4 @@
+; $Id: ue_custom.module,v 1.102 2009/12/08 22:25:19 soxofaan Exp $
+name = Uniform
+description = Uniform masks your standard form controls with custom themed controls. It works in sync with your real form elements to ensure accessibility and compatibility.
+core = 6.x

@@ -1,0 +1,160 @@
+<?php
+// $Id: ad_flash.install,v 1.5 2010/09/19 15:48:27 alexandrascu Exp $
+
+/**
+ * Ad_image module database schema.
+ *
+ *
+ * Based on the ad_image.module by Jeremy Andrews
+ *
+ * Contributed by 
+ *
+ * 2007
+ *   Fabio Varesano <fvaresano at yahoo dot it> 
+ *
+ * 2005-2007.
+ *   Jeremy Andrews <jeremy@kerneltrap.org>.
+ *
+ * 2010 
+ *    Alexandru Mihnea Andrascu | Visual Candy <office@visualcandy.eu>
+ */
+
+function ad_flash_schema() {
+
+  /**
+   * The ad_flash table stores information about each image ad.
+   */
+  $schema['ad_flash'] = array(
+    'description' => 'The ad_flash table stores information about each image ad.',
+    'fields' => array(
+      'aid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Ad ID. Equals to ad\'s node ID.',
+      ),
+      'fid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'File ID. Equals to file ID of the flash file.',
+      ),
+      'url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Ad URL',
+      ),
+      'width' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Width of the flash file.',
+      ),
+      'height' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Height of the flash file.',
+      ),
+    ),
+    'primary key' => array('aid'),
+    'indexes' => array(
+      'fid' => array('fid'),
+    ),
+  );
+
+  /**
+   * The ad_flash_format table provides format guidelines for a given group
+   * of image ads.
+   */
+  $schema['ad_flash_format'] = array(
+    'description' => 'The ad_flash_format table provides format guidelines for a given group of image ads',
+    'fields' => array(
+      'gid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Ad group ID, which equals to group\'s taxonomy term ID.',
+      ),
+      'min_width' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Minimum width for the groups\' ads.',
+      ),      
+      'max_width' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Maximum width for the groups\' ads.',
+      ),      
+      'min_height' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Minimum height for the groups\' ads.',
+      ),      
+      'max_height' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Maximum height for the groups\' ads.',
+      ),
+    ),
+    'primary key' => array('gid'),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Install Flash Ad.
+ */
+function ad_flash_install() {
+  // Create tables.
+  drupal_install_schema('ad_flash');
+}
+
+/**
+ * Allow a complete uninstallation of the Flash Ad module.
+ */
+function ad_flash_uninstall() {	
+	// Delete all ad_flash content.
+  $result = db_query("SELECT aid FROM {ad_flash}");
+  while ($aid = db_result($result)) {
+    node_delete($aid);
+  }
+	
+  // Remove tables.
+  drupal_uninstall_schema('ad_flash');
+}
+
+/**
+ * Update function for previous non-schema API MySQL databases.
+ * Note: Previous versions were MySQL-only, so running this on anything else is utterly pointless.
+ */
+function ad_flash_update_6000() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_drop_unique_key($ret, 'ad_flash', 'aid');
+      db_add_primary_key($ret, 'ad_flash', array('aid'));
+      db_add_index($ret, 'ad_flash', 'aid', array('aid'));
+      break;
+    default:
+  }
+  return $ret;
+}
+
+?>

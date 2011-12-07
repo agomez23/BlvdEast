@@ -1,0 +1,15 @@
+; $Id: apachesolr_ajax.info,v 1.3 2010/03/05 18:48:45 jpmckinney Exp $
+
+name = Apache Solr AJAX
+description = AJAXifies the apachesolr module.
+package = Apache Solr
+core = 6.x
+
+dependencies[] = apachesolr_search
+
+; Information added by drupal.org packaging script on 2010-07-06
+version = "6.x-1.11"
+core = "6.x"
+project = "apachesolr_ajax"
+datestamp = "1278447003"
+

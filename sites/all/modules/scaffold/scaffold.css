@@ -1,0 +1,11 @@
+/* $Id: scaffold.css,v 1.1 2010/08/03 11:39:59 jide Exp $ */
+
+/**
+ * @file
+ * Stylesheet used by themes using Scaffold constants.
+ */
+
+#scaffold-colorpicker {
+  position: absolute;
+  z-index: 2700;
+}

@@ -1,0 +1,90 @@
+<?php
+	
+	function ue_saved_search_menu()
+	{
+		$items = array();
+		
+		$items['user/%/searches'] = array(
+			'title' => 'Saved Searches',
+			'description' => 'Saved searches',
+			'page callback' => 'ue_saved_search_user_searches',
+			'access callback' => 'ue_saved_search_user_searches_access',
+			'type' => MENU_LOCAL_TASK
+		);
+		
+		return $items;
+	}
+	
+	function ue_saved_search_user_searches_access()
+	{
+		global $user;
+		return $user->uid == 1;
+	}
+	
+	function ue_saved_search_user_searches()
+	{
+		global $user;
+		
+		drupal_set_title(t('Saved Searches'));
+		
+		$header = array(
+			array('data' => t('Search Name'), 'field' => 'name', 'sort' => 'desc'),
+			array('data' => t('Date Created'), 'field' => 'created'),
+			array('data' => ''),
+		);
+		
+		$rows = array();
+		
+		$context = array(
+			'revision' => 'themed-original',
+			'type' => 'amount',
+		);
+		
+		$result = pager_query('SELECT * FROM {ue_custom_searches} WHERE uid = %d' . tablesort_sql($header), 20, 0, 'SELECT sid, name, created FROM {ue_custom_searches} WHERE uid = %d', $user->uid);
+		
+		while ($search = db_fetch_array($result))
+		{
+			$context['subject'] = array('search' => $search);
+			
+			$nh1 = taxonomy_get_term($search['nh1']);
+			$nh2 = taxonomy_get_term($search['nh2']);
+		
+			$fields = array_merge($search);
+			
+			$fields['p']['min'] = $fields['pmin'];
+			$fields['p']['max'] = $fields['pmax'];
+			
+			unset($fields['name']);
+			unset($fields['sid']);
+			unset($fields['uid']);
+			unset($fields['created']);
+			unset($fields['pmin']);
+			unset($fields['pmax']);
+			
+			$rows[] = array(
+				array('data' => $search['name'], 'nowrap' => 'nowrap'),
+				array('data' => format_date($search['created'], 'custom', variable_get('uc_date_format_default', 'm/d/Y'))),
+				array('data' => '<a href="' . url('results') . '?' . http_build_query($fields, '', '&') . '">Run Search</a>', 'nowrap' => 'nowrap')
+			);
+		}
+		
+		if (empty($rows))
+			$rows[] = array(array('data' => t('You haven\'t saved any searches.'), 'colspan' => 3));
+		
+		$rtn .= theme('table', $header, $rows, array('style' => 'width:100%')) . theme('pager', NULL, 20, 0);
+		
+		return $rtn;
+	}
+	
+	function ue_saved_search_search_save($search)
+	{
+		global $user;
+		
+		$fields = array_merge($search, array('pmin' => $search['p']['min'], 'pmax' => $search['p']['max']));
+		
+		$fields['uid'] = $user->uid;
+		
+		$sid = db_insert('ue_custom_searches')->fields($fields)->execute();
+		
+		return $sid;
+	}

@@ -1,0 +1,12 @@
+; $Id: resizable_body.info,v 1.1.2.4.2.1 2009/03/15 12:39:07 george2 Exp $
+name = Resizable Body and Comments
+description = Change the cols, rows for body and comment field as well as a few other visual adjustments.
+package = "Resizable Fields"
+core = 6.x
+
+; Information added by drupal.org packaging script on 2009-04-13
+version = "6.x-2.0"
+core = "6.x"
+project = "resizable_body"
+datestamp = "1239605780"
+

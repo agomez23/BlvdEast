@@ -1,0 +1,15 @@
+Changes from 6.x-2.2
+- fixed an issue with bgcolor wich was hardcoded
+- now is added dynamically from the swf stage color
+- we can use transparen png / gif without having to add another swf layer just for backround color. 
+
+Changes from 6.x-2.1
+- fixed issue #543406 at #21 patches by opteronmx, alanburke, gregarios
+- clickTAG should now function properly
+- jquery and javascript display methods should work as intended
+6.x-2.2
+  Second and working version to be a proper full-blown module.
+ 
+ Changes from 6.x-2.6
+[#720346] - Patched. 
+[#815326] - Patched.

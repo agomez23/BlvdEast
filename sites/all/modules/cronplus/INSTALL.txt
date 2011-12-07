@@ -1,0 +1,56 @@
+$Id: INSTALL.txt,v 1.3 2007/03/22 23:41:18 syscrusher Exp $
+
+
+              INSTALLATION INSTRUCTIONS
+
+To install and use this module:
+
+0. Read the README.txt and INSTALL.txt files thoroughly.
+
+1. Copy the Cronplus files to an appropriate subdirectory in your Drupal
+   environment (such as "modules/cronplus").
+
+   This module does not require any module-specific database tables.
+
+2. Enable the Cronplus module using the Drupal administrative screen.
+
+3. Use the settings page to configure Cronplus as you wish. Current
+   options include:
+
+   * Preferred hour
+
+     For cronplus runs that happen at daily, or longer, time intervals,
+     this option instructs the module to do its work at the first Drupal
+     cron run that happens during or after the specified hour (24-hour
+     time, GMT timezone).
+
+   * Preferred weekday
+
+     For cronplus runs that happen at weekly, or longer, time intervals,
+     this option instructs the module to do its work at the first Drupal
+     cron run that happens during or after the specified day of the week.
+     Note that the "preferred hour" option is still in effect also, so
+     the two together attempt to set the weekday and the hour of the day.
+
+   Note that *both* of these options are only advisory to cronplus.module.
+   Its ability to follow these instructions depends on how often your
+   Drupal system invokes cron.php. In general, the more frequently cron.php
+   is invoked, the closer to your requested day of week and hour of day
+   the jobs will actually run. cronplus.module will forego the preferred
+   day and hour settings if it detects that a given run is overdue. The
+   priority is to get the runs to happen at or near the appropriate
+   intervals first and foremost. Over time, a well-tuned system should
+   (in theory) tend to converge toward your preferred values.
+
+4. TROUBLESHOOTING
+
+   If you have problems with cron.php timing out, check your PHP settings
+   for maximum script execution time, and also check the timeout setting
+   for the system batch job that invokes cron.php. (In Linux systems,
+   this would typically be either "wget" or "curl" commands, both of
+   which have options to set the time limit.)
+
+   Note that under certain circumstances -- particularly, when the module
+   is first installed -- it is *NORMAL* for the time interval hooks to
+   be invoked twice in fairly rapid succession. This will self-correct as
+   the previous run history is written into the {variable} table.

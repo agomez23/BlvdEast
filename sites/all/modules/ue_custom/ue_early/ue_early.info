@@ -1,0 +1,6 @@
+name = UE Custom Early
+version = 6.x-1.0
+description = Custom functions for <a href="http://www.urbanedgeny.com/">Urban Edge</a> (necessary for some hooks to run before relativity module)
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom

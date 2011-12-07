@@ -1,0 +1,39 @@
+<?php
+
+	// add parent-path token for url aliasing - dw
+	function relativity_token_token_list($type)
+	{
+		if ($type == 'node' || $type == 'all')
+		{
+			$tokens['relativity']['parent-path'] = t('Parent node path');
+			return $tokens;
+		}
+	}
+	
+	// calculate parent-path token.
+	function relativity_token_token_values($type, $object = NULL)
+	{
+		$tokens = array();
+		$tokens['parent-path'] = '';
+		if ($type == 'node')
+		{
+			$node = $object;
+			
+			// check if the node has parents
+			if (isset($node->parent_node))
+			{
+				$parent = node_load($node->parent_node);
+				$tokens['parent-path'] = $parent->path;
+			}
+			else
+			{
+				$result = db_query('SELECT parent_nid as pid FROM {relativity} WHERE nid = %d', $node->nid);
+				if($parent = db_fetch_object($result))
+				{
+					$parent = node_load($parent->pid);
+					$tokens['parent-path'] = $parent->path;
+				}
+			}
+		}
+		return $tokens;
+	}

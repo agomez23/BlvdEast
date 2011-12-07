@@ -1,0 +1,777 @@
+<?php
+
+	define('UE_MANAGE_LISTINGS_PATH', 'manage-listings');
+	define('UE_MANAGE_LISTINGS_ACCESS', 'access manage listings');
+	define('UE_MANAGE_LISTINGS_ACCESS_SUPER', 'manage listings superuser');
+	
+	function ue_manage_listings_perm()
+	{
+		return array(
+			UE_MANAGE_LISTINGS_ACCESS,
+			UE_MANAGE_LISTINGS_ACCESS_SUPER
+		);
+	}
+	
+	
+	
+	function ue_manage_listings_init()
+  {
+    drupal_add_js(drupal_get_path('module','ue_manage_listings').'/hovertip.js');
+    drupal_add_css(drupal_get_path('module','ue_manage_listings').'/hovertip.css');
+    drupal_add_js(drupal_get_path('module', 'ue_manage_listings').'/ue_manage_listings_custom.js', 'module');
+
+		if(variable_get('ue_manage_listings_admin_theme', false) && drupal_match_path($_GET['q'], UE_MANAGE_LISTINGS_PATH))
+		{
+			global $custom_theme;
+			$custom_theme = variable_get('admin_theme', '0');
+			drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
+		}
+	}
+	
+	function ue_manage_listings_help($path, $arg)
+	{
+		switch ($path)
+		{
+			case UE_MANAGE_LISTINGS_PATH:
+			
+			$helptext = variable_get('ue_manage_listings_helptext', array('body' => '', 'format' => FILTER_FORMAT_DEFAULT));
+			
+			if(strlen($helptext['body']))
+				return check_markup($helptext['body'], $helptext['format'], FALSE);
+			
+			break;
+		}
+	}
+	
+	
+	function ue_manage_listings_menu()
+	{
+		$items = array();
+		
+		$items[UE_MANAGE_LISTINGS_PATH] = array(
+			'title' => 'Manage Listings',
+			'description' => 'Manage listings',
+			'page callback' => 'ue_manage_listings_manage',
+			'access arguments' => array(UE_MANAGE_LISTINGS_ACCESS),
+			'type' => variable_get('ue_manage_listings_menutype', MENU_CALLBACK),
+			'menu_name' => variable_get('ue_manage_listings_menuname', 'navigation'),
+		);
+		
+		$items[UE_MANAGE_LISTINGS_PATH . '/quickedit'] = array(
+			'page callback' => 'ue_manage_listings_manage_edit',
+			'access arguments' => array(UE_MANAGE_LISTINGS_ACCESS),
+			'type' => MENU_CALLBACK,
+		);
+		
+		return $items;
+	}
+	
+	function ue_manage_listings_form_alter(&$form, $form_state, $form_id)
+	{
+		if($form_id == 'ue_custom_admin')
+		{
+			$form['ue_manage_listings'] = array(
+				'#type' => 'fieldset',
+				'#title' => t('Manage Listings'),
+				'#collapsible' => TRUE,
+				'#weight' => 0
+			);
+		
+			$form['ue_manage_listings']['ue_manage_listings_admin_theme'] = array(
+				'#type' => 'checkbox',
+				'#title' => t('Use administration theme.'),
+				'#default_value' => variable_get('ue_manage_listings_admin_theme', false),
+				'#description' => t('If checked, the theme will be switched to the administration theme on the manage listings screen.'),
+				'#required' => TRUE
+			);
+			
+			$formats = module_invoke_all('field_formatter_info');
+			foreach($formats as $formatkey => $format)
+				if(in_array('image', $format['field types']))
+					$imageformats[$formatkey] = $format['label'];
+			
+			$form['ue_manage_listings']['ue_manage_listings_thumbformat'] = array(
+				'#type' => 'select',
+				'#title' => t('Thumbnail format'),
+				'#default_value' => variable_get('ue_manage_listings_thumbformat', 'imagefield_formatter_image_nodelink'),
+				'#options' => $imageformats,
+				'#required' => TRUE,
+			);
+			
+			$form['ue_manage_listings']['ue_manage_listings_menutype'] = array(
+				'#type' => 'select',
+				'#title' => t('Menu type'),
+				'#default_value' => variable_get('ue_manage_listings_menutype', 'MENU_CALLBACK'),
+				'#description' => t('You may need to rebuild the menu cache after changing this option.'),
+				'#options' => array(
+					MENU_CALLBACK => 'Callback (hidden from nav)',
+					MENU_NORMAL_ITEM => 'Normal item (set menu below)',
+				),
+				'#required' => TRUE,
+			);
+			
+			$form['ue_manage_listings']['ue_manage_listings_menuname'] = array(
+				'#type' => 'select',
+				'#title' => t('Menu name'),
+				'#default_value' => variable_get('ue_manage_listings_menuname', 'navigation'),
+				'#description' => t('You may need to rebuild the menu cache after changing this option.'),
+				'#options' => array_combine(menu_get_names(), menu_get_names()),
+				'#required' => TRUE,
+			);
+			
+			$helptext = variable_get('ue_manage_listings_helptext', array('body' => '', 'format' => FILTER_FORMAT_DEFAULT));
+			
+			$form['ue_manage_listings']['ue_manage_listings_helptext'] = array(
+				'#type'  => 'item',
+				'#tree'   => TRUE,
+			);
+			
+			$form['ue_manage_listings']['ue_manage_listings_helptext']['body'] = array(
+				'#type' => 'textarea',
+				'#title' => t('Help text'),
+				'#default_value' => $helptext['body'],
+				'#description' => t('Help text displayed on manage listings page.'),
+			);
+			
+			$form['ue_manage_listings']['ue_manage_listings_helptext']['format'] = filter_form($helptext['format'], NULL, array('ue_manage_listings_helptext', 'format'));
+			
+		}
+	}
+	
+	/* MANAGE LISTINGS 2.0 */
+	function ue_manage_listings_manage()
+	{
+		drupal_add_css(drupal_get_path('module', 'ue_manage_listings') . '/ue_manage_listings.css');
+		drupal_set_title('Manage Listings');
+		drupal_set_breadcrumb(array(l(t("Home"), $base_url),l(t("My Account"),"user")));
+		global $user;
+		
+		$paidSites = array('CZ', 'EN', 'HP', 'NC', 'OX', 'OO', 'RE', 'SE', 'TR', 'TA', 'VA', 'YA', 'ZI');
+		foreach($paidSites as $i => $key) $paid[] = array('value' => $key);
+		
+		$premSites = array();
+		foreach($premSites as $i => $key) $prem[] = array('value' => $key);
+		
+		if(strlen($_POST['op']))
+		{
+			foreach($_POST['nid'] as $nid)
+			{
+				if(intval($nid) > 0)
+				{
+					$node = node_load($nid);
+					if(node_access('update', $node))
+					{
+						switch($_POST['op'])
+						{
+							case 'onmkt':
+							case 'offmkt':
+								$node->field_unit_availability = array(array('value' => ($_POST['op'] == 'onmkt' ? 'On the Market' : '')));
+								//if ($_POST['op']=="offmkt") $node->promote = 0;
+								content_update($node);
+								node_save($node);
+								break;
+							case 'pub':
+							case 'unpub':
+								if(user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER))
+								{
+									$node->status = $_POST['op'] == 'pub' ? 1 : 0;
+									node_save($node);
+								}
+								break;
+							case 'del':
+								if(user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER))
+									if(node_access('delete', $node)) node_delete($nid);
+								break;
+						}
+					}
+				}
+			}
+			header('Location: ' . $_POST['destination']);
+			exit();
+		}
+		
+		if(node_access('create', 'property'))
+		{
+			$output .= '<div style="float:right;font-size:1.2em;font-weight:bold">';
+			$output .= l(
+				'Add New Building',
+				'node/add/property',
+				array(
+					'query' => array('destination' => substr($_SERVER['REQUEST_URI'], 1)),
+					'attributes' => array('class' => 'addProperty')
+				)
+			);
+			$output .= '</div>';
+		}
+		
+		$output .= '<div class="view-getMyProperties">';
+		
+		$companyID = is_array($_GET['companyID']) ? $_GET['companyID'] : array();
+		$propID = is_array($_GET['propertyID']) ? $_GET['propertyID'] : array();
+	
+		// get list of properties for filter.
+		$properties = ue_custom_get_properties('n.title', $companyID);
+		
+		// remove properties from filter params that were just filtered out by companies.
+		if(count($propID))
+			for($i = count($propID); $i--; $i >= 0)
+				if(!array_key_exists($propID[$i], $properties)) array_splice($propID, $i, 1);
+		
+		// get list of properties for page.
+		$filteredProperties = ue_custom_get_properties('n.title', $companyID, $propID, true);
+		
+		// render filters.
+		$output .= ue_manage_listings_manage_filters($companyID, $propID, $properties);
+		
+		// render property list.
+		$output .= ue_manage_listings_manage_properties($filteredProperties);
+		
+		$output .= '</div>';
+		
+		drupal_add_js(drupal_get_path('module', 'ue_manage_listings') .'/ue_manage_listings.js', 'module', 'footer');
+		
+		return $output;
+	}
+	
+	function ue_manage_listings_manage_filters($companyID, $propID, $properties)
+	{
+		$output .= '<form action="' . $_SERVER['REQUEST_URI'] . '" method="GET">';
+		
+		if(!variable_get('ue_custom_singleowner', false) && user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER)) $output .= ue_manage_listings_manage_company_filter($companyID);
+		
+		// output property filter if more than 3 properties.
+		if(count($properties) > 3)
+		$output .= ue_manage_listings_manage_property_filter($propID, $properties);
+		// moved the line of code below into ue_manage_listings_manage_property_filter -cthorn
+		//if(user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER) || count($properties) > 3) $output .= '<div style="clear:both"><input type="submit" class="form-submit" value="Update filter"></div><br>';
+		
+		$output .= '</form>';
+		
+		return $output;
+	}
+	
+	function ue_manage_listings_manage_company_filter($companyID)
+	{
+		$companies = ue_custom_get_companies();
+		$output .= '<div style="width:47%;float:left;padding-right:20px;">';
+		$output .= '<h3>Filter Companies:</h3>';
+		//$output .= '<a class="blue" href="#" onclick="$(\'option\', $(this).next(\'select\')).attr(\'selected\',\'selected\'); return false" style="font-size:.9em; border:0;">select all</a>';
+		$output .= '<select name="companyID[]" size="6" multiple="multiple" style="width:100%;">';
+		
+		$output .= '<option value="all"' . ($companyID[0]=="all" ? ' selected>' : '>').'all properties</option>';
+		$output .= '<option value="0"' . ($companyID[0]=="0" ? ' selected>' : '>') . 'unattached properties</option>';
+		$output .= '<optgroup label="Select Landlord...">';
+
+    $total_companies=0;  
+		foreach ($companies as $company)
+			$output .= '<option value="' . $company->nid . '"' . (in_array($company->nid, $companyID) ? ' selected>' : '>') . $company->title . '</option>';
+		
+		
+    $output .= '</optgroup></select>';
+    //make sure this doesn't cause a problem.
+		if(user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER)) $output .= '<div style="clear:both"><input type="submit" class="form-submit" value="Update filter"></div><br>';
+
+    //get ready to display company showing information and OP
+    if(isset($companyID) && !empty($companyID)) {
+      $company_info = node_load($companyID[0]);
+      $output .= '<strong>'.$company_info->title .'</strong><br/> '; 
+
+      if(!empty($company_info->field_company_showing[0]['value'])) {
+
+        $company_showing_info = $company_info->field_company_showing[0]['value'];
+        $output .= '<strong>Landlord Showing Info</strong>: <span clicktip="showinginfo_'.$total_companies.'">Click to View</span>';
+        $output .= '<div class="clicktip" id="showinginfo_'.$total_companies.'">'.$company_showing_info;
+          //inject option to edit
+          if(node_access('update', $company_info)) {
+			      $ops = '&nbsp;<a href="' . url('node/' . $company_info->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Edit</a>';
+            $output .= $ops;
+          }
+
+        $output .= '</div><br/>';
+      }
+      else {
+        if(node_access('update', $company_info)) {
+			    $company_info_ops = '&nbsp;<a href="' . url('node/' . $company_info->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Click to Add</a>';
+          $company_showing_info = '<strong>Landlord Showing Info</strong>: None '.$company_info_ops.'<br/>';
+        }
+        else {
+          $company_showing_info = '<strong>Landlord Showing Info</strong>: None<br/>';
+        }
+        $output .= $company_showing_info;
+      }
+
+      if(!empty($company_info->field_company_op[0]['value'])) {
+        $company_op_info = $company_info->field_company_op[0]['value'];
+        $output .= '<strong>Landlord OP Info</strong>: <span clicktip="opinfo">Click to View</span>';
+        $output .= '<div class="clicktip" id="opinfo">'.$company_op_info;
+          //inject option to edit
+          if(node_access('update', $company_info)) {
+				    $company_op_ops = '&nbsp;<a href="' . url('node/' . $company_info->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Edit</a>';
+            $output .= $company_op_ops;
+          }
+        $output .= '</div><br/>';
+      }
+      else {
+          if(node_access('update', $company_info)) {
+				    $company_op_ops = '&nbsp;<a href="' . url('node/' . $company_info->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Click to Add</a>';
+            $company_op_info = '<strong>Landlord OP Info</strong>: None '.$company_op_ops.'<br/>';
+          }
+          else {
+            $company_op_info = '<strong>Landlord OP Info</strong>: None <br/>';
+          }
+        $output .= $company_op_info;
+      }
+      $output .= '&nbsp;&nbsp;';
+      //$output .= '<div id="company_showing_info"">';
+      
+			/*$output .= l(
+				'Update Building',
+				'node/'.$companyID.'/edit',
+				array(
+					'query' => array('destination' => substr($_SERVER['REQUEST_URI'], 1)),
+					'attributes' => array('class' => 'addProperty')
+        )
+      );*/
+      $total_companies++;
+    }
+    $output .= '</div>';
+
+		return $output;
+	}
+	
+	function ue_manage_listings_manage_property_filter($propID, $properties)
+	{
+		$output .= '<div style="width:47%;float:left">';
+		$output .= '<h3>Filter Properties:</h3>';
+		$output .= '<select name="propertyID[]" size="6" multiple="multiple" style="width:100%;">';
+		
+		foreach ($properties as $property)
+			$output .= '<option value="' . $property->nid . '"' . (in_array($property->nid, $propID) ? ' selected>' : '>') . $property->title . '</option>';
+		
+		$output .= '</select>';
+		
+		$output .= '</div>';
+		return $output;
+	}
+	
+	function ue_manage_listings_manage_properties($filteredProperties)
+	{
+		
+		if(!count($filteredProperties))
+			return '<div style="text-align:center">You haven\'t added any properties yet. <a href="' . url('node/add/property') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Add a property</a> to get started!</div>';
+		
+		
+		// render pager.
+		$output .= theme('pager', NULL, 30);
+		foreach($filteredProperties as $obj)
+		{
+			global $theme_path;
+			$collapsed = false;
+			$collapsedRows = 0;
+      $prop = node_load($obj->nid);
+      //echo '<pre>'; print_r($prop); echo '</pre>';
+			$editProperty = node_access('update', $prop); // access to update
+			
+			$output .= '<div style=" position:relative;border-top:solid 3px #999;clear:both;padding:.5em 0 1em" id="prop' . $prop->nid . '">';
+			
+			$check = '<div><span style="font-size:.9em"><a href="#" onclick="return checkAll(' . $prop->nid . ');">Check All</a> | <a href="#" onclick="return checkActive(' . $prop->nid . ');">Check Active</a> | <a href="#" onclick="return checkNone(' . $prop->nid . ');">Check None</a></span><br /><a class="btip" href="#" onclick="return false;" title="Select the listings to update, then choose bulk operations at the bottom of the page.">'.t('Bulk Update').'*</a></div>';
+			
+			$header = array(array('colspan' => 2, data => $check), t('Size'), t('Rent'), t('Available'), t('Updated'), t('Unit Showing Info'), t('Unit OP Info'));
+			
+			if($editProperty)
+			{
+				$output .= '<div class="property-edit" style="font-weight:bold;float:right"><a href="' . url('node/' . $prop->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Update Building Information</a></div>';
+				$output .= '<div class="property-addListing" style="font-weight:bold;float:right;margin-right:.5em"><a href="' . url('node/add/listing/parent/' . $prop->nid) . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Add a New Listing</a></div>';
+				// added 20100518 - ZE //
+				$vwBFlags = views_get_view('building_flags');
+				if(isset($vwBFlags))
+				{
+					$vwBFlags->set_arguments(array($prop->nid));
+					$vwBFlags->execute();
+					$output .= '<br class="clear"/><div class="bFlags" style=" clear:both; float:right;">'.$vwBFlags->render().'</div>';
+				}
+				// *** //
+			}
+			$output .= '<div>';
+			if(isset($prop->field_photos))
+				$output .= '<div style="float:left;margin-right:5px">' . content_format('field_photos', $prop->field_photos[0], variable_get('ue_manage_listings_thumbformat', 'image_nodelink')) . '</div>';
+			else if(isset($prop->field_b_photos))
+				$output .= '<div style="float:left;margin-right:5px">' . content_format('field_b_photos', $prop->field_b_photos[0], variable_get('ue_manage_listings_thumbformat', 'image_nodelink')) . '</div>';
+			
+			$output .= '<h3 class="property-title" style="border:none;margin:0;padding:0;font-weight:bold;">' . l($prop->title, 'node/' . $prop->nid) . '</h3>';
+			
+			$output .= '<span class="property-address">' . $prop->field_address_line_1[0]['value'] . '</span>';
+			
+			if($prop->status != 1) $output .= '&nbsp;(Inactive)';
+			$output .= '</div>';
+      $output .= '<div style="clear:both"></div>';
+
+      //$output .= '</div>';
+        
+			$result = db_query(
+				'SELECT DISTINCT
+					r.nid
+				FROM
+					relativity r
+				INNER JOIN content_type_listing l ON
+					l.nid = r.nid
+				INNER JOIN node n ON
+					n.nid = l.nid
+				WHERE
+					r.parent_nid = %d
+				ORDER BY
+					l.field_unit_availability_value = \'On the Market\' OR n.status = 0 DESC,
+					n.title',
+				$prop->nid);
+			
+			$rows = array();
+
+      $total_entries=0;  
+			while($listing = node_load(db_result($result)))
+			{
+				
+				$size = '';
+				if($listing->field_bedroom[0]['value'])
+				{
+					$name = taxonomy_get_term($listing->field_bedroom[0]['value'])->name;
+					
+					if(strpos($name, '(') > 0) $name = substr($name, 0, strpos($name, '(') - 1);
+					$size .= '<div style="font-size:.9em">' . $name . '</div>';
+				}
+				
+				if($listing->field_bathroom[0]['value'] > 0)
+				{
+					$name = taxonomy_get_term($listing->field_bathroom[0]['value'])->name;
+					if(strpos($name, '(') > 0) $name = substr($name, 0, strpos($name, '(') - 1);
+					$size .= '<div style="font-size:.9em">' . $name . '</div>';
+				}
+				
+				$ops = l($listing->title, 'node/' . $listing->nid, array('attributes' => array('class' => 'blue')));
+				
+				if($listing->status != 1) $ops .= ' (Inactive)';
+				
+				$ops .= ' <span class="offmkt">' . ($listing->field_unit_availability[0]['value'] == 'On the Market' ? '' : '(Off the Market)') . '</span>';
+				
+				$ops .= '<div style="font-size:.9em">';
+				
+				if(node_access('update', $listing))
+				{
+					$ops .= '<a href="' . url('node/' . $listing->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Edit</a>&nbsp;|&nbsp;';
+					$ops .= '<a href="#" onclick="return quickEdit(' . $listing->nid . ');">Quick Edit</a>&nbsp;|&nbsp;';
+				}
+				if(node_access('delete', $listing))
+					$ops .= '<a href="' . url('node/' . $listing->nid . '/delete') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Delete</a>';
+				
+				if(node_access('update', $listing))
+				{
+					if(module_exists('clone'))
+						$ops .= '&nbsp;|&nbsp;<a href="' . url('node/' . $listing->nid . '/clone') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Clone</a>';
+					if(node_get_types('type', 'openhouse'))
+						$ops .= '&nbsp;|&nbsp;<a href="' . url('node/add/openhouse/parent/' . $listing->nid) . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '&keepThis=true&TB_iframe=true&height=480&width=640&modal=true#TB_inline" class="thickbox">Add Open House</a>';
+				}
+					
+				$ops .= '</div>';
+				
+        $collapsed = $listing->field_unit_availability[0]['value'] != 'On the Market';
+
+        if(!empty($listing->field_showing_instructions[0]['value'])) {
+          $viewing_info = '<span hovertip="listingshowinginstructions_'.$listing->nid.'">Hover to view</span>';
+          $viewing_info .= '<div class="hovertip" id="listingshowinginstructions_'.$listing->nid.'">'.$listing->field_showing_instructions[0]['value'];
+          //inject option to edit
+          if(node_access('update', $listing)) {
+				    $showing_ops = '<br/><a href="' . url('node/' . $listing->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Edit</a>';
+            $viewing_info .= $showing_ops;
+          }
+          $viewing_info .= '</div>';
+
+        }
+        else {
+          $viewing_info = 'None';
+        } 
+        
+        if(!empty($listing->field_op[0]['value'])) {
+          $op_info = '<span hovertip="listings_op_instructions_'.$listing->nid.'">Hover to view</span>';
+          $op_info .= '<div class="hovertip" id="listings_op_instructions_'.$listing->nid.'">'.$listing->field_op[0]['value'];
+          //inject option to edit
+          if(node_access('update', $listing)) {
+				    $op_ops = '<br/><a href="' . url('node/' . $listing->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Edit</a>';
+            $op_info .= $op_ops;
+          }
+          $op_info .= '</div>';
+        }
+        else {
+          $op_info = 'None';
+        }
+ 
+				$rows[] = array(
+					'data' => array(
+						node_access('update', $listing) ? '<div style="padding-left:10px"><input type="checkbox" value="' . $listing->nid . '" name="nid[]" class="bulk"></div>' : '',
+						$ops,
+						'<span class="size">' . $size . '</span>',
+						'<span class="price">$' . number_format($listing->field_price[0]['value']) . ($listing->field_neteffective[0]['value'] == 'Net Effective' ? ' Net Effective' : '') . '</span>',
+						'<span class="date">' . (strtotime($listing->field_date[0]['value']) > 0 ? format_date(strtotime($listing->field_date[0]['value']), 'custom', 'm/d/y') : 'Immediately') . '</span>',
+						'<span class="updated">' . format_date($listing->changed, 'custom', 'm/d/y') . '</span>',
+						'<span class="listing-viewing-info">' . $viewing_info. '</span>',
+						'<span class="listing-op-info">' . $op_info . '</span>'
+					),
+					'style' => 'border-bottom:none;padding-top:3px' . ($collapsed ? ';display:none' : ''),
+					'id' => 'listingrow' . $listing->nid,
+					'class' => $collapsed ? 'inactive' : 'active'
+				);
+				
+				$editrow = '<form style="display:none">';
+				$editrow .= '<div style="font-size:.9em;float:left">';
+				
+				$editrow .= '<div style="width:80px;float:left">On the Market</div>';
+				$editrow .= '<div style="width:100px;float:left">';
+				$editrow .= '<input type="radio" value="On the Market" disabled name="field_unit_availability"' . ($listing->field_unit_availability[0]['value'] == 'On the Market' ? ' checked>' : '>') . ' Yes&nbsp;&nbsp;';
+				$editrow .= '<input type="radio" value="" disabled name="field_unit_availability"' . ($listing->field_unit_availability[0]['value'] != 'On the Market' ? ' checked>' : '>') . ' No';
+				$editrow .= '</div>';
+				$editrow .= '<div style="width:70px;float:left">Monthly Rent</div>';
+				$editrow .= '<div style="width:80px;float:left"><input type="text" class="form-text" name="field_price" style="width:65px" value="' . $listing->field_price[0]['value'] . '" disabled></div>';
+				
+				$editrow .= '<div style="width:300px;clear:both;height:5px"></div>';
+				
+				$editrow .= '<div style="width:80px;float:left">Date Available</div>';
+				$editrow .= '<div style="width:100px;float:left"><input type="text" class="form-text" name="field_date" style="width:65px" value="' . (strtotime($listing->field_date[0]['value']) > 0 ? format_date(strtotime($listing->field_date[0]['value']), 'custom', 'm/d/y') : '') . '" disabled></div>';
+				
+				$editrow .= '<div style="width:70px;float:left">Net Effective</div>';
+				$editrow .= '<div style="width:100px;float:left">';
+				$editrow .= '<input type="radio" value="Net Effective" disabled name="field_neteffective"' . ($listing->field_neteffective[0]['value'] == 'Net Effective' ? ' checked>' : '>') . ' Yes&nbsp;&nbsp;';
+				$editrow .= '<input type="radio" value="" disabled name="field_neteffective"' . ($listing->field_neteffective[0]['value'] != 'Net Effective' ? ' checked>' : '>') . ' No';
+				$editrow .= '</div>';
+				
+				//$editrow .= '<div style="width:70px;float:left">Sq Ft.</div>';
+				//$editrow .= '<div style="width:80px;float:left"><input type="text" name="field_sqft" style="width:65px" value="' . $listing->field_sqft[0]['value'] . '" disabled></div>';
+				
+				$editrow .= '</div>';
+				
+				$editrow .= '<div style="float:left;padding-top:9px" class="buttons"><input type="button" class="form-submit" value="Save" onclick="saveEdit(' . $listing->nid . ');" disabled>&nbsp;&nbsp;<input type="button" class="form-submit" value="Cancel" onclick="cancelEdit(' . $listing->nid . ');" disabled></div>';
+				
+				$editrow .= '<div style="float:left;padding-top:13px;display:none" class="loading">Loading...</div>';
+				
+				$editrow .= '</form>';
+				
+				$rows[] = array('data' => array('', array('data' => $editrow, 'colspan' => 5)), 'id' => 'editrow' . $listing->nid, 'class' => 'editrow' . ($collapsed ? ' inactive' : ' active'), 'style' => $collapsed ? 'display:none' : '');
+				
+				if($collapsed) $collapsedRows++;
+			}
+			
+			if(count($rows) == 0)
+				$rows[] = array(array('data' => '<div style="text-align:center;margin:1em 0">' . t('No listings in this property.') . '</div>', 'colspan' => count($header) + 1));
+			
+			if($collapsedRows > 0)
+				$rows[] = array(array('data' => '<div class="off_the_market" style="text-align:center;margin:1em 0"><a href="#" onclick="$(this).parents(\'tr\').hide(); return showCollapsed(' . $prop->nid . ');">' . $collapsedRows . t(' off-the-market listings.') . '</a></div>', 'class' => 'offmarketrow', 'colspan' => count($header) + 1));
+			
+      $output .= '<div class="view-getMyListings">' . theme('table', $header, $rows, array('width' => '100%', 'class' => 'clear')) . '</div>';
+
+      //prepare to display property instructions 
+	    $output .= '<br/><span style="font-size:1em;font-weight:bold;color:#666666;">Contact and Showing Information for</span> : '.$prop->title;	
+			$output .= '<div class="property-edit" style="font-weight:bold;float:right"><a href="' . url('node/' . $prop->nid . '/edit') . '?destination=' . substr($_SERVER['REQUEST_URI'], 1) . '">Update Building Information</a></div>';
+      $bld_contact_info = views_get_view('property_contact_info');
+      if(isset($bld_contact_info)) {
+        $bld_contact_info->set_arguments(array($prop->nid));
+        $bld_contact_info->execute();
+        $output .= '<br class="clear"/><div class="bld-contact-info" style=" clear:both; float:left;">'.$bld_contact_info->render().'</div>';
+      }
+      $output .= '<div style="clear:both"></div>';
+      
+      if(!empty($prop->field_showing_instructions[0]['value'])) {
+        $is_prop_showing_instructions = true;
+        $prop_showing_instructions = $prop->field_showing_instructions[0]['value'];
+
+        $output .= '<span style="font-size:1em;font-weight:bold;color:#666666;">Building Showing Info</span>: <span clicktip="propshowinfo_'.$prop->nid.'">Click to View</span>';
+      }
+      else {
+        $prop_showing_instructions = 'None';
+        $output .= '<span style="font-size:1em;font-weight:bold;color:#666666;">Building Showing Info</span>: '.$prop_showing_instructions. '<br/>';
+      }
+
+      $output .= '&nbsp;&nbsp;';
+
+      if(!empty($prop->field_op[0]['value'])) {
+        $is_prop_op_instructions = true;
+        $prop_op_instructions = $prop->field_op[0]['value'];
+        $output .= '<span style="font-size:1em;font-weight:bold;color:#666666;">Building OP Info</span>: <span clicktip="propopinfo_'.$prop->nid.'">Click to View</span>';
+      }
+      else {
+        $prop_op_instructions = 'None';
+        $output .= '<span style="font-size:1em;font-weight:bold;color:#666666;">Building OP Instructions</span>: None<br/>';
+      }
+      //display showing information
+      if($is_prop_showing_instructions) {
+        $output .= '<div class="clicktip" id="propshowinfo_'.$prop->nid.'"><strong>Building Showing Info</strong><br/> '.$prop_showing_instructions.'</div>';	
+      }
+
+      if($is_prop_op_instructions) {
+        $output .= '<div class="clicktip" id="propopinfo_'.$prop->nid.'"><strong>Building OP Info</strong><br/> '.$prop_op_instructions.'</div>';	
+      }
+
+      //$output .= '<div class="prop-contact-info">';
+		  //$output .= '<br/><br/>';	
+      $output .= '</div>';
+
+      //$total_entries++;
+		}
+		// render bulk update.
+		$output .= ue_manage_listings_manage_bulk_update();
+		
+		// render pager.
+		$output .= theme('pager', NULL, 30);
+		
+		return $output;
+	}
+	
+	function timeago($date)
+	{
+		global $user;
+		$interval = date('U') - $date;
+		
+		$min = 60;
+		$hour = $min*60;
+		$day = $hour*24;
+		$week = $day*7;
+		$month = $day*31;
+		$year = $month*12;
+		
+		if($interval < $day)
+		{
+			if($user->uid != 1)
+				$time_ago = t('today');
+			else
+				$time_ago = format_interval($interval, 1) . t(' ago');
+		}
+		else if($interval > $week && $interval < $week * 2)
+			$time_ago = format_interval($interval, 2) . t(' ago');
+		else
+			$time_ago = format_interval($interval, 1) . t(' ago');
+			
+		return $time_ago;
+	}
+
+	function ue_manage_listings_manage_bulk_update()
+	{
+		$output .= '<div style="padding:1em 0;">';
+		$output .= '<form action="' . $_SERVER['REQUEST_URI'] . '" method="POST" id="bulk">';
+		$output .= '<input type="hidden" name="destination" value="' . substr($_SERVER['REQUEST_URI'], 1) . '">';
+		
+		$output .= '<div>Bulk update: ';
+		$output .= '<select name="op">';
+		$output .= '<option value="onmkt">On the Market</option>';
+		$output .= '<option value="offmkt">Off the Market</option>';
+		if(user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER))
+		{
+			$output .= '<option value="del">Delete</option>';
+			$output .= '<option value="pub">Publish</option>';
+			$output .= '<option value="unpub">Unpublish</option>';
+		}
+		$output .= '</select>';
+		$output .= '<input type="submit" class="form-submit" value="Update">';
+		$output .= '</div>';
+		
+		$output .= '<div class="hidden" style="display:none"></div>';
+		
+		$output .= '</form>';
+		$output .= '</div>';
+		
+		return $output;
+	}
+	
+	// ajax callback for quick edit
+	function ue_manage_listings_manage_edit($nid)
+	{
+		global $user;
+		$args = array('field_unit_availability' => array('filter' => FILTER_SANITIZE_SPECIAL_CHARS),
+					  'field_neteffective' => array('filter' => FILTER_SANITIZE_SPECIAL_CHARS),
+					  'field_date' => array('filter' => FILTER_VALIDATE_REGEX, 'options' => array('regexp' => '(0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])[- /.](19|20)[0-9]{2}')), 
+					  'field_price' => array('filter' => FILTER_VALIDATE_INT),
+					  );
+		
+		$input = filter_input_array(INPUT_POST, $args);
+		
+		if(strlen($input['field_date']))
+			$input['field_date'] = date('Y-m-d H:i:s', strtotime($input['field_date']));
+		
+		$node = node_load(intval($nid));
+		
+		if(node_access('update', $node))
+		{
+			foreach($input as $field => $value)
+				if($value !== false) $node->$field = array(array('value' => $value));
+			
+			content_update($node);
+			node_save($node);
+			
+			$rtn = new StdClass();
+			
+			foreach($input as $field => $value)
+			{
+				$val = $node->$field;
+				$rtn->$field = $val[0]['value'];
+			}
+			
+			$rtn->field_date = strtotime($rtn->field_date) > 0 ? format_date(strtotime($rtn->field_date), 'custom', 'm/d/y') : 'Immediately';
+			$rtn->field_price = '$' . number_format($rtn->field_price);
+			$rtn->changed = format_date($node->changed, 'custom', 'm/d/y');
+			
+			print json_encode($rtn);
+		}
+		else
+		{
+			header("HTTP/1.0 403 Access Denied");
+			die('Access denied for user ' . $user->uid . '.');
+		}
+	}
+	
+	/* clone of ue_custom_get_properties */
+	
+	function ue_manage_listings_get_properties($orderby = 'n.title', $companyID = NULL, $propID = NULL, $paged = false)
+	{
+		global $user;
+		
+		$query = 'SELECT p.nid, n.title FROM content_type_property p INNER JOIN node n ON n.nid = p.nid WHERE 1 ';
+		
+		//TODO: add toggle, don't filter companies or assigned for management company sites. -dw
+		if(user_access(UE_MANAGE_LISTINGS_ACCESS_SUPER) && count($companyID) > 0) //superuser and company filter used
+		{
+			if ($companyID[0]!="all") : // "all filter" added by ze 20100715
+				$query .= 'AND (0 ';
+				foreach($companyID AS $company)
+					if($company > 0)
+						$query .= 'OR ' . intval($company) . ' IN (field_contact_build_mgr_nid, field_contact_build_owner_nid, field_contact_lease_mgr_nid) ';
+					elseif($company == 0) // 'no company'
+						$query .= 'OR (field_contact_build_mgr_nid IS NULL AND field_contact_build_owner_nid IS NULL AND field_contact_lease_mgr_nid IS NULL) ';
+				$query .= ') ';
+			endif; // all filter
+		}
+		elseif(module_exists('nodeaccess')) // show assigned properties
+		{
+			$query .= 'AND (';
+			$query .= '(n.uid = ' . $user->uid . ' OR p.nid IN (SELECT nid FROM {nodeaccess} WHERE realm = \'nodeaccess_uid\' AND gid = ' . $user->uid . '))';
+			$query .= 'OR p.nid IN (SELECT parent_nid FROM {relativity} r WHERE r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ' OR r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ')))';
+			$query .= ')';
+		}
+		elseif(!variable_get('ue_custom_singleowner', false))
+		{
+			$query .= 'AND (';
+			$query .= '(n.uid = ' . $user->uid . ')';
+			$query .= 'OR p.nid IN (SELECT parent_nid FROM {relativity} r WHERE r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ' OR r.nid IN (SELECT nid FROM node WHERE uid = ' . $user->uid . ')))';
+			$query .= ')';
+		}
+		
+		// property filter
+		if(count($propID) > 0) $query .= 'AND p.nid IN (' . implode(',', $propID) . ') ';
+		
+		if($paged)//array(450,9819,1295,1204);
+			$result = pager_query($query . 'ORDER BY %s', 10, 0, NULL, $orderby);
+		else
+			$result = db_query($query . 'ORDER BY %s', $orderby);
+		
+		while($node = db_fetch_object($result))
+			if(!$paged)
+				$properties[$node->nid] = $node;
+			else
+				$properties[] = $node;
+		
+		return $properties;
+	}

@@ -1,0 +1,15 @@
+; $Id: resizable_cck.info,v 1.1.2.1 2009/03/15 12:41:57 george2 Exp $
+name = Resizable CCK Text Fields
+description = Add columns and height adjustment options for CCK textarea fields.
+package = "Resizable Fields"
+core = 6.x
+
+dependencies[] = content
+dependencies[] = text
+dependencies[] = resizable_body
+; Information added by drupal.org packaging script on 2009-04-13
+version = "6.x-2.0"
+core = "6.x"
+project = "resizable_body"
+datestamp = "1239605780"
+

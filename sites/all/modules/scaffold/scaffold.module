@@ -1,0 +1,611 @@
+<?php
+// $Id: scaffold.module,v 1.15 2010/08/20 14:24:14 jide Exp $
+
+/**
+ * @file
+ * Provides integration with Scaffold CSS framework.
+ */
+
+/**
+ * Implementation of hook_init().
+ */
+function scaffold_init() {
+  global $theme_info, $base_theme_info;
+
+  if (!isset($theme_info)) {
+    init_theme();
+  }
+
+  // Add base theme Scaffold stylesheets.
+  foreach ($base_theme_info as $base) {
+    if (!empty($base->info['scaffold']) && !empty($base->stylesheets)) {
+      foreach ($base->stylesheets as $media => $stylesheets) {
+        foreach ($stylesheets as $stylesheet => $path) {
+          if (is_array($base->info['scaffold'][$media])
+           && in_array($stylesheet, $base->info['scaffold'][$media])) {
+            _scaffold_add_css($path);
+          }
+        }
+      }
+    }
+  }
+  
+  // Add theme Scaffold stylesheets.
+  if (!empty($theme_info->info['scaffold']) && !empty($theme_info->stylesheets)) {
+    foreach ($theme_info->stylesheets as $media => $stylesheets) {
+      foreach ($stylesheets as $stylesheet => $path) {
+        if (is_array($theme_info->info['scaffold'][$media])
+         && in_array($stylesheet, $theme_info->info['scaffold'][$media])) {
+          _scaffold_add_css($path);
+        }
+      }
+    }
+  } 
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function scaffold_menu() {
+  $items = array();
+  $items['scaffold'] = array(
+    'title' => 'Scaffold processing',
+    'page callback' => '_scaffold_process',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'description' => 'scaffold.',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/scaffold'] = array(
+    'title' => 'Scaffold',
+    'description' => 'Settings for Scaffold.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('scaffold_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_system_info_alter().
+ */
+function scaffold_system_info_alter(&$info, $file) {
+  // Register Scaffold stylesheets in theme infos.
+  if (isset($info['scaffold']) && !empty($info['scaffold'])) {
+    foreach ($info['scaffold'] as $media => $stylesheets) {
+      foreach ($stylesheets as $path) {
+        $info['stylesheets'][$media][] = $path;
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_page().
+ */
+function scaffold_preprocess_page(&$variables) {
+  $variables['styles'] = _scaffold_get_css();
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function scaffold_form_system_theme_settings_alter(&$form, &$form_state) {
+  $key = arg(4);
+  $themes = system_theme_data();
+  $base = drupal_get_path('module', 'scaffold');
+  
+  // Ensure we deal with an actual theme.
+  if (!$theme = $themes[$key]) {
+    return;
+  }
+  
+  // Get the settings form.
+  if (!$elements = module_invoke($theme->name, 'scaffold_constants_form')) {
+    return;
+  }
+  
+  // Get settings values.
+  $constants = _scaffold_get_constants($theme->name);
+  
+  if (empty($constants)) {
+    return;
+  }
+  
+  // Add Farbtastic color picker
+  drupal_add_css('misc/farbtastic/farbtastic.css', 'module', 'all', FALSE);
+  drupal_add_js('misc/farbtastic/farbtastic.js');
+  
+  // Add custom CSS/JS
+  drupal_add_css($base .'/scaffold.css', 'module', 'all', FALSE);
+  drupal_add_js($base .'/scaffold.js');
+
+  // If there are no theme specific settings, let's create the fieldset.
+  if (!$form['theme_specific']) {
+    $form['theme_specific'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Theme-specific settings'), 
+      '#description' => t('These settings only exist for the %theme theme and all the styles based on it.', array('%theme' => $themes[$key]->info['name'])),
+    );
+  }
+
+  // Add scaffold form to theme specific settings.
+  $form['theme_specific']['scaffold'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Scaffold'),
+    '#weight' => 1,
+    '#prefix' => '<div class="clear-block" id="scaffold-form-wrapper">',
+    '#suffix' => '</div>',
+  ) + $elements;
+
+  $fieldset = &$form['theme_specific']['scaffold'];
+
+  // Fill values.
+  foreach(element_children($fieldset) as $key) {
+    if (isset($constants[$key])) {
+      // Force field size if it is a color field and size is not set.
+      if (!isset($fieldset[$key]['#size'])
+       && preg_match('/^#[a-zA-Z0-9]{6,8}$/', $constants[$key])) {
+        $fieldset[$key]['#size'] = 8;
+      }
+      $fieldset[$key]['#default_value'] = $constants[$key];
+    }
+  }
+
+  if (!$form['buttons']['#weight']) {
+    $form['buttons']['#weight'] = 2;
+  }
+}
+
+/**
+ * General settings form.
+ */
+function scaffold_settings_form(&$form_state) {
+  $form = array();
+
+  $config = variable_get('scaffold', _scaffold_get_defaults());
+
+  $form['scaffold'] = array(
+    '#tree' => TRUE,
+  );
+
+  $form['scaffold']['document_root'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Document root'),
+    '#description' => t('Scaffold needs to know the document root. <code>$_SERVER["DOCUMENT_ROOT"]</code> global variable will be used if empty. In some cases, you may want to set this manually.<br/>Currently, its value is <em>!document_root</em>.', array('!document_root' => $_SERVER["DOCUMENT_ROOT"])),
+    '#default_value' => $config['document_root'],
+  );
+
+  $form['scaffold']['development'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Development Mode'),
+    '#description' => t('When developing themes, enable development mode. Parsing errors will be displayed. Disable in production.'),
+    '#default_value' => $config['development'],
+  );
+
+  $form['scaffold']['enable_log'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Error Logging'),
+    '#description' => t('Enables scaffold internal firelog logs.'),
+    '#default_value' => $config['enable_log'],
+  );
+
+  $form['scaffold']['gzip_compression'] = array(
+    '#type' => 'select',
+    '#title' => t('Gzip Compression'),
+    '#description' => t('Scaffold can gzip your files before it outputs the CSS to the browser.'),
+    '#default_value' => $config['gzip_compression'],
+    '#options' => array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+  );
+
+  $form['scaffold']['error_threshold'] = array(
+    '#type' => 'select',
+    '#title' => t('Error Log Threshold'),
+    '#description' => t('Set the minimum log level required to be displayed as an error.'),
+    '#default_value' => $config['error_threshold'],
+    '#options' => array(t('Errors'), t('Warning'), t('Message'), t('Debug')),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Adds a scaffold file to the stylesheet queue and registers it.
+ *
+ * @param $path
+ *   (optional) The path to the CSS file relative to the base_path().
+ * @param $type
+ *   (optional) The type of stylesheet that is being added. Types are: module
+ *   or theme.
+ * @param $media
+ *   (optional) The media type for the stylesheet, e.g., all, print, screen.
+ * @param $preprocess
+ *   (optional) Should this CSS file be aggregated and compressed if this
+ *   feature has been turned on under the performance section?
+ * @return
+ *   An array of CSS files.
+ */
+function scaffold_add_css($path = NULL, $type = 'module', $media = 'all', $preprocess = TRUE) {
+  if ($path) {
+    _scaffold_add_css($path);
+  }
+  return drupal_add_css($path, $type, $media, $preprocess);
+}
+
+/**
+ * Adds a stylesheet file to the stylesheet queue without adding it to regular
+ * Drupal stylesheets.
+ *
+ * @param $path
+ *   (optional) The path to the CSS file relative to the base_path()
+ * @return
+ *   An array of CSS files.
+ */
+function _scaffold_add_css($path = NULL) {
+  static $css = array();
+  if ($path) {
+    $css[] = $path;
+  }
+  return $css;
+}
+
+/**
+ * Replacement of drupal_get_css().
+ *
+ * Takes care of scaffold stylesheets as if they were regular stylesheets. If
+ * CSS aggregation is enabled, uses scaffold mechanism to aggregate files.
+ *
+ * @param $css
+ *   (optional) An array of CSS files. If no array is provided, the default
+ *   stylesheets array is used instead.
+ * @return
+ *   A string of XHTML CSS tags.
+ */
+function _scaffold_get_css($css = NULL) {
+  $output = '';
+
+  if (!isset($css)) {
+    $css = drupal_add_css();
+  }
+
+  $scaffold_css = _scaffold_add_css();
+
+  $no_module_preprocess = '';
+  $no_theme_preprocess = '';
+
+  $preprocess_css = (variable_get('preprocess_css', FALSE) && (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'update'));
+  $directory = file_directory_path();
+  $is_writable = is_dir($directory) && is_writable($directory) && (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PUBLIC);
+
+  $query_string = '?'. substr(variable_get('css_js_query_string', '0'), 0, 1);
+
+  foreach ($css as $media => $types) {
+    // Store candidate Scaffold files for each media.
+    $scaffold_files = array();
+    
+    foreach ($types as $type => $files) {
+      if ($type == 'module') {
+        $theme_styles = array();
+        foreach (array_keys($css[$media]['theme']) as $theme_style) {
+          $theme_styles[] = basename($theme_style);
+        }
+      }
+      foreach ($types[$type] as $file => $preprocess) {
+        if ($type == 'module' && in_array(str_replace('-rtl.css', '.css', basename($file)), $theme_styles)) {
+          unset($types[$type][$file]);
+          continue;
+        }
+        if (file_exists($file)) {
+          if (!$preprocess || !($is_writable && $preprocess_css)) {
+            if (!$preprocess && $type == 'module') {
+              // Single Scaffold stylesheet.
+              if (in_array($file, $scaffold_css)) {
+                $file = 'scaffold/' . $file;
+              }
+              $no_module_preprocess .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $file . $query_string .'" />'."\n";
+            }
+            else if (!$preprocess && $type == 'theme') {
+              // Single Scaffold stylesheet.
+              if (in_array($file, $scaffold_css)) {
+                $file = 'scaffold/' . $file;
+              }
+              $no_theme_preprocess .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $file . $query_string .'" />'."\n";
+            }
+            else {
+              // Grab Scaffold stylesheets for parsing.
+              if (in_array($file, $scaffold_css)) {
+                $scaffold_files[] = $file;
+              }
+              else {
+                $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $file . $query_string .'" />'."\n";
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Process all Scaffold stylesheets together.
+    if ($scaffold_files) {
+      $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . 'scaffold/'. implode(',', $scaffold_files) . $query_string .'" />'."\n";
+    }
+
+    if ($is_writable && $preprocess_css) {
+      // Add Scaffold files to the md5 hash.
+      $filename = 'css_'. md5(serialize($types) . serialize($scaffold_css) . $query_string) .'.css';
+      $preprocess_file = _scaffold_build_css_cache($types, $filename);
+      $output .= '<link type="text/css" rel="stylesheet" media="'. $media .'" href="'. base_path() . $preprocess_file .'" />'."\n";
+    }
+  }
+
+  return $no_module_preprocess . $output . $no_theme_preprocess;
+}
+
+/**
+ * Replacement of drupal_build_css_cache().
+ *
+ * Aggregates files using scaffold instead of core.
+ *
+ * @param $types
+ *   An array of types of CSS files (e.g., screen, print) to aggregate and
+ *   compress into one file.
+ * @param $filename
+ *   The name of the aggregate CSS file.
+ * @return
+ *   The name of the CSS file.
+ */
+function _scaffold_build_css_cache($types, $filename) {
+  $data = '';
+  $scaffold_css = _scaffold_add_css();
+
+  // Create the css/ within the files folder.
+  $csspath = file_create_path('css');
+  file_check_directory($csspath, FILE_CREATE_DIRECTORY);
+
+  $scaffold_files = array();
+
+  if (!file_exists($csspath .'/'. $filename)) {
+    // Build aggregate CSS file.
+    foreach ($types as $type) {
+      foreach ($type as $file => $cache) {
+        if ($cache) {
+          // Collect Scaffold files.
+          if (in_array($file, $scaffold_css)) {
+            $scaffold_files[] = $file;
+          }
+          // Process other stylesheets normally.
+          else {
+            $contents = drupal_load_stylesheet($file, TRUE);
+            // Return the path to where this CSS file originated from.
+            $base = base_path() . dirname($file) .'/';
+            _drupal_build_css_path(NULL, $base);
+            // Prefix all paths within this CSS file, ignoring external and absolute paths.
+            $data .= preg_replace_callback('/url\([\'"]?(?![a-z]+:|\/+)([^\'")]+)[\'"]?\)/i', '_drupal_build_css_path', $contents);
+          }
+        }
+      }
+      // Parse Scaffold stylesheets. Absolute urls are handled by the framework.
+      if ($scaffold_files) {
+        $result = _scaffold_parse($scaffold_files, FALSE, array('gzip_compression' => FALSE));
+        $data .= $result['content'];
+      }
+    }
+
+    // Per the W3C specification at http://www.w3.org/TR/REC-CSS2/cascade.html#at-import,
+    // @import rules must proceed any other style, so we move those to the top.
+    $regexp = '/@import[^;]+;/i';
+    preg_match_all($regexp, $data, $matches);
+    $data = preg_replace($regexp, '', $data);
+    $data = implode('', $matches[0]) . $data;
+
+    // Create the CSS file.
+    file_save_data($data, $csspath .'/'. $filename, FILE_EXISTS_REPLACE);
+  }
+  return $csspath .'/'. $filename;
+}
+
+/**
+ * Stylesheets processing.
+ *
+ * Parses files passed through path arguments and displays errors.
+ *
+ * @param $path
+ *   The path of the stylesheets preceeded by scaffold path.
+ */
+function _scaffold_process() {
+  $args = arg();
+  unset($args[0]);
+  $files = explode(',', implode('/', $args));
+
+  $result = _scaffold_parse($files);
+
+  if (Scaffold::$has_error) {
+    $config = variable_get('scaffold', _scaffold_get_defaults());
+    if ($config['development']) {
+      $errors = '';
+      foreach ($result['log'] as $error) {
+        $key = array_keys($error);
+        $value = array_values($error);
+        $errors .= '<p>'. $file .' : '. $key[0] .' : '. $value[0] .'</p>';
+      }
+      drupal_set_message($errors, 'error');
+    }
+  }
+}
+
+/**
+ * Stylesheets parsing.
+ *
+ * Parses given stylesheets using the Scaffold library. Also injects custom
+ * defined theme constants.
+ *
+ * @param $files
+ *   Files to parse.
+ * @param $render
+ *   (optional) Whether to render or output the result.
+ * @param $config
+ *   (optional) Configuration override.
+ * @return
+ *   The computed stylesheet content.
+ */
+function _scaffold_parse($files, $render = TRUE, $config = array()) {
+  global $theme_key;
+
+  if (!$path = _scaffold_get_path()) {
+    return;
+  }
+
+  require_once $path.'/libraries/Bootstrap.php';
+  require_once $path.'/modules/Constants/Constants.php';
+
+  if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('GMT');
+  }
+
+  $constants = _scaffold_get_constants($theme_key);
+  
+  if (!isset($constants)) {
+    $constants = array();
+  }
+  
+  // Add custom constants and $Id variable used by drupal files.
+  Constants::$constants = $constants + array('Id' => '');
+  
+  $config = array_merge(_scaffold_get_config(), $config);
+
+  $result = Scaffold::parse($files, $config, array(), $render);
+  // We need to empty the $output variable otherwise Scaffold returns a nested
+  // result array when called multiple times. This is probably a bug.
+  Scaffold::$output = NULL;
+  
+  return $result;
+}
+
+/**
+ * Helper function to get the path of the library.
+ *
+ * The library can be placed in the libraries folder or in the module folder
+ * directly. Supports integration and libraries modules.
+ *
+ * @return
+ *   The the path of the library.
+ */
+function _scaffold_get_path() {
+  static $path;
+
+  if (!isset($path)) {
+    // Attempt with integration module, this method is based upon a strong
+    // Drupal cache, and I/O will be done only at the first hit.
+    if (function_exists('integration_library_path')) {
+      if ($file = integration_library_path('scaffold', 'index.php')) {
+        // Second hit will hit a statically cached array, so will cost something
+        // like nothing on performances.
+        $path = integration_library_path('scaffold');
+      }
+      else {
+        drupal_set_message(t('CSSCaffold is not installed correctly.'), 'warning');
+        $path = FALSE;
+      }
+    }
+    else {
+      // Attempt with the libraries module.
+      if (function_exists('libraries_get_path')) {
+        $path = libraries_get_path('scaffold');
+      }
+      // Consider that library is in the module folder.
+      else {
+        $path = drupal_get_path('module', 'scaffold') . '/scaffold';
+      }
+      // Check if file really exists.
+      // Ugly test method that will generate I/O at each page request.
+      if (!file_exists($path . '/index.php')) {
+        drupal_set_message(t('CSSCaffold is not installed correctly.'), 'warning');
+        $path = FALSE;
+      }
+    }
+  }
+
+  return $path;
+}
+
+/**
+ * Helper function to get currently set configuration.
+ *
+ * @return
+ *   The configuration array.
+ */
+function _scaffold_get_config() {
+  $config = variable_get('scaffold', _scaffold_get_defaults());
+
+  define('SCAFFOLD_PRODUCTION', $config['development'] == 0);
+
+  if (!$path = _scaffold_get_path()) {
+    return;
+  }
+
+  // Build our scaffold css cache directory.
+  $scaffold_path = file_create_path('scaffold');
+  file_check_directory($scaffold_path, FILE_CREATE_DIRECTORY);
+
+  $root = $config['document_root'] ? $config['document_root'] : $_SERVER['DOCUMENT_ROOT'];
+
+  // Build out the scaffold config settings.
+  $config = array(
+    'document_root' => $root,
+    'system' => $root . '/' . $path,
+    'cache' => $root . '/' .$scaffold_path,
+    'cache_lifetime' => variable_get('cache_lifetime', 0),
+    'enable_log' => ($config['enable_log'] == 1),
+    'error_threshold' => $config['error_threshold'],
+    'gzip_compression' => $config['gzip_compression'] > 0 ? $config['gzip_compression'] : FALSE,
+  );
+
+  return $config;
+}
+
+/**
+ * Helper function to get default configuration.
+ *
+ * @return
+ *   The default configuration array.
+ */
+function _scaffold_get_defaults() {
+  return array(
+    'document_root' => '',
+    'development' => 1,
+    'enable_log' => 0,
+    'gzip_compression' => 0,
+    'error_threshold' => 0,
+  );
+}
+
+/**
+ * Helper function to get theme defined constants.
+ *
+ * If the theme implements hook_scaffold_constants_defaults(), the returned
+ * values will be used as the defaults.
+ *
+ * @return
+ *   The constants array.
+ */
+function _scaffold_get_constants($theme_key = NULL) {
+  static $settings;
+
+  if (!$theme_key) {
+    global $theme_key;
+  }
+
+  if (!isset($settings)) {
+    $settings = theme_get_settings($theme_key);
+  }
+
+  // Return defaults if constants have not been overriden.
+  if (!isset($settings['scaffold'])) {
+    return module_invoke($theme_key, 'scaffold_constants_defaults');
+  }
+  else {
+    return $settings['scaffold'];
+  }
+}

@@ -1,0 +1,95 @@
+<?php
+// $Id: already_in.module,v 1.5 2010/04/16 14:15:02 mattv Exp $ 
+
+/**
+ * @file 
+ */
+
+/**
+ * Implementation of hook_menu()
+ */
+function already_in_menu() {
+  $items['admin/settings/already-registered'] = array(
+    'title' => 'Already in',
+    'description' =>  'Configure Already In settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('already_in_admin_settings'),
+    'access arguments' => array('administer already in module'),
+    'menu_name' => 'drubnub',
+  );
+  return $items;
+
+}
+
+/**
+ * Implementation of hook_perm()
+ */
+function already_in_perm() {
+  return array('administer already in module');
+}
+
+function already_in_admin_settings() {
+  $form['already_in_destination'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Redirect authenticated users to'),
+    '#default_value' => variable_get('already_in_destination', 'user'),
+    '#size' => 40,
+    '#description' => t('The page authenticated users are redirected to when they attempt to visit the login, user registration, or password reset URLs.'),
+    '#field_prefix' => url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q='),
+    '#required' => TRUE,
+  );
+  $form['already_in_message'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display message on redirect.'),
+    '#default_value' => variable_get('already_in_message', TRUE),
+    '#description' => t('Check this box to display a "You are already logged in" message to users when being redirected.'),
+  );
+  $form['#validate'][] = 'already_in_settings_validate';
+  return system_settings_form($form);
+}
+
+function already_in_settings_validate($form, &$form_state) {
+  // Validate already in destination path. (borrows from validation code in system.admin.inc)
+  $item = array('link_path' => $form_state['values']['already_in_destination']);
+  $normal_path = drupal_get_normal_path($item['link_path']);
+  if ($item['link_path'] != $normal_path) {
+    drupal_set_message(t('The menu system stores system paths only, but will use the URL alias for display. %link_path has been stored as %normal_path', array('%link_path' => $item['link_path'], '%normal_path' => $normal_path)));
+    $item['link_path'] = $normal_path;
+  }
+  if (!empty($item) && !menu_valid_path($item)) {
+    form_set_error('already_in_destination', t("The path '@path' is either invalid or you do not have access to it.", array('@path' => $item['link_path'])));
+  }
+}
+
+
+/**
+ * Implementation of hook_menu_alter()
+ */
+function already_in_menu_alter(&$callbacks) {
+    $callbacks['user/register']['access callback'] = 'already_in_access';
+    $callbacks['user/register']['access arguments'] = array('register');
+    $callbacks['user/password']['access callback'] = 'already_in_access';
+    $callbacks['user/login']['access callback'] = 'already_in_access';
+}
+
+function already_in_access($op = "") {
+  // access callback gets called when displaying menus, so needs to check which page is actually getting called
+  if (arg(0) == 'user' && (arg(1) == 'register' || arg(1) == 'password' || arg(1) == 'login')) {
+    // in the original user module this function is 'user_register_access'
+    // return user_is_anonymous() && variable_get('user_register', 1);
+    // this removes the 'user_is_anonymous' call in the access check
+    if (!user_is_anonymous()) {
+      if (variable_get('already_in_message', TRUE)) {
+        drupal_set_message(t('You are already logged in.'), 'status', FALSE);
+      }
+      drupal_goto(filter_xss(variable_get('already_in_destination', 'user')));  
+    }
+    else if ($op == 'register') {
+      return variable_get('user_register', 1);
+    }
+    else {
+      return user_is_anonymous();
+    }
+  }
+  return user_register_access();
+}

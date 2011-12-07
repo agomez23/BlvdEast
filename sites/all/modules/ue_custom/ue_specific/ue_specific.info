@@ -1,0 +1,6 @@
+name = UE Specific
+version = 6.x-1.0
+description = Custom functions specific to <a href="http://www.urbanedgeny.com/">Urban Edge</a>
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom

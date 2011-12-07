@@ -1,0 +1,218 @@
+<?php
+// $Id: google_analytics_api_test.module,v 1.4 2009/08/19 06:58:25 jkitching Exp $
+
+/**
+ * @file
+ * Dummy Google Analytics API server used with SimpleTest
+ *
+ * The server responds positively to all authentication requests, and has
+ * a set of expected data requests that it will respond to.
+ */
+
+define('GOOGLE_ANALYTICS_API_TEST_AUTH_TOKEN', '66cba0a214231d3fd3e7f984c7674ad0');
+define('GOOGLE_ANALYTICS_API_TEST_SESSION_TOKEN', '5a5b356a3a02fb64019b0967e4e267b6');
+
+/**
+ * Implement hook_menu().
+ */
+function google_analytics_api_test_menu() {
+  $items['analytics-test/accounts/AuthSubRequest'] = array(
+    'title' => 'Google Account AuthSub authentication request',
+    'page callback' => 'google_analytics_api_test_accounts_authsub_request',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['analytics-test/accounts/AuthSubSessionToken'] = array(
+    'title' => 'Google Account AuthSub session token retrieval',
+    'page callback' => 'google_analytics_api_test_accounts_authsub_session_token',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['analytics-test/accounts/AuthSubRevokeToken'] = array(
+    'title' => 'Revoke Google Account AuthSub session token',
+    'page callback' => 'google_analytics_api_test_accounts_authsub_revoke_token',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['analytics-test/analytics/feeds/accounts/default'] = array(
+    'title' => 'Google Analytics API account listing',
+    'page callback' => 'google_analytics_api_test_analytics_feeds_accounts_default',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['analytics-test/analytics/feeds/data'] = array(
+    'title' => 'Google Analytics API data retrieval',
+    'page callback' => 'google_analytics_api_test_analytics_feeds_data',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/*
+ * Hook to replace a Google URL for testing purposes.
+ */
+function google_analytics_api_test_replace_url($url) {
+  /* URLs used:
+   * https://www.google.com/accounts/ClientLogin
+   * https://www.google.com/accounts/AuthSubRequest
+   * https://www.google.com/accounts/AuthSubSessionToken
+   * https://www.google.com/accounts/AuthSubRevokeToken
+   * https://www.google.com/accounts/AuthSubTokenInfo
+   * https://www.google.com/analytics/feeds/accounts/default
+   * https://www.google.com/analytics/feeds/data
+   * https://www.google.com/analytics/feeds/
+   */
+  return preg_replace('|^https://www.google.com/|', url('analytics-test/', array('absolute' => TRUE)), $url);
+}
+
+/**
+ * Helper function; check for proper Authorization header.
+ */
+function google_analytics_api_test_check_auth_header($token) {
+  $sent_headers = getallheaders();
+
+  // Check for token header.
+  if (!isset($sent_headers['Authorization'])) {
+    header('HTTP/1.0 401 Error');
+    exit('No authorization header sent in AuthSub request.');
+  }
+
+  // Check for correct token.
+  if ($sent_headers['Authorization'] != 'AuthSub token=' . $token) {
+    header('HTTP/1.0 401 Error');
+    exit('Invalid token sent in AuthSub request.');
+  }
+}
+
+/**
+ * Menu callback; Google Account AuthSub authentication request.
+ */
+function google_analytics_api_test_accounts_authsub_request() {
+  // Check for scope parameter.
+  if (!isset($_GET['scope'])) {
+    header('HTTP/1.0 401 Error');
+    exit('No scope parameter sent in AuthSub request.');
+  }
+  if ($_GET['scope'] != 'https://www.google.com/analytics/feeds/') {
+    header('HTTP/1.0 401 Error');
+    exit('Invalid scope parameter sent in AuthSub request.  Can only be "https://www.google.com/analytics/feeds/".');
+  }
+
+  // Check for next parameter.
+  if (!isset($_GET['next'])) {
+    header('HTTP/1.0 401 Error');
+    exit('No next parameter sent in AuthSub request.');
+  }
+
+  // Are we at the second stage?
+  if (isset($_POST['sec_tok'])) {
+    // Check for correct sec token.
+    if ($_POST['sec_tok'] != $_SESSION['sec_tok']) {
+      header('HTTP/1.0 401 Error');
+      exit('Invalid sec token sent in AuthSub request.');
+    }
+
+    // Check for clicking the correct button.
+    if (!isset($_POST['allow'])) {
+      header('HTTP/1.0 401 Error');
+      exit('Please use the "Grant access" button.');
+    }
+
+    // Respond to request with a redirection.
+    $response = array('token' => GOOGLE_ANALYTICS_API_TEST_AUTH_TOKEN);
+    drupal_set_header('Content-Type', 'text/plain');
+    header('Location: ' . url($_GET['next'], array(
+      'query' => http_build_query($response, '', '&'),
+      'external' => TRUE)));
+    exit();
+  }
+
+  // Show the Grant/Deny access form.
+  // Note that normally we would just have action="", but SimpleTest assumes that
+  // an empty action string means 'the base URL of the site'.
+  $_SESSION['sec_tok'] = md5(time());
+  $get_args = $_GET;
+  unset($get_args['q']);
+  $action = url($_GET['q'], array('absolute' => TRUE, 'query' => http_build_query($get_args)));
+  $output = '';
+  $output .= '<form action="' . $action . '" method="post">';
+  $output .= '<input type="hidden" name="sec_tok" value="' . $_SESSION['sec_tok'] .  '" />';
+  $output .= '<input type="submit" name="allow" value="Grant access" />';
+  $output .= '<input type="submit" name="deny" value="Deny access" />';
+  $output .= '</form>';
+  exit($output);
+}
+
+/**
+ * Menu callback; Google Account AuthSub session token retrieval.
+ */
+function google_analytics_api_test_accounts_authsub_session_token() {
+  google_analytics_api_test_check_auth_header(GOOGLE_ANALYTICS_API_TEST_AUTH_TOKEN);
+
+  // Send back session token if checks passed.
+  exit('Token=' . GOOGLE_ANALYTICS_API_TEST_SESSION_TOKEN);
+}
+
+/**
+ * Menu callback; Revoke Google Account AuthSub session token.
+ */
+function google_analytics_api_test_accounts_authsub_revoke_token() {
+  google_analytics_api_test_check_auth_header(GOOGLE_ANALYTICS_API_TEST_SESSION_TOKEN);
+
+  // Empty value with 200 response is good.
+  exit();
+}
+
+/**
+ * Menu callback; Google Analytics API account listing.
+ */
+function google_analytics_api_test_analytics_feeds_accounts_default() {
+  google_analytics_api_test_check_auth_header(GOOGLE_ANALYTICS_API_TEST_SESSION_TOKEN);
+
+  exit(file_get_contents(dirname(__FILE__) . '/account_listing.xml'));
+}
+
+/**
+ * Menu callback; Google Analytics API data retrieval.
+ */
+function google_analytics_api_test_analytics_feeds_data() {
+  google_analytics_api_test_check_auth_header(GOOGLE_ANALYTICS_API_TEST_SESSION_TOKEN);
+
+  $test_cases = array(
+    'case-1' => array(
+      array(
+        'start-date' => '2008-10-01',
+        'end-date' => '2008-10-31',
+        'dimensions' => 'ga:source,ga:medium',
+        'metrics' => 'ga:visits,ga:bounces',
+        'sort' => '-ga:visits',
+        'filters' => 'ga:medium==referral',
+        'start-index' => '1',
+        'max-results' => '5',
+        'ids' => 'ga:10000000',
+      ),
+      file_get_contents(dirname(__FILE__) . '/data_feed1.xml'),
+    ),
+  );
+
+  // Look for a matching test case.
+  $match_case = FALSE;
+  foreach ($test_cases as $name => $test_case) {
+    $match_case = $name;
+    list ($parameters, $output) = $test_case;
+    foreach ($parameters as $key => $value) {
+      // Does the parameter in this test case match?
+      if (!isset($_GET[$key]) || $_GET[$key] != $value) {
+        // No.  Try the next test case.
+        $match_case = FALSE;
+        break;
+      }
+    }
+    // Did all of the parameters match?
+    if ($match_case) {
+      exit($output);
+    }
+  }
+}

@@ -1,0 +1,77 @@
+@charset "utf-8";
+/* CSS3 52framework */
+
+.header-bar-group
+{
+	background:#222 -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    from(#506b80),
+    to(#264862)
+) no-repeat;
+background:#222 -moz-linear-gradient(
+    #506b80 0%,
+    #264862 100%
+) no-repeat;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#506b80', endColorstr='#264862');
+	border-bottom:solid 1px #213848;
+}
+
+
+/* apply css3 styles to rounded-corner panel style and remove images */
+html.borderradius .rounded-corner{-webkit-border-radius:8px;-moz-border-radius:8px;border-radius:8px;background:#F3F4EF;/*padding:8px*/}
+html.borderradius .wrap-corner{-webkit-border-radius:8px;-moz-border-radius:8px;border-radius:8px}
+
+html.borderradius .wrap-corner,
+html.borderradius .t-edge,
+html.borderradius .l-edge,
+html.borderradius .b-edge,
+html.borderradius .r-edge,
+html.borderradius .wrap-corner .l,
+html.borderradius .wrap-corner .r{background:none}
+
+html.borderradius .rounded-corner .wrap-corner .t-edge, html.borderradius .rounded-corner .wrap-corner .b-edge,
+html.borderradius .rounded-corner .wrap-corner .l, html.borderradius .rounded-corner .wrap-corner .r {
+    display:none
+}
+
+html.borderradius .rounded-corner .wrap-corner .r-edge{padding:5px}
+
+/* apply css3 styles to login block */
+html.borderradius .header-login-container{-webkit-border-radius:0 0 8px 8px;-moz-border-radius:0 0 8px 8px;border-radius:0 0 8px 8px;background:#264862;padding:0 8px 8px}
+html.borderradius .header-login-container #block-user-0{-webkit-border-radius:0 0 8px 8px;-moz-border-radius:0 0 8px 8px;border-radius:0 0 8px 8px;background:#fff;padding:0 8px 8px}
+
+
+/* 
+	The CSS3 Text-Shadow property contains the following values
+	horizontal-offset (length, required) | vertical-offset (length, required) | blur-radius (length, optional) | shadow-color (color, optional) 
+*/
+.shadow {	text-shadow:1px 1px 1px #666;}/*<-- edit the color you wish to use in your shadows */
+
+
+
+.rounded {
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	border:1px solid #ccc;
+}
+
+.rounded_top_right {
+	border-top-right-radius:5px;
+	-moz-border-radius-topright:5px;
+	-webkit-border-top-right-radius:5px;
+	border:1px solid #ccc;
+}
+
+.box_shadow {
+	-webkit-box-shadow: 2px 2px 3px #ccc;
+	-moz-box-shadow: 2px 2px 3px #ccc;
+	box-shadow: 2px 2px 3px #ccc;
+}
+
+.rotate {
+	-webkit-transform: rotate(-15deg);
+	-moz-transform: rotate(-15deg);
+}

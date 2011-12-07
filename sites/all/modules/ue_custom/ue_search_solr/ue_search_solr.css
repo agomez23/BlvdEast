@@ -1,0 +1,111 @@
+.block-ue_search_solr .content{height:188px}
+.block-ue_search_solr .content, .block-ue_search_solr .uniform-text input{color:#666}
+#content-top .block-ue_search_solr .block-inner { padding-bottom:50px;}
+.search-top
+{
+	border-bottom:dotted 1px #e26b8b;
+	padding-bottom:8px;
+}
+.search-top h3
+{
+	float:left;
+	margin:0;
+	text-transform:uppercase;
+}
+.search-col1, .search-col2, #search-keywords, .search-checkboxes, #search-submit { visibility:hidden; }
+.search .uniform-radio{margin:0 3px 0 15px}
+.search .uniform-checker {margin:0 4px 0 0}
+.search-top .search-type{float:right}
+.search-top label span{float:left;color:#EF3E42}
+.search-col1,.search-col2{/*padding-top:10px*/ padding-top:20px;}
+.search-col1
+{
+	float:left;
+	width:220px;
+	position:relative;
+}
+.search-col2
+{
+	float:left;
+	width:220px;
+}
+
+.search-col1 select{width:206px}
+.search-col1 .uniform-selector span{width:176px;overflow:hidden}
+.search-col1 .uniform-selector select{width:207px}
+
+.search .uniform-selector{margin-bottom:8px}
+.search-col2 input.text{width:68px}
+
+.search-col2 .uniform-selector{width:100px;float:left}
+
+.search-col2 #uniform-search-price-min,
+.search-col2 #uniform-search-price-max
+{
+	width:86px
+
+}
+.search-col2 #uniform-search-price-min span,
+.search-col2 #uniform-search-price-max span
+{
+	width:58px
+}
+
+.search-col2 #uniform-search-price-min select,
+.search-col2 #uniform-search-price-max select
+{
+	width:88px
+}
+
+.search-col2 .uniform-selector span{width:72px}
+.search-col2 .uniform-selector select{width:102px}
+.search-col2 div.text{margin-left:3px}
+.search-col2 span{float:left;height:26px;line-height:26px;margin-bottom:8px}
+.search .searchbtn{float:right}
+
+#uniform-search-keywords{margin-bottom:3px}
+#search-keywords{width:419px}
+#search-webid{width:59px}
+
+/*.search-checkboxes{float:left;width:350px}*/
+.search-checkboxes { margin-bottom:5px;}
+.search-checkboxes label{float:left;padding-right:20px;margin-top:4px}
+#uniform-search-webid{float:right}
+
+.search .nh-popup {position:relative;background:#F5F6F7;padding:4px 4px 11px;width:199px;display:none;z-index:100;border-top:none;overflow:hidden}
+.nh-popup .regionTitle{font-size:.9em;position:relative}
+.nh-popup .regionTitle .count{position:absolute;right:5px;top:3px;background:url(images/neighborhood_count_bg.gif) no-repeat 50% 50%;padding:2px 8px 3px;color:#FFF;font-weight:bold}
+.nh-popup .ui-accordion .regionSection{font-size:.9em;padding:.3em .8em}
+.nh-popup .regionSection label{display:block;padding:3px;margin:.1em 0;line-height:18px;overflow:hidden;position:relative}
+.nh-popup .regionSection label.ui-state-hover{display:block;padding:2px}
+.nh-popup .regionSection div.label{float:left;width:150px}
+.nh-accordion{width:200px;height:330px}
+
+.block-ue_search_solr
+{
+	width:476px;
+	margin-right:12px;
+	float:left;
+}
+/*
+#block-ue_custom-1 ul{padding:0;margin:0}
+#block-ue_custom-1 li li{background:none}
+*/
+
+/* fall back to normal width in two column layout. */
+.two-sidebars .block-ue_search_solr
+{
+	width:auto;
+}
+
+.two-sidebars .search-col1
+{
+	width:186px;
+}
+
+.two-sidebars .search-col2
+{
+	width:171px;
+}
+
+#search-submit,#uniform-search-submit{float:right;/*margin-top:2px;*/ margin-top:15px;clear:right}

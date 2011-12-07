@@ -1,0 +1,49 @@
+<?php
+	
+	$cloneParent = 0;
+	
+	/**
+	* Implementation of hook_clone_node_alter().
+	*/
+	function ue_custom_clone_clone_node_alter(&$node, $original_node, $method)
+	{
+		global $cloneParent;
+		
+		$cloneParent = $node->parent_node;
+	}
+	
+	/**
+	 * Implements hook_nodeapi().
+	 */
+	function ue_custom_clone_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+		global $cloneParent, $user;
+		
+		if($op == 'insert' && $cloneParent > 0)
+		{
+      $node->field_propertyid = array(array('nid' => $cloneParent));
+      $node->uid = $user->uid;
+      $node->parent_node = $cloneParent;
+
+			node_save($node);
+			db_query('INSERT INTO {relativity} (nid, parent_nid) VALUES (%d, %d)', $node->nid, $cloneParent); //executing query direct because relationship module redirects page.
+			$cloneParent = 0;
+		}
+	}
+	
+	/**
+	* Implementation of hook_form_alter().
+	*/
+	function ue_custom_clone_form_alter(&$form, $form_state, $form_id)
+	{
+		if($form_id == 'listing_node_form' && arg(2) == 'clone')
+		{
+			// clear title, br, bath, rent fields
+			$form['title']['#default_value'] = '';
+			$form['group_listing_details']['field_bedroom']['#default_value'] = '';
+			$form['group_listing_details']['field_bathroom']['#default_value'] = '';
+			$form['group_listing_details']['field_price'][0]['#default_value'] = '';
+			$form['group_listing_details']['field_neteffective']['#default_value'] = '';
+			unset($form['field_propertyid']);
+		}
+	}

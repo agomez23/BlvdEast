@@ -1,0 +1,9 @@
+; $Id: panels_teasers.info,v 1.1.4.3 2010/06/15 23:38:47 gundalo Exp $
+name = Apache Solr Panel Results
+description = Makes a panel available to build search results when content is indexed in Solr.
+package = "Apache Solr"
+dependencies[] = panels
+dependencies[] = page_manager
+dependencies[] = apachesolr
+dependencies[] = apachesolr_search
+core = 6.x

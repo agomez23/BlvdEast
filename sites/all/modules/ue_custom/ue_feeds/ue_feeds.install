@@ -1,0 +1,256 @@
+<?php
+
+	function ue_feeds_schema()
+	{
+		$schema['ue_feeds'] = array(
+			'description' => t('holds feed records.'),
+			'fields' => array(
+				'fid' => array(
+					'description' => t('unique ID for a feed.'),
+					'type' => 'serial',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'dir' => array(
+					'description' => t('direction of a feed.'),
+					'type' => 'int',
+					'size' => 'tiny',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'adapterclass' => array(
+					'description' => t('classname of the feed adapter.'),
+					'type' => 'varchar',
+					'length' => 100,
+					'not null' => true,
+				),
+				'filterclass' => array(
+					'description' => t('classname of the feed filter.'),
+					'type' => 'varchar',
+					'length' => 100,
+					'not null' => true,
+				),
+				'name' => array(
+					'description' => t('name of the feed.'),
+					'type' => 'varchar',
+					'length' => 60,
+					'not null' => true,
+				),
+				'uri' => array(
+					'description' => t('URI of the feed.'),
+					'type' => 'varchar',
+					'length' => 1024,
+					'not null' => true,
+				),
+				'options' => array(
+					'description' => t('serialized feed options.'),
+					'type' => 'text',
+				),
+				'lastrun' => array(
+					'description' => t('last run timestamp.'),
+					'type' => 'int',
+				),
+				/*
+				'freeTargets' => array(
+					'description' => t('feed targets.'),
+					'type' => 'text',
+					'not null' => true,
+				),
+				'paidTargets' => array(
+					'description' => t('paid targets.'),
+					'type' => 'text',
+					'not null' => true,
+				),
+				'premiumTargets' => array(
+					'description' => t('premium targets.'),
+					'type' => 'text',
+					'not null' => true,
+				),
+				*/
+				'targets' => array(
+					'description' => t('targets.'),
+					'type' => 'text',
+					'not null' => true,
+				),
+				'authorID' => array(
+					'description' => t('default author ID of nodes.'),
+					'type' => 'int',
+				),
+				'companyID' => array(
+					'description' => t('default company ID of nodes.'),
+					'type' => 'int',
+				),
+			),
+			'primary key' => array('fid'),
+		);
+		
+		$schema['ue_feeds_files'] = array(
+			'description' => t('holds feed files before they get uploaded.'),
+			'fields' => array(
+				'nid' => array(
+					'description' => t('node ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'fid' => array(
+					'description' => t('file ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'field' => array(
+					'description' => t('CCK field to add file to.'),
+					'type' => 'varchar',
+					'length' => 60,
+					'not null' => true,
+				),
+				'url' => array(
+					'description' => t('URL of file to download.'),
+					'type' => 'varchar',
+					'length' => 1024,
+					'not null' => true,
+				),
+			),
+			'unique keys' => array('fid' => array('nid', 'fid', 'field')),
+		);
+		
+		$schema['ue_feeds_nodes'] = array(
+			'description' => t('holds feed node references.'),
+			'fields' => array(
+				'nid' => array(
+					'description' => t('node ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'fid' => array(
+					'description' => t('reference to feed.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'eid' => array(
+					'description' => t('external ID.'),
+					'type' => 'varchar',
+					'length' => 200,
+					'not null' => true,
+				),
+				'updated' => array(
+					'description' => t('last run timestamp.'),
+					'type' => 'int',
+				),
+				'data' => array(
+					'description' => t('serialized feed item.'),
+					'type' => 'text',
+				),
+			),
+			'primary key' => array('fid', 'eid'),
+		);
+		
+		$schema['ue_feeds_zips'] = array(
+			'description' => t('default neighborhood termid for zipcodes.'),
+			'fields' => array(
+				'tid' => array(
+					'description' => t('term ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'zip' => array(
+					'description' => t('reference to feed.'),
+					'type' => 'varchar',
+					'length' => 5,
+					'not null' => true,
+				),
+			),
+			'primary key' => array('zip'),
+		);
+		
+		$schema['ue_feeds_targets'] = array(
+			'description' => t('holds feed node-target references.'),
+			'fields' => array(
+				'nid' => array(
+					'description' => t('node ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'tid' => array(
+					'description' => t('reference to target term ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+			),
+			'primary key' => array('nid', 'tid'),
+		);
+		
+		return $schema;
+	}
+	
+	function ue_feeds_install()
+	{
+		drupal_install_schema('ue_feeds');
+	}
+	
+	function ue_feeds_uninstall()
+	{
+		drupal_uninstall_schema('ue_feeds');
+	}
+	
+	/* update 1 - add targets table. */
+	function ue_feeds_update_6100(&$sandbox)
+	{
+		$schema['ue_feeds_targets'] = array(
+			'description' => t('holds feed node-target references.'),
+			'fields' => array(
+				'nid' => array(
+					'description' => t('node ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+				'tid' => array(
+					'description' => t('reference to target term ID.'),
+					'type' => 'int',
+					'unsigned' => true,
+					'not null' => true,
+				),
+			),
+			'primary key' => array('nid', 'tid'),
+		);
+		
+		$ret = array();
+		
+		db_create_table($ret, 'ue_feeds_targets', $schema['ue_feeds_targets']);
+		
+		return $ret;
+	}
+	
+	/* update 2 - update feed targets */
+	function ue_feeds_update_6103(&$sandbox)
+	{
+		$ret = array();
+		
+		db_add_field($ret, 'ue_feeds', 'targets', array('type' => 'text', 'not null' => TRUE));
+		db_drop_field($ret, 'ue_feeds', 'freeTargets');
+		db_drop_field($ret, 'ue_feeds', 'paidTargets');
+		db_drop_field($ret, 'ue_feeds', 'premiumTargets');
+	
+		return $ret;
+	}
+	
+	/*
+	
+	function ue_feeds_install()
+	{
+		switch ($GLOBALS['db_type']) {
+		case 'mysql':
+		case 'mysqli':
+		break;
+		
+		default:
+		}
+	}
+	*/

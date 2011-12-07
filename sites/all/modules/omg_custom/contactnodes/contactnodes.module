@@ -1,0 +1,90 @@
+<?php
+	define('CONTACTNODES_DEFAULT_SUBMITCAPTION', 'Send form');
+	define('CONTACTNODES_DEFAULT_FORMTITLE', 'Contact Us');
+	define('CONTACTNODES_DEFAULT_FORMURL', 'contact');
+	define('CONTACTNODES_DEFAULT_MENUNAME', 'navigation');
+	
+	require_once 'contactnodes.admin.inc';
+	
+	function contactnodes_menu()
+	{
+		$items = array();
+		
+		$items['admin/settings/omg/contactnodes'] = array(
+			'title' => 'Contact Nodes',
+			'description' => 'Configure Contact Nodes module.',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('contactnodes_admin'),
+			'access arguments' => array('access administration pages'),
+			'type' => MENU_NORMAL_ITEM
+		);
+		
+		//Add menu link if option checked.
+		$items[variable_get('contactnodes_formurl', CONTACTNODES_DEFAULT_FORMURL)] = array(
+			'title' => variable_get('contactnodes_title', CONTACTNODES_DEFAULT_FORMTITLE),
+			'page callback' => 'contactnodes_contact_page',
+			'access arguments' => array('access content'),
+			'menu_name' => variable_get('contactnodes_menuname', CONTACTNODES_DEFAULT_MENUNAME),
+			'type' => variable_get('contactnodes_menutype', MENU_CALLBACK),
+		);
+		
+		return $items;
+	}
+	
+	function contactnodes_contact_page()
+	{
+		if(!function_exists("node_object_prepare"))
+			include_once(drupal_get_path('module', 'node') . '/node.pages.inc');
+			
+		drupal_set_title(variable_get('contactnodes_title', CONTACTNODES_DEFAULT_FORMTITLE));
+		
+		$type = variable_get('contactnodes_nodetype', '');
+		return node_add($type);
+	}
+	
+	function contactnodes_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+	}
+	
+	/**
+	* Implementation of hook_form_alter().
+	*/
+	function contactnodes_form_alter(&$form, $form_state, $form_id)
+	{
+		global $base_path;
+		$type = variable_get('contactnodes_nodetype', '');
+		if($form_id == "${type}_node_form")
+		{
+			//change submit caption
+			$form['buttons']['submit']['#value'] = variable_get('contactnodes_submitcaption', CONTACTNODES_DEFAULT_SUBMITCAPTION);
+			
+			//remove preview button.
+			unset($form['buttons']['preview']);
+			
+			//only perform other actions if form is accessed from friendly url
+			if($_SERVER['REQUEST_URI'] == $base_path . variable_get('contactnodes_formurl', CONTACTNODES_DEFAULT_FORMURL))
+			{
+				//set header.
+				if(strlen(variable_get('contactnodes_header', '')))
+					$form['#prefix'] = variable_get('contactnodes_header', '');
+				
+				//set footer.
+				if(strlen(variable_get('contactnodes_footer', '')))
+					$form['#suffix'] = variable_get('contactnodes_footer', '');
+				
+				//set confirmation page
+				if(strlen(variable_get('contactnodes_confirm', '')))
+					$form['buttons']['submit']['#submit'][] = 'contactnodes_form_setredirect';
+				
+				//remove unncessary fieldsets
+				foreach(array('revision_information', 'author', 'options', 'menu', 'path') as $fieldset)
+					unset($form[$fieldset]);
+			}
+		}
+	}
+	
+	function contactnodes_form_setredirect($form, &$form_state)
+	{
+		$form_state['redirect'] = variable_get('contactnodes_confirm', '');
+	}
+	

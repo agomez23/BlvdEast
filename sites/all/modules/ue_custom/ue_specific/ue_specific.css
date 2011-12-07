@@ -1,0 +1,180 @@
+h3.property-title{margin-bottom:.5em;padding-bottom:.5em;border-bottom:1px solid #DDD}
+.view-results .views-row{position:relative}
+.view-results h3.property-title{margin-top:0}
+.view-results .listing-price{position:absolute;top:10px;right:5px;font-size:1.2em;font-weight:bold}
+
+.view-getMyProperties div.views-row{margin-bottom:2em}
+.view-getMyProperties div.views-row.views-row-last{margin-bottom:0}
+.view-getMyListings .views-table{width:100%}
+
+#block-views-results-block_5  .property-title, .listing-title, .listing-neighborhood, .listing-headline, .listing-flags{float:left;clear:both;border:none}
+.listing-neighborhood{width:180px}
+.listing-buildingtype{float:left}
+.listing-price, .listing-rooms{float:right}
+.listing-rooms { font-weight:bold; }
+
+/* temp */
+.listing-flags{text-align:right}
+.listing-flags span{padding:5px 10px;background:no-repeat 50% 50%}
+.listing-flags span.photos {background-image:url('/sites/urbanedgeny.com/themes/ue/images/icons/image.png')}
+.listing-flags span.incentives{background-image:url('/sites/urbanedgeny.com/themes/ue/images/icons/medal_gold_3.png')}
+.listing-flags span.floorplans{background-image:url('/sites/urbanedgeny.com/themes/ue/images/icons/report_picture.png')}
+
+
+
+/* my listings page */
+.view-getMyProperties .property-address{float:left}
+.view-getMyProperties .property-edit, .view-getMyProperties .property-addListing{float:right;margin-left:10px}
+.view-getMyProperties .property-listings{clear:both; }
+.view-getMyProperties .listing-edit{text-align:right}
+#content-area .view-getMyProperties .view-getMyListings table.views-view-grid{margin:0} /* media view */
+#content-area .view-getMyProperties .view-getMyListings table.views-view-grid td{padding:0 2px} /* media view */
+#content-area .view-getMyListings table{margin-bottom:0}
+#content-area #listing-accordion ul{margin:0}
+
+/* listing/property detail page */
+#content-area #listing-tabbar {margin:.3em 0 8px 0;padding:0;/*background:#EAEAEA;border:solid 1px #CCC*/;height:24px;font-size:1.2em}
+#listing-tabbar li{float:left;list-style-type:none;background:none;margin:0 .4em;padding:.2em 0}
+#listing-tabbar li.active a { font-weight:bold; background: url("/sites/urbanedgeny.com/themes/ue/images/menu-active.gif") no-repeat scroll 50% 100% transparent; padding-bottom:6px;  }
+#listing-tabs{width:640px;height:330px;position:relative}
+
+#listing-slideshow{height:330px;width:640px}
+#listing-overview,#listing-floorplans,#listing-slideshow,#listing-map{position:absolute;top:0}
+
+#listing-overview,#listing-floorplans{padding:8px;width:624px;height:314px;}
+#listing-accordion{border:solid 1px #CCC;border-top:none}
+#listing-accordion h2{background:#EAEAEA;border-top:solid 1px #CCC;margin:0;padding:.2em}
+#listing-accordion .accordion-section{border-top:solid 1px #CCC;padding:8px}
+.listing-amen li, .property-amen li, .property-hood li{float:left;width:183px;padding-right:4px;}
+.overview-thumb{float:right;margin:0 0 10px 10px}
+#listing-nonaccordion h2 { border-top:1px solid#ccc; padding-top:20px; margin-top:20px; }
+
+/* property listings */
+.view-display-id-block_5 .views-table{width:100%}
+.view-display-id-block_5 .views-field{text-align:right;padding:3px 7px;white-space:nowrap}
+.view-display-id-block_5 .views-field-phpcode{width:160px;text-align:left}
+.view-display-id-block_5 .views-field-field-bedroom-value{width:160px}
+
+/* manage block - photos etc */
+.manage-heading{font-size:1.1em}
+.view-manageSub .view-empty{background:#EEE;text-align:center;padding:3px;border-bottom:1px solid #CCC}
+.view-manageSub{margin-bottom:.2em}
+body.section-manage-listings2 th { vertical-align:bottom; }
+
+/* add/edit property/listing */
+.page-node-add-property .help, .page-node-add-property #content-header h1.title, /* hide help/form title on property add */
+.node-type-property.section-node-edit .help, .node-type-property.section-node-edit #content-header h1.title, /* hide help/form title on property edit */
+.page-node-add-listing .help, .page-node-add-listing #content-header h1.title, /* hide help/form title on listing add */
+.node-type-listing.section-node-edit .help, .node-type-listing.section-node-edit #content-header h1.title, /* hide help/form title on listing edit */
+.node-type-listing.section-node-edit #edit-delete, .node-type-property.section-node-edit #edit-delete, /* hide delete buttons */
+#node-form .uetab legend /* hide custom fieldgroups */
+{
+	display:none
+}
+
+.page-node-add-property .node-form,.node-type-property.section-node-edit .node-form,
+.page-node-add-listing .node-form,.node-type-listing.section-node-edit .node-form
+{
+	text-align:center
+}
+
+.page-node-add-property .node-form .standard, .node-type-property.section-node-edit .node-form .standard,
+.page-node-add-property .node-form .admin, .node-type-property.section-node-edit .node-form .admin,
+.page-node-add-listing .node-form .standard, .node-type-listing.section-node-edit .node-form .standard,
+.page-node-add-listing .node-form .admin, .node-type-listing.section-node-edit .node-form .admin
+{
+	text-align:left
+}
+
+.page-node-add-property #edit-submit,
+.node-type-property.section-node-edit #edit-submit,
+.page-node-add-listing #edit-submit,
+.node-type-listing.section-node-edit #edit-submit
+{
+	background:url(/sites/urbanedgeny.com/themes/ue/images/save-property.gif) no-repeat 50% 50%;
+	border:none;
+	text-indent:-200px;
+	cursor:pointer;
+	width:85px;
+	height:46px;
+	font-size:0px;
+	line-height:0px;
+}
+
+#edit-nextpg
+{
+	background:url(/sites/urbanedgeny.com/themes/ue/images/next-page.gif) no-repeat 50% 50%;
+	border:none;
+	text-indent:-200px;
+	cursor:pointer;
+	width:155px;
+	height:46px;
+	font-size:0px;
+	line-height:0px;
+}
+
+.button-separator{margin:0 2em;font-size:1.4em;font-weight:bold;color:#666}
+
+/* remove padding/margin at top of fieldgroups */
+.page-node-add-property #node-form fieldset, .node-type-property.section-node-edit #node-form fieldset,
+.page-node-add-listing #node-form fieldset, .node-type-listing.section-node-edit #node-form fieldset
+{
+	padding-top:0;
+	margin-top:0;
+}
+
+/* setup clipping for ue tabs */
+#node-form{position:relative;overflow:hidden}
+.node-form .uetab{position:relative}
+
+/* header block */
+#block-ue_specific-1 p{margin-top:.5em}
+#content-top-wide #block-ue_specific-1{margin-bottom:53px;position:relative}
+#block-ue_specific-1 ul.form-tabs{position:absolute;bottom:-40px;left:0;background:#FFF url(/sites/urbanedgeny.com/themes/ue/images/form-tabs-background.gif) no-repeat 100% 0;height:29px;padding:0;margin:0}
+#block-ue_specific-1 ul.form-tabs li{float:left;padding:0;margin:0;background:url(/sites/urbanedgeny.com/themes/ue/images/form-tabs-active.gif) no-repeat 0 30px;position:relative;height:27px;z-index:20}
+#block-ue_specific-1 ul.form-tabs a{background:url(/sites/urbanedgeny.com/themes/ue/images/form-tabs-separator.png) no-repeat 100% 50%;padding:0 16px 0 10px;margin:0 -6px 0 0;display:block;height:29px;line-height:26px;text-transform:uppercase;font-size:1.1em;font-weight:bold;color:#999;z-index:30}
+#block-ue_specific-1 ul.form-tabs li.active{background-position:0 1px;z-index:10}
+#block-ue_specific-1 ul.form-tabs li.active a{color:#FFF}
+#block-ue_specific-1 ul.form-tabs li.last a{background:none;padding-right:18px}
+#block-ue_specific-1 ul.form-tabs li.last.active{background-position:100% 1px;padding:0 1px 0 0}
+#block-ue_specific-1 ul.form-tabs li.first{border-left:solid 1px #CCC}
+#block-ue_specific-1 ul.form-tabs li.first a{padding-left:8px}
+
+/* search results */
+.view-id-results.view-display-id-page_2 .view-pager-top{float:left}
+.view-id-results.view-display-id-page_2 .pager{background:none;padding:0;margin:0}
+/*.view-id-results.view-display-id-page_2 .view-header{float:right;margin:1em 0}*/
+.view-id-results.view-display-id-page_2 .view-content{clear:both}
+
+div.n1box { display:none; position:absolute; top:0; left:0; width:920px; background-color:#f5f6f7; border:1px solid #e5e6e7; z-index:999; padding-bottom:20px; filter:alpha(opacity=90); -moz-opacity:0.9; -khtml-opacity: 0.9; opacity: 0.9;
+ }
+div.n2box, div.n2box h3 { clear:both; }
+div.n2box { padding:10px 20px; }
+div.n3box { padding-left:20px; clear:right;}
+div.n3box label { float:left; position:relative; width:200px; overflow:hidden; }
+div.n1close { float:right; padding-right:20px; }
+
+/* broker blast block */
+#block-ue_specific-9 .meta { display:none; }
+#block-ue_specific-9 input { max-width:100%; }
+#block-ue_specific-9 #edit-submitted-email-wrapper { padding-top:0; }
+#block-ue_specific-9 #edit-submit { float:right; }
+#block-ue_specific-9 form { padding-bottom:20px; }
+#block-ue_specific-9 div.messages.status ul li { list-style:outside; list-style-type:none; background:none; padding:0; }
+
+/* bFlags */
+.bFlags table {max-width:400px;border:1px solid #ddd; }
+.bFlags table, .bFlags table td {  background-color:#FFF;  }
+.bFlags table th { padding:0 10px 0 2px; font-weight:bold; border-bottom:1px solid #ddd; background-color:#eee; color:#666; }
+
+/* manage */
+tr.inactive { background-color:#ddd!important; opacity:0.7; }
+
+/* new neigh select */
+#neigh_select .expandable { background-image:url("/sites/urbanedgeny.com/modules/taxonomy_manager/images/tv-expandable.gif"); background-position:0 0; list-style:none outside none; padding:0 0 0 20px; background-repeat:no-repeat; }
+#neigh_select .expandable.expanded { background-image:url("/sites/urbanedgeny.com/modules/taxonomy_manager/images/tv-collapsable.gif"); }
+.level1, .level2 { display:none; }
+.level2 { margin-left:20px; }
+div.disabled label { color:#bbb; }
+
+.offmarketrow:hover, .offmarketrow a:hover { background-color:#C2EFD5; }

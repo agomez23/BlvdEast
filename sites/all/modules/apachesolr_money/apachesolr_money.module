@@ -1,0 +1,593 @@
+<?php
+
+/**
+ * @file
+ * Provides the ApacheSolr Money search indexing and slider block functions.
+ */
+
+define('APACHESOLR_MONEY_RANGE_PIECES', 25);
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @return array
+ */
+function apachesolr_money_menu() {
+  $items = array();
+  $items['admin/settings/apachesolr/money'] = array(
+    'title' => 'Money Slider',
+    'description' => 'Administer the ApacheSolr Money settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('apachesolr_money_admin_settings'),
+    'access arguments' => array('administer apachesolr_money'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'apachesolr_money.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function apachesolr_money_perm() {
+  return array('administer apachesolr_money');
+}
+
+/**
+ * Implementation of hook_apachsolr_prepare_query().
+ *
+ * @param stdClass $query
+ */
+function apachesolr_money_apachesolr_prepare_query(&$query) {
+  $facets = apachesolr_get_enabled_facets('apachesolr_money');
+  foreach ($facets as $facet) {
+    if (strpos($facet, 'currency') === FALSE) {
+      $query->set_available_sort($facet, array(
+        'title' => t('Price'),
+        'default' => 'asc',
+      ));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_apachesolr_facets().
+ *
+ * @return An array keyed by block delta.
+ */
+function apachesolr_money_apachesolr_facets() {
+  $facets = array();
+  $fields = apachesolr_cck_fields();
+  if ($fields) {
+    foreach ($fields as $name => $field) {
+      if ($field['field_type'] == 'money') {
+
+        // Create amount subfield facet
+        $facets[$field['field_name']] = array_merge($field, array(
+            'info' => t('CCK @field_type field: Filter by @field (Amount)', array('@field_type' => $field['field_type'], '@field' => $field['label'])),
+            'facet_field' => apachesolr_money_index_key($field, 'amount'),
+            'content_types' => $field['content_types'],
+          )
+        );
+
+        // Create currency subfield facet
+        $facets[$field['field_name'] . '_currency'] = array_merge($field, array(
+            'info' => t('CCK @field_type field: Filter by @field (Currency)', array('@field_type' => $field['field_type'], '@field' => $field['label'])),
+            'facet_field' => apachesolr_money_index_key($field, 'currency'),
+            'content_types' => $field['content_types'],
+          )
+        );
+      }
+    }
+  }
+  return $facets;
+}
+
+/**
+ * See apachesolr_index_key(), but custom modified to handle amount and currency subtypes
+ *
+ * @param array $field An array of array('index_type' => 'type_name', 'multiple' => TRUE, 'name' => 'field_name')
+ * @param string $subtype Either amount or currency
+ * @return a key string Returns a unique index key for Apache Solr
+ */
+function apachesolr_money_index_key($field, $subtype) {
+  $sm = $field['multiple'] ? 'm_' : 's_';
+  switch ($subtype) {
+    case 'amount':
+      $type_prefix = 'p';
+      $field_name = $field['name'];
+      break;
+    case 'currency':
+      $type_prefix = 's';
+      $field_name = $field['name'] . '_' . $subtype;
+      break;
+  }
+  return $type_prefix . $sm . $field_name;
+}
+
+/**
+ * Implementation of hook_apachesolr_update_index().
+ *
+ * Create Apache Solr document indexes for each CCK money field, for both amount and currency.
+ *
+ * @param stdClass $document
+ * @param stdClass $node
+ * @param stdClass $namespace
+ */
+function apachesolr_money_apachesolr_update_index(&$document, $node, $namespace) {
+  $fields = content_fields();
+  foreach ($fields as $field) {
+    if ($field['type'] == 'money') {
+      $node_field = $node->$field['field_name'];
+
+      // Add amount subfield to Solr document
+      $key = apachesolr_index_key(array('index_type' => 'double', 'multiple' => FALSE, 'name' => 'cck_' . $field['field_name']));
+      $document->{$key} = doubleval($node_field[0]['amount']);
+
+      // Add currency subfield to Solr document
+      $key = apachesolr_index_key(array('index_type' => 'string', 'multiple' => FALSE, 'name' => 'cck_' . $field['field_name'] . '_currency'));
+      $document->{$key} = $node_field[0]['currency'] ? $node_field[0]['currency'] : 'USD';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_apachesolr_cck_fields_alter().
+ *
+ * Adds the CCK fields to Apache Solr so it will recognize and index them.
+ *
+ * @param array $mappings
+ */
+function apachesolr_money_apachesolr_cck_fields_alter(&$mappings) {
+  $fields = content_fields();
+  foreach ($fields as $field) {
+    if ($field['type'] == 'money') {
+
+      // Add amount subfield to index
+      $mappings['per-field'][$field['field_name']] = array(
+        'indexing_callback' => 'apachesolr_money_indexing_money_amount_callback',
+        'index_type' => 'double',
+      );
+
+      // Add currency subfield to index
+      $mappings['per-field'][$field['field_name'] . '_currency'] = array(
+        'indexing_callback' => 'apachesolr_money_indexing_money_currency_callback',
+        'index_type' => 'string',
+      );
+    }
+  }
+}
+
+/**
+ * Index the money CCK amount subfield.
+ *
+ * @param stdClass $node The current node being indexed.
+ * @param string $fieldname The current field being indexed.
+ * @return an array of arrays.
+ */
+function apachesolr_money_indexing_money_amount_callback($node, $fieldname) {
+  $fields = array();
+  foreach ($node->$fieldname as $field) {
+    if (isset($field['amount'])) {
+      $fields[] = array('value' => $field['amount']);
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Index the money CCK currency subfield.
+ *
+ * @param stdClass $node The current node being indexed.
+ * @param string $fieldname The current field being indexed.
+ * @return an array of arrays.
+ */
+function apachesolr_money_indexing_money_currency_callback($node, $fieldname) {
+  $fields = array();
+  foreach ($node->$fieldname as $field) {
+    if (isset($field['currency'])) {
+      $fields[] = array('value' => $field['currency']);
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function apachesolr_money_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      return _apachesolr_money_block_list($delta);
+      break;
+
+    case 'view':
+      global $user;
+      if (user_access($op . ' ' . $delta, $user)) {
+        return theme('apachesolr_money_block_view', $delta);
+      }
+      break;
+
+    case 'configure':
+      return apachesolr_facetcount_form('apachesolr_money', $delta);
+      break;
+
+    case 'save':
+      apachesolr_facetcount_save($edit);
+      break;
+  }
+}
+
+/**
+ * Helper function to return the list of blocks.
+ *
+ * @param string $delta
+ * @return array of blocks
+ */
+function _apachesolr_money_block_list($delta) {
+  $blocks = array();
+  $enabled_facets = apachesolr_get_enabled_facets('apachesolr_money');
+  $facets = apachesolr_money_apachesolr_facets();
+  foreach ($enabled_facets as $delta => $facet_field) {
+    if (isset($facets[$delta])) {
+      $blocks[$delta] = array(
+        'info' => $facets[$delta]['info'],
+        'cache' => BLOCK_CACHE_PER_PAGE,
+      );
+    }
+  }
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_theme().
+ *
+ * This lets us tell Drupal about our theme functions and their arguments.
+ */
+function apachesolr_money_theme() {
+  return array(
+    'apachesolr_money_block_view' => array(
+      'arguments' => array('delta'),
+    ),
+  );
+}
+
+/**
+ * Helper function to return the block view.
+ *
+ * @param unknown_type $delta
+ * @return $block_function or empty
+ */
+function theme_apachesolr_money_block_view($delta) {
+  $output = '';
+  if (apachesolr_has_searched()) {
+    $query = apachesolr_current_query();
+    $response = apachesolr_static_response_cache();
+    $facets = apachesolr_get_enabled_facets('apachesolr_money');
+
+    // Check for valid response and available facets
+    if (empty($response) || empty($facets[$delta])) {
+      return;
+    }
+
+    // Check for block visibility
+    if (!apachesolr_block_visibility($query, 'apachesolr_money', $delta)) {
+      return;
+    }
+
+    if ($fields = apachesolr_cck_fields()) {
+
+      // Here we add the page requisites: the jQuery UI slider + CSS, and the Apache Solr Money module JS
+      jquery_ui_add(array('ui.slider'));
+      drupal_add_js(drupal_get_path('module', 'apachesolr_money') . '/apachesolr_money.js');
+      drupal_add_css(drupal_get_path('module', 'jquery_ui') . '/jquery.ui/themes/base/jquery-ui.css');
+
+      // Build the facet slider blocks for filtering
+      foreach ($fields as $name => $field) {
+        if ($field['field_type'] == 'money') {
+          $index_key = $facets[$delta];
+          $callback = FALSE;
+
+          // The Money CCK field is actually a dual Amount+Currency field,
+          // but the jQuery slider is only needed for the Amount subfield.
+          // So We need some complex code to handle the difference:
+          // the facet name ending in "_currency" is always the Currency field (we check with astrpos())
+          $type = (strpos($facets[$delta], '_currency') !== FALSE) ? t('Currency') : t('Amount');
+          $block_function = (strpos($facets[$delta], '_currency') !== FALSE) ? 'facet_block_callback' : 'apachesolr_money_range_facet_block';
+          $output = $block_function($response, $query, 'apachesolr_money', $delta, $index_key, t('Filter by @field (@type)', array('@field' => $field['label'], '@type' => $type)), $callback);
+        }
+      }
+    }
+  }
+  return $output;
+}
+
+/**
+ * Do a custom Solr query to get the min / max value, given the current filters.
+ *
+ * @param unknown_type $facet
+ * @param string $keys
+ * @param string $filters
+ * @param string $direction
+ * @return string Solr query result
+ */
+function apachesolr_money_get_minmax($facet, $keys, $filters, $direction = 'desc') {
+  list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
+  include_once(drupal_get_path('module', $module) . '/Solr_Base_Query.php');
+
+  $docs = array();
+  $solr = apachesolr_get_solr();
+  $params = array(
+    'fl' => $facet,
+    'sort' => $facet . ' ' . $direction,
+    'keys' => $keys
+  );
+  if (!empty($filters)) {
+    $params['fq'] = array(
+      str_replace(' ', ' AND ', trim($filters)),
+      // '(nodeaccess_all:0)'
+    );
+  }
+  $solrsort = array('#name' => $facet, '#direction' => $direction);
+  $base_path = 'search/apachesolr_search';
+
+  try {
+    $customQuery = new $class($solr, $keys, $filters, $solrsort, $base_path);
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    $customQuery = NULL;
+  }
+
+  $customQuery->set_available_sort($facet, array(
+      'title' => t('Price'),
+      'default' => 'asc',
+  ));
+  $customQuery->set_solrsort($facet, $direction);
+  $customResponse = $solr->search($customQuery->get_query_basic(), 0, 1, $params);
+  if ($customResponse->response) {
+    $docs = (array) end($customResponse->response);
+  }
+  return round($docs['0']->$facet);
+}
+
+/**
+ * Helper function for displaying a facet block.
+ */
+function apachesolr_money_range_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+  $output  = drupal_get_form('apachesolr_money_price_range_form', $facet_field, $delta);
+  return array('subject' => $filter_by, 'content' => $output);
+}
+
+/**
+ * Implementation of hook_form().
+ *
+ * Builds the form with min/max and start/end values
+ * Submits the custom price range.
+ *
+ * The price slider has two kinds of value pairs, min/max and start/end. The values depend on the actual search query & filters.
+ * - min/max: the limits of the price slider (depends on the current search & selected facets)
+ * - start/end: the actual (currently selected) values (depends on active user selection)
+ */
+function apachesolr_money_price_range_form($form_state, $facet, $cck) {
+  $keys = '';
+  $currencySymbol = variable_get('apachesolr_money_currency', '$');
+
+  // Get the proper user search keys
+  $apachesolr_has_searched = apachesolr_has_searched();
+  if (strpos($_GET['q'], 'search/apachesolr_search') !== FALSE || strpos($_GET['q'], 'search/apachesolr_ajax') !== FALSE) {
+    $keys = trim(search_get_keys());
+  }
+
+  // Add replace for clean urls
+  $base = 'search/apachesolr_search/';
+  if (variable_get('clean_url', '0')) {
+    $keys = str_replace('+', '%2B', $keys);
+  }
+
+  // Check the Apache Solr query values from url
+  $query_values = array();
+  if ($apachesolr_has_searched) {
+    $query = apachesolr_current_query();
+    $query_values = $query->get_url_queryvalues();
+  }
+
+  // Extract the current price range filter
+  if (isset($_GET['filters'])) {
+    $filters = $_GET['filters'];
+    $extracted = apachesolr_money_filter_extract($filters, $facet);
+  }
+  elseif (arg(0) == 'taxonomy' && is_numeric(arg(2))) {
+    $filters = 'tid:' . arg(2);
+  }
+
+  // Extract the minimum and maximum price for the current query
+  // Note: this code must come after $extracted,because we want to see min/max EXCLUDING the actual price range filter
+  $min = apachesolr_money_get_minmax($facet, $keys, $filters, 'asc');
+  if ($min > 0) {
+    $min = $min - 1;
+  }
+  $max = ceil(apachesolr_money_get_minmax($facet, $keys, $filters, 'desc'));
+
+  // The jQuery slider is not continuous, it is dichtomous (needs integer steps)
+  // Thus we must chop the range into 25 pieces (arbitrary choice, but it works fine)
+  $options[$min] = $currencySymbol . format_number($min, 0);
+  for ($i = 1; $i < APACHESOLR_MONEY_RANGE_PIECES; $i++) {
+    $v = round(($max / (APACHESOLR_MONEY_RANGE_PIECES - 1)) * $i);
+    $options[$v] = $currencySymbol . format_number($v, 0);
+  }
+
+  // Set the start and end (the current slider positions within min and max)
+  $start = (isset($extracted['0']['#start']) && $extracted['0']['#start'] > $min) ? $extracted['0']['#start'] : $min;
+  $end = (isset($extracted['0']['#end']) && $extracted['0']['#end'] < $max) ? $extracted['0']['#end'] : $max;
+  if ($end == 0 && $extracted['0']['#end'] <> 0) {
+    $end = round(($max / 24) * 1);
+  }
+
+  // Add Drupal JS settings
+  drupal_add_js(
+    array(
+      'apacheSolrMoneyMin' => $min,
+      'apacheSolrMoneyMax' => $max,
+      'apacheSolrMoneyFrom' => $start,
+      'apacheSolrMoneyTo' => $end
+    ),
+    'setting'
+  );
+
+  // Build the actual slider form
+  $form['module']['#value'] == 'apachesolr_search';
+  $form['#submit'] = array('apachesolr_money_price_range_form_submit');
+  $form['range-info'] = array(
+    '#type' => 'markup',
+    '#value' => '<p class="range-info">' . t('Active results range from <strong>!currency!min</strong> to <strong>!currency!max</strong>', array('!currency' => $currencySymbol, '!min' => (format_number($min) == 0 ? 1 : format_number($min)), '!max' => format_number($max))) . '</p>'
+    );
+  $form['range-from'] = array(
+    '#description' => t('Min.'),
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#max-length' => 10,
+    '#required' => TRUE,
+    '#default_value' => $start,
+  );
+  $form['range-slider'] = array(
+    '#type' => 'markup',
+    '#value' => '<div id="range-slider"></div>'
+  );
+  $form['range-to'] = array(
+    '#description' => t('Max.'),
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#max-length' => 10,
+    '#required' => TRUE,
+    '#default_value' => $end,
+  );
+  // need these values available for setting min/max in ajax callback, apachesolr_ajax.js
+  $form['range-min'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $min,
+  );
+  $form['range-max'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $max,
+  );
+  // needed for solr ajax submit
+  $form['range-ajax'] = array(
+    '#type' => 'hidden',
+    '#default_value' => base_path() . 'search/apachesolr_search/' . $keys . '?' . (!empty($_GET['solrsort']) ? 'solrsort=' . $_GET['solrsort'] . '&' : '') . (isset($_GET['retain-filters']) ? (isset($_GET['solrsort']) ? '&' : '') . 'retain-filters=' . $_GET['retain-filters'] . '&' : '') . 'filters=' . (!empty($filters) ? $filters . ' ' : '') . urlencode($facet . ':'),
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Filter'));
+  $form['apachesolr_money']['#tree'] = TRUE;
+  $form['apachesolr_money']['queryvalues'] = array(
+    '#type' => 'hidden',
+    '#default_value' => serialize($query_values),
+  );
+  $form['apachesolr_money']['get'] = array(
+    '#type' => 'hidden',
+    '#default_value' => serialize(array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1))),
+  );
+  $form['apachesolr_money']['range-field'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $facet,
+  );
+  return $form;
+}
+
+/**
+ * Copied from Solr_Base_Query.
+ *
+ * @param unknown_type $filterstring
+ * @param unknown_type $name
+ */
+function apachesolr_money_filter_extract(&$filterstring, $name) {
+  $extracted = array();
+  // Range queries.  The "TO" is case-sensitive.
+  $patterns[] = '/(^| |-)' . $name . ':([\[\{](\S+) TO (\S+)[\]\}])/';
+  // Match quoted values.
+  $patterns[] = '/(^| |-)' . $name . ':"([^"]*)"/';
+  // Match unquoted values.
+  $patterns[] = '/(^| |-)' . $name . ':([^ ]*)/';
+  foreach ($patterns as $p) {
+    if (preg_match_all($p, $filterstring, $matches, PREG_SET_ORDER)) {
+      foreach ($matches as $match) {
+        $filter = array();
+        $filter['#query'] = $match[0];
+        $filter['#exclude'] = ($match[1] == '-');
+        $filter['#value'] = trim($match[2]);
+        if (isset($match[3])) {
+          // Extra data for range queries
+          $filter['#start'] = $match[3];
+          $filter['#end'] = $match[4];
+        }
+        $extracted[] = $filter;
+        // Update the local copy of $filters by removing the match.
+        $filterstring = str_replace($match[0], '', $filterstring);
+      }
+    }
+  }
+  return $extracted;
+}
+
+/**
+ * Added form submit function to account for Apache mode_rewrite quirks.
+ *
+ * @see apachesolr_search_form_search_form_alter()
+ */
+function apachesolr_money_price_range_form_submit($form, &$form_state) {
+  $keys = '';
+  $form_values = $form_state['values'];
+
+  // Get the current search keys
+  if (arg(0) == 'search' && (arg(1) == 'apachesolr_search' || arg(1) == 'apachesolr_ajax')) {
+    $keys = trim(search_get_keys());
+  }
+
+  // Clean url check
+  $base = 'search/apachesolr_search/';
+  if (variable_get('clean_url', '0')) {
+    $keys = str_replace('+', '%2B', $keys);
+  }
+
+  // Get the query values
+  $get = unserialize($form_values['apachesolr_money']['get']);
+  $query_values = unserialize($form_values['apachesolr_money']['queryvalues']);
+
+  // Extract (discard) and update existing price range
+  $extracted = apachesolr_money_filter_extract($query_values['filters'], $form_values['apachesolr_money']['range-field']);
+  if (!empty($query_values['filters'])) {
+    $space = ' ';
+  }
+  $query_values['filters'] = trim($query_values['filters']) . $space . $form_values['apachesolr_money']['range-field'] . ':' . '[' . $form_values['range-from'] . ' TO ' . $form_values['range-to'] . ']';
+  if ($query_values) {
+    $get = $query_values + $get;
+  }
+
+  // Retain filters
+  if (!empty($form_values['apachesolr_search']['retain-filters'])) {
+    $get['retain-filters'] = '1';
+  }
+  $form_state['redirect'] = array($base . $keys, $get);
+}
+
+/**
+ * Implementation of hook_requirements
+ *
+ * We need to check if the base CSS file exists at /jquery.ui/themes/base/jquery-ui.css
+ */
+function apachesolr_money_requirements($phase) {
+  $requirements = array();
+  $requirement['title'] = t('ApacheSolr Money');
+  $path = drupal_get_path('module', 'jquery_ui') . '/jquery.ui/themes/base/jquery-ui.css';
+
+  if (file_check_path($path) == 'jquery-ui.css') {
+    $requirement['description'] = t('The required jquery-ui.css is correctly installed in @location', array('@location' => $path));
+    $requirement['severity'] = REQUIREMENT_OK;
+  }
+  else {
+    $requirement['description'] = t('The required jquery-ui.css not correctly installed in @location. Please check the README.txt', array('@location' => $path));
+    $requirement['severity'] = REQUIREMENT_WARNING;
+  }
+
+  $requirements[] = $requirement;
+  return $requirements;
+}

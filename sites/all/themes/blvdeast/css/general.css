@@ -1,0 +1,383 @@
+@charset "utf-8";
+/* 52framework General StyleSheet - contains styles for all the HTML elements this framework supports */
+
+/* LAYOUT */
+.block{margin-bottom:10px} /* change .block spacing to 10px to match grid gutter */
+.panel-region-separator{height:20px} /* match gutter spacing between panes */
+.block .node-type-panel .node-inner{margin:0} /* remove .inner margin from panel nodes */
+
+html{height:100%;background:#F3F4EF}
+
+#main{background:#FFF;padding:10px 0 0}
+
+#content-inner.block{ position:relative;margin:0; min-height:400px; padding-bottom:20px;} /* remove extra margin from bottom of .block for #content-inner */
+h1.title{margin-left:10px;margin-right:10px} /* add .inner margin to h1.title */
+
+/* panel rounded edges */
+.rounded-corner{background:#E6E6DC;padding:8px}
+.tabpage .rounded-corner{background:#F3F4EF}
+.rounded-corner .wrap-corner  { padding:5px;}
+.rounded-corner .wrap-corner .r-edge{padding:4px 15px}
+
+/* generic tabs styles. link style has to override weird styles from typography.css and system.css */
+ul.tabs{margin:0;border:none}
+ul.tabs li{display:block;margin:0 10px 0 0;padding:0;float:left;border:none}
+ul.tabs a, ul.tabs a:link,ul.primary li.active a,#content-tabs ul.tabs li a:link,#content-tabs ul.tabs li a:visited{background:none;display:block;float:left;margin:0;padding:0 .6em;line-height:2em;font-weight:bold;border:none;color:#333}
+ul.tabs li.active a:link,ul.primary li.active a,#content-tabs ul.tabs li.active a:link,#content-tabs ul.tabs li.active a:visited{background:#AFAFA6;color:#FFF;cursor:default;border:solid #8F8F86;border-width:2px 0 0 2px}
+.ui-tabs .ui-tabs-nav li {border:none;}
+
+/* tab page styles */
+.drupal-tabs{background:#E6E6DC;padding:8px;border:none; }
+.drupal-tabs .tabpage-container{margin-top:8px}
+.drupal-tabs .tabpage-container-inner{background:#FFF}
+.drupal-tabs .tabpage{padding:.6em}
+
+/* sub tab styles */
+.drupal-tabs .drupal-tabs{background:none;padding:0}
+.drupal-tabs .drupal-tabs ul.tabs.secondary{margin:0}
+.drupal-tabs .drupal-tabs .tabpage-container-inner{background:none}
+.drupal-tabs .drupal-tabs li a{background:#E6E6DC}
+
+/* content tabs styles - override to float to right of breadcrumbs. add spacing to secondary tabs if present */
+.content-tabs,.content-tabs-inner,.content-tabs .tabs{float:right;width:auto;margin:0}
+ul.tabs.secondary{margin-top:5px;clear:right}
+
+/* slideshow styles */
+.view{position:relative}
+/*.views_slideshow_thumbnailhover_main{height:480px}*/
+
+.pane-beast-result .view-node-slideshow .views-slideshow-controls-bottom { height:20px;}
+.view-node-slideshow .views-slideshow-controls-bottom{position:relative;margin:10px 0 0; height:auto; overflow:hidden;}
+.tabpage.tabs-listing-left .view-node-slideshow .views-slideshow-controls-bottom { height:60px; }
+.view-node-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser{float:left;margin:0px .1em}
+.view-node-slideshow .views_slideshow_thumbnailhover_breakout_teasers{margin:0 30px;position:relative;z-index:1}
+
+.view-node-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser{cursor:pointer;opacity:.5}
+.view-node-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser img{border-radius:3px;-moz-border-radius:3px}
+.view-node-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser.activeSlide{opacity:.7}
+.view-node-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser{-webkit-transition:opacity .6s;-moz-transition:opacity .6s;-o-transition:opacity .6s;transition:opacity .6s}
+.view-node-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser:hover{opacity:1}
+
+/* results slideshow styles */
+.view-node-slideshow.results-slideshow{width:160px;float:left;margin:0 10px 10px 0}
+.view-node-slideshow.results-slideshow .views-slideshow-controls-bottom{margin:0}
+.view-node-slideshow.results-slideshow .views_slideshow_thumbnailhover_breakout_teasers{margin:0}
+.view-node-slideshow.results-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser{background:url(../images/bullet-gray.gif) no-repeat 50% 50%;width:8px;text-indent:8px;overflow:hidden}
+.view-node-slideshow.results-slideshow .views_slideshow_thumbnailhover_div_breakout_teaser.active{opacity:1}
+.view-community-towns h3, .view-community-towns h3 a, 
+.view-building-index h3, .view-building-index h3 a { text-decoration:none;}
+.view-community-towns h3, .view-building-index h3 { line-height:1; margin-bottom:.2em;}
+
+/* slideshow controls */
+.views-slideshow-controls-top .views_slideshow_image_count{position:absolute;top:0;right:0}
+.views-slideshow-controls-bottom .views_slideshow_controls{height:24px;position:absolute;top:50%;width:100%;margin-top:-12px}
+.views_slideshow_controls .views_slideshow_pause,.views_slideshow_controls .views_slideshow_play{display:none}
+.views_slideshow_controls .views_slideshow_previous,
+.views_slideshow_controls .views_slideshow_next{float:left;width:30px;height:100%;text-indent:30px;overflow:hidden;display:block;background:url(../images/arrow-left.gif) no-repeat 50% 50%;}
+.views_slideshow_controls .views_slideshow_next{float:right;background-image:url(../images/arrow-right.gif)}
+
+/* homepage styles */
+.view-featured.view-display-id-block_1 .views_slideshow_singleframe_main{margin:0 auto;width:820px}
+.view-featured.view-display-id-block_1 .views-row{float:left;margin:0 5px 0 0;width:160px}
+.view-featured.view-display-id-block_1 .views-row-4{margin:0}
+
+.view-featured.view-display-id-block_2, .view-featured.view-display-id-block_2 h4{line-height:1.4em}
+.view-featured.view-display-id-block_2 h4{font-size:1em;font-weight:bold;margin:0}
+.view-featured.view-display-id-block_2 .photo{float:left;margin:0 5px 0 0}
+.view-featured.view-display-id-block_2 .row{clear:both;margin:0 0 5px}
+.panels-home .panel-middle .pane-title{}
+
+#tabs-mini-panel-search-middle ul.tabs, #tabs-mini-panel-homepage-map-middle ul.tabs { float:right }
+#tabs-mini-panel-search-middle h3, #tabs-mini-panel-homepage-map-middle h3 { float:left; margin:2px 0 0 10px;}
+
+/* homepage streetview */
+#mini-panel-homepage_map .tabpage-container-inner{height:300px}
+#mini-panel-homepage_map .tabpage{padding:0}
+/* width must be specified for ie */
+#streetview_home{height:300px;width:444px}
+
+/* header styles */
+.header-bar-group, .header-bar-group a{color:#FFF}
+a.remax { display:block; background:url(../images/remax_32.png) no-repeat; width:193px; height:32px; margin-bottom:3px; }
+a.fb { float:left; background:url(../images/facebook_16.png) no-repeat; width:16px; height:16px;}
+a.twt { float:left; background:url(../images/twitter_16.png) no-repeat; width:16px; height:16px; margin:0 4px; }
+.addthis_default_style .at300m { float:left; margin-right:0; width:16px; height:16px;}
+.addthis_default_style .at15t_compact { margin-right:2px;}
+#primary-menu{ display:block;position:absolute;bottom:0;right:18px;margin:0; width:auto}
+.addthis_toolbox {  }
+
+.header-bar-group .row{overflow:inherit;position:relative}
+.header-bar-group .block,.header-bar-group .block .inner,.header-minibar-group .block .inner{width:auto;margin:0}
+.header-bar-group .menu li,.header-bar-group .links li{float:left;margin:0 .2em .4em}
+.header-bar-group .primary-menu a{border-radius:4px;-moz-border-radius:4px;-webkit-border-radius:4px;padding:10px 14px;font:bold 13px AllerRegular, Arial}
+.header-bar-group .menu a,.header-bar-group .links a{color:#FFF;display:block;}
+.header-bar-group .primary-menu a:hover{background:#FFF;color:#333}
+
+.header-left{float:left;margin-left:10px; margin-top:10px;}
+.header-bar-group .block.header-phone{ margin-bottom:20px}
+
+/* phone number block */
+.block.header-phone{font-size:1.6em;font-weight:bold;color:#003556;}
+#slogan{font-size:1.4em;font-weight:bold; font-style:italic;text-transform:uppercase;color:#FFF;color:#93D2FF;margin:0 0 5px}
+.phone-blvd {/*color:#d8ffb3;*/font-size:1.1em; color:#93D2FF;}
+.phone-direct{ font-size:.8em; margin-left:20px;}
+.header-middle{float:left;margin:20px 15px 0 80px}
+.header-right{margin-right:10px}
+.header-right,.header-right .block{float:right; margin-bottom:30px; width:auto}
+.header-right .block{margin-bottom:5px;clear:right}
+.header-bar-group {padding:5px 0 0}
+
+.secondary-menu,.header-share{clear:both;float:right}
+.header-right .secondary-menu{font-size:1.1em;font-weight:bold; clear:none; float:right}
+.header-right .secondary-menu-inner.inner{margin:0}
+.header-share .fb-like{border:none;overflow:hidden;width:90px;height:21px;display:block;float:left}
+.header-share .addthis-button{line-height:28px;display:block;float:left}
+.header-login-container{position:absolute;top:41px;right:0;color:#000;z-index:1;font-size:.9em;display:none}
+.header-login-container .form-text{width:150px}
+.header-login-container .form-item{margin:.5em 0}
+.header-login-container .block .inner{margin:0}
+.header-login-container a{color:#333}
+
+#block-block-7 { margin:auto auto 5px; }
+
+/* breadcrumbs styles */
+.breadcrumbs{width:auto;float:left;margin:0}
+.breadcrumbs-inner{margin:10px}
+.breadcrumb{padding:0}
+
+/* homepage styles */
+.page-home .panels-home .row-top{background:url(../images/home-topbar.gif) no-repeat 100% 0;margin-right:10px}
+.page-home .panels-home .panel-topright{width:290px}
+.page-home .panels-home .panel-topright ul{margin:0}
+.page-home .panels-home .panel-topright .inner{margin-right:20px}
+.page-home .panels-home .pane-benefits{padding:10px 0 0}
+.page-home .panels-home .grid12-3.panel-left, .page-home .panels-home .grid12-3.panel-right {  }
+.page-home .panels-home .pane-benefits a strong, .page-home .panels-home .pane-benefits strong a { text-shadow:0 0 0;}
+/* homepage search widget */
+#tabs-mini-panel-search-middle .tabpage-container-inner{}
+.blvd-search .form-col{float:left;width:212px}
+.blvd-search .keyword{width:425px;width:412px;margin-bottom:0;color:#666; display:none}
+.blvd-search .keyword.dirty{color:#000}
+.blvd-search .form-item{float:left;margin:.2em 0}
+.blvd-search .form-item label{float:left}
+.blvd-search .form-left label{width:83px}
+.blvd-search .form-right label{width:48px}
+.blvd-search .form-left .form-select{width:120px}
+.blvd-search .form-right .form-select{width:157px}
+.blvd-search .price .form-select {width:75px}
+.blvd-search #edit-min, .blvd-search #edit-min-1{margin-right:10px}
+.blvd-search .form-submit-wrapper{display:block;clear:both;text-align:center;padding-left:45px}
+.blvd-search #edit-search, .blvd-search #edit-search-1{padding:2px 8px; margin:0}
+.blvd-search .form-right .pet-opts label{width:auto;}
+.blvd-search .form-checkboxes.parking-opts, .blvd-search .form-checkboxes.pet-opts { margin:0; float:left; line-height:1; }
+/* hide content tabs on home */
+.page-home .content-tabs{display:none}
+
+/* results */
+.view-availabilities .result{clear:both;padding:1em 2em 1em 0;border-top:2px solid #F3F4EF}
+.view-availabilities .result h4{margin:0}
+.view-availabilities .result .rent{float:right;font-weight:bold;font-size:1.3em}
+.view-availabilities .result .town{float:right}
+.view-availabilities .result .bldg{font-weight:bold}
+.view-availabilities .result .description{margin-top:.6em;font-size:.9em}
+
+/* right align addthis */
+.block-addthis{margin:10px auto 0; width:120px; float:none}
+
+.pane-block-15 .pane-content { text-align:center}
+
+/* community */
+.view-community-towns .town{clear:both}
+
+/* building index */
+.view-building-index .building{clear:both}
+.view-building-index .building .town{ font-weight:bold}
+
+/* request appt */
+#webform-client-form-86, #webform-client-form-78{width:410px}
+#webform-client-form-86 #webform-component-firstname, #webform-client-form-78 #webform-component-firstname,
+#webform-client-form-86 #webform-component-lastname, #webform-client-form-78 #webform-component-lastname,
+#webform-client-form-86 #webform-component-email, #webform-client-form-78 #webform-component-email,
+#webform-client-form-86 #webform-component-phone, #webform-client-form-78 #webform-component-phone{float:left;margin:0 5px 0 0}
+#webform-client-form-86 #webform-component-firstname input, #webform-client-form-78 #webform-component-firstname input,
+#webform-client-form-86 #webform-component-lastname input, #webform-client-form-78 #webform-component-lastname input{width:193px}
+#webform-client-form-86 #webform-component-email, #webform-client-form-78 #webform-component-email{clear:both}
+#webform-client-form-86 #webform-component-email input, #webform-client-form-78 #webform-component-email input{width:285px}
+#webform-client-form-86 #webform-component-phone input, #webform-client-form-78 #webform-component-phone input{width:100px}
+#webform-client-form-86 #webform-component-comments, #webform-client-form-78 #webform-component-comments{clear:both}
+#webform-client-form-86 #webform-component-comments textarea, #webform-client-form-78 #webform-component-comments textarea{width:397px}
+#webform-client-form-86 #webform-component-listing-info{width:220px;float:left}
+#webform-client-form-86 .form-actions, #webform-client-form-78 .form-actions{float:right}
+
+/* solr sort block */
+.pane-apachesolr-sort{text-align:center}
+
+/* solr facets */
+.pane-facet .item-list ul{margin:0}
+.pane-facet .item-list li{margin:.3em 0;list-style-type:none}
+.facet-count{float:right;background:#DDD;font-size:.9em;padding:0 .6em;color:#333}
+a.apachesolr-facet{color:#000;text-decoration:none}
+#apachesolr-panels-search-form{margin:0}
+#apachesolr-panels-search-form .form-text{width:130px}
+
+/* bldg facet */
+.facet-bldg select{width:190px; max-width:90%!important;}
+
+a
+{
+	-webkit-transition:background .2s, color .2s;-moz-transition:background .2s, color .2s;-o-transition:background .2s, color .2s;transition:background .2s, color .2s;
+}
+
+header.header-main{margin:40px auto 10px}
+
+.slide_placeholder{
+	background:-moz-radial-gradient(center 45deg, circle closest-corner, #f8888a 0%, #f4595b 80%) no-repeat;
+	background:-webkit-gradient(radial, center center, 0, center center, 400, from(#f8888a), to(#f4595b)) no-repeat;
+	border-radius:6px;
+	-moz-border-radius:6px;
+	height:260px;
+}
+
+footer
+{
+	border-top:solid 1px #999;
+	background:#222 -webkit-gradient(
+    linear,
+    left top,
+    left bottom,
+    from(#444),
+    to(#222)
+) no-repeat;
+background:#222 -moz-linear-gradient(
+    #444 0%,
+    #222 100%
+) no-repeat;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#444444', endColorstr='#222222');
+	color:#aaa;
+	padding:1em 0;
+}
+
+/* ** ** Common Addative Classes ** ** */
+.left, .float_left  { float:left	}
+.right, float_right { float:right	}
+.clear { clear:both; display:block; overflow:hidden; visibility:hidden; height:0px;}
+.clear_left{clear:left}
+.clear_right{clear:right}
+.clear_both{clear:both}
+.hide  { display:none	}
+
+.align_right    { text-align:right;	  }
+.align_left     { text-align:left;	  }
+.align_center   { text-align:center;  }
+.align_justify  { text-align:justify; }
+
+a {	color:#3391D8;text-decoration:underline}
+a:active, a:visited { }
+
+blockquote {
+		font-family: Georgia,"Times New Roman", Times, serif; 
+		margin:5px; 
+		padding:10px;
+		font-size:1.52em; 
+		color:#999; 
+		font-style:italic; 
+		line-height:1.3em; 
+		width:100%; 
+		quotes:none;
+	}
+	blockquote.left {border-right:1px dashed #ccc; width:35%;} /* float blockquote left, and set width */
+	blockquote.right {border-left:1px dashed #ccc; width:35%;} /* float blockquote right and set a width */
+
+/* ** ** Header Styles ** ** */
+h1, h2, h3, h4, h5 {font-family:AllerRegular, Arial, Helvetica; margin:0 0 0.5em; line-height:1.1em;color:#333; color:#3391D8;}
+h1 {	font-size:2em;} 
+h2 {	font-size:1.652em;} 
+h3 {	font-size:1.552em;} 
+h4 {	font-size:1.452em;} 
+h5 {	font-size:1.352em;} 
+h6 {	font-size:1.22em;}
+
+/* ** ** ul li's ** ** */
+ul li
+{
+	margin-left:20px;
+}
+
+/* ** ** paragraph styling ** ** */
+p {margin:0 0 1.52em;}
+	p img.left {float:left;margin:1.52em 1.52em 1.52em 0;padding:0;}
+	p img.right {float:right;margin:1.52em 0 1.52em 1.52em;}
+
+/* ** ** forms ** ** */
+form fieldset, .single_building {-webkit-border-radius: 16px; -moz-border-radius: 16px; border-radius:16px; padding:5px; border:8px solid #E6E6DC; }
+#user-register { margin:10px;}
+#user-register div fieldset { border:none; }
+form fieldset legend, form fieldset h3, .single_building h3, 
+.pane-post-listing #edit-body-wrapper label, .pane-post-home #edit-body-wrapper label, 
+.pane-post-listing #field_b_photos_values th, .pane-post-home #field_b_photos_values th 
+	{font-size:1.25em; font-weight:bold; color:#3391D8; padding:0;}
+form input[type=text], form input[type=email], form input[type=url], form input[type=password],
+.single_building .view-content .field-content {
+		-moz-border-radius: 4px; 
+		-webkit-border-radius: 4px; 
+		border-radius:4px; 
+		height:20px; 
+		margin-bottom:5px; 
+		border:1px solid #ccc; 
+		padding:4px 0 1px 5px;
+		
+		}
+form textarea {
+		-moz-border-radius: 4px; 
+		-webkit-border-radius: 4px; 
+		border-radius:4px; 
+		margin-bottom:5px; 
+		border:1px solid #ccc; 
+		padding:4px 0 1px 5px;
+		
+		}
+form label {display:block; height:20px; font-size:1.2em;}
+
+.form-item{margin:.5em 0}
+
+/* basic button styles */
+.form-button,
+form input.form-submit,
+.form-submit,
+.pane-flag-links .flag-favorites .flag-link-toggle{line-height:1em;padding:4px 8px;background:#D1D1D1;color:#333;border:solid 1px #e3e1e1;font-weight:bold}
+
+.form-button-green,
+.pane-flag-links .flag-favorites .flag-link-toggle{background:#5BAB0F;color:#FFF;border:none}
+
+.form-button-red, a.form-button-red, form input.form-button-red
+{background:#e52525;color:#FFF;border:none; font-size:1.2em; margin-right:10px;}
+
+/* link button styles */
+a.form-button,
+.pane-flag-links .flag-favorites .flag-link-toggle{display:block;text-align:center;text-decoration:none}
+
+.right a.form-button { font-size:1.4em; padding:6px; width:155px; margin:auto; }
+
+/*
+ul.tabs{margin:0;border:none}
+ul.tabs li{display:block;margin:0;padding:1px;float:left;border:none}
+ul.tabs a:link,ul.primary li.active a,#content-tabs ul.tabs li a:link,#content-tabs ul.tabs li a:visited{display:block;float:left;margin:0;font-weight:bold;border:none;color:#333}
+ul.tabs li.active a:link,ul.primary li.active a,#content-tabs ul.tabs li.active a:link,#content-tabs ul.tabs li.active a:visited{background:#B8B8B8}
+*/
+/* green button styles */
+
+/* red button styles */
+
+
+strong   		{	font-weight:600;}
+em, dfn  		{	font-style:italic;}
+dfn 	 		{   font-weight:600;}
+sup, sub 		{   line-height:0;}
+abbr, acronym   {	border-bottom:1px dashed #ccc;}
+address 		{	margin:0 0 1.5em;font-style:italic;}
+del 			{	color:#666;}
+pre, code, tt   {	font:1em 'andale mono', 'lucida console', monospace;line-height:1.5; display:block;}
+code 			{	background-color:#d5d2d8; display:block; padding:0px 2px 4px 26px; background:#fff url(code.jpg) no-repeat left top; line-height:1.67em;}
+pre 			{	margin:1.5em 0;white-space:pre;}
+
+

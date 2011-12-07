@@ -1,0 +1,27 @@
+/* building and listing detail css */
+
+/* following migrated from blvd.css */
+.pane-property-group-basic-tab .field-field-address-line-1,
+.pane-property-group-basic-tab .field-field-city,
+.pane-property-group-basic-tab .field-field-state,
+.pane-property-group-basic-tab .field-field-zipcode
+{ display:none; }
+.node-type-property .panel-pane { clear:left; }
+.node-type-property .panel-pane.building-address, .node-type-property .panel-pane.building-town { padding:0; }
+
+/* panel layout - listing */
+.panels-flexible-region-listing-left-inside{padding:0}
+.panel-region-separator{margin:0 0 1.5em}
+
+/* listing details - rightcol */
+#mini-panel-node_listing_details ul{margin:0}
+#mini-panel-node_listing_details li{list-style-type:none;text-align:right;padding:.2em .4em}
+#mini-panel-node_listing_details li.odd{background:#F3F4EF}
+#mini-panel-node_listing_details .field-label-inline-first{float:left}
+
+/* building details - rightcol availabilities */
+.node-type-property .view-availabilities.view-display-id-block_1 .photo{float:left;margin-right:5px}
+.node-type-property .view-availabilities.view-display-id-block_1 .rent{float:none;font-size:1em;font-weight:normal} /* overriding main availabilities view styles, this needs to be cleaned up */
+
+/* listing details - map */
+.panels-listing .left .view-node-map{width:598px}

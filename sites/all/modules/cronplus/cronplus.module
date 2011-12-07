@@ -1,0 +1,297 @@
+<?php
+/**
+ * $Id: cronplus.module,v 1.10 2008/12/19 10:09:27 syscrusher Exp $
+ *
+ * CronPlus enhances the Drupal cron feature to provide specific calls to
+ * other modules at hourly, daily, weekly, monthly, and yearly intervals.
+ *
+ * Author: Syscrusher (Scott Courtney)    License: GPL
+ */
+
+/**
+ * Implements hook_help().
+ */
+function cronplus_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Calls module-specific hourly, daily, weekly, monthly, and yearly functions.');
+      break;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cronplus_menu() {
+  $items = array();
+  $items['admin/settings/cronplus'] = array(
+    'title' => t('cronplus'),
+    'page callback' => 'cronplus_settings_main',
+    'description' => 'Select which hour and on what day you would like houly and daily crons to run. Also see the status of cronplus',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+//    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/settings/cronplus/main'] = array(
+    'title' => t('configuration'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'weight' => -10,
+  );
+  $items['admin/settings/cronplus/status'] = array(
+    'title' => t('status report'),
+    'page callback' => 'cronplus_settings_status', 'access' => user_access('administer site configuration'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK, 'weight' => 10
+  );
+  return $items;
+}
+
+/**
+ * Handle validation of the settings form
+ *
+ * Right now, all the fields are dropdown/select, so validation errors are
+ * unlikely.
+ */
+function cronplus_settings_form_validate($form_id, $form_values) {
+  $cronplus_preferred_hour = intval($form_values['cronplus_preferred_hour']);
+  if ($cronplus_preferred_hour < 0 || $cronplus_preferred_hour > 23) {
+    form_set_error('cronplus_preferred_hour', t('Hour must be 0 to 23 inclusive'));
+  }
+  $cronplus_preferred_wkdy = intval($form_values['cronplus_preferred_wkdy']);
+  if ($cronplus_preferred_wkdy < 0 || $cronplus_preferred_wkdy > 6) {
+    form_set_error('cronplus_preferred_wkdy', t('Weekday must be 0 to 6 (Sunday through Saturday, respectively) inclusive'));
+  }
+}
+
+/**
+ * Handle submission of the settings form
+ */
+function cronplus_settings_form_submit($form_id, $form_values) {
+  $cronplus_preferred_hour = intval($form_values['cronplus_preferred_hour']);
+  $cronplus_preferred_wkdy = intval($form_values['cronplus_preferred_wkdy']);
+  variable_set('cronplus_preferred_hour', $cronplus_preferred_hour);
+  variable_set('cronplus_preferred_wkdy', $cronplus_preferred_wkdy);
+  drupal_set_message(t('Cronplus settings saved'), 'info');
+}
+
+/**
+ * Handle the module's settings.
+ */
+function cronplus_settings_main() {  
+  return drupal_get_form('cronplus_settings_form');
+}
+
+function cronplus_settings_form() {
+  $form = array();
+  $form['cronplus_preferred_hour'] = array(
+    '#type' => 'select',
+    '#title' => t('Preferred hour'),
+    '#description' => t('Preferred hour of the day at which daily, weekly, monthly, and yearly jobs will run, if possible. Not guaranteed.'),
+    '#default_value' => intval(variable_get('cronplus_preferred_hour', 0)),
+    '#options' => _cronplus_int_options(0, 23),
+  );
+  $form['cronplus_preferred_wkdy'] = array(
+    '#type' => 'select',
+    '#title' => t('Preferred weekday'),
+    '#description' => t('Preferred day of the week on which weekly, monthly, and yearly jobs will run, if possible. Not guaranteed.'),
+    '#default_value' => intval(variable_get('cronplus_preferred_wkdy', 0)),
+    '#options' => _cronplus_int_options(0, 6, array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'), TRUE),
+  );
+  $form['cronplus_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save settings'),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Returns an array of the time periods supported by the module. This can
+ * be used by other modules to offer administrators or users options of
+ * which time period should be attached to a particular feature of the
+ * application.
+ *
+ * The index of the array is the raw period-name as applicable to hook
+ * functions. The values are the translated version of that name.
+ */
+function cronplus_periods() {
+  $periods = array();
+  foreach (array('hourly', 'daily', 'weekly', 'monthly', 'yearly') as $period) {
+    $periods[$period] = t($period);
+  }
+  return $periods;
+}
+
+/**
+ * Returns a really simple form for viewing the cronplus log entries.
+ */
+function cronplus_logview_form() {
+  $form = array(
+     'submit' => array(
+       '#type' => 'submit',
+       '#value' => t('View cronplus log'),
+     ),
+  );
+  return $form;
+}
+
+/**
+ * Handles submit of the log view form
+ */
+function cronplus_logview_form_submit($form_id, $form_values) {
+  $_SESSION['watchdog_overview_filter'] = 'cronplus';
+  drupal_goto('admin/reports/dblog');
+}
+
+/**
+ * Shows a page listing all the places that implement each of the cronplus
+ * hooks.
+ */
+function cronplus_settings_status() {
+  $html = '<p>'. t('This section lists modules implementing the cronplus hook for each available time period. The listing is purely informational; there are no settings to change here.');
+  $html .= '<p>' . drupal_get_form('cronplus_logview_form');
+  $periods =& cronplus_periods();
+  // Add one special case.
+  $periods['cronplus'] = 'cronplus '. t('(multiplex hook)');
+  foreach ($periods as $period => $period_t) {
+    $html .= '<h2>'. $period_t .'</h2>';
+    $html .= '<div class="cronplus_status">';
+    $hook = ($period == 'cronplus') ? 'cronplus' : 'cronplus_'. $period;
+    $group = '<p>'. t('Hook: {module}_%hook()', array('%hook' => $hook)) .'<p>'. t('Implemented by: ');
+    $modules = module_implements($hook);
+    if (count($modules) > 0) {
+      $group .= '<span class="cronplus_modules">'. implode(', ', $modules) .'</span>';
+    }
+      else {
+      $group .= t('None');
+    }
+    $group .= '<p>'. t('Last invoked: ');
+    if ($period == 'cronplus') {
+      $group .= t('Invoked along with each of the above');
+    }
+      else {
+      $last_invoked = intval(variable_get('cronplus_'. $period .'_last', 0));
+      $group .= $last_invoked ? gmdate('Y-m-d H:i:s', $last_invoked) .'&nbsp;UTC' : t('Never');
+    }
+    $html .= $group .'</div>';
+  }
+  $html .= '<p>';
+  print theme("page", $html);
+}
+
+/**
+ * Implements hook_cron. Examines the current date and time, and makes the
+ * appropriate calls to other modules based on what parts of the date and
+ * time have changed since the last run.
+ */
+function cronplus_cron() {
+  // Gather information...
+  $last_cron = intval(variable_get('cronplus_last_cron', 0));
+  $now = time();
+  $now_wkdy  = intval(gmdate('w', $now)); // 0=Sunday
+  // For the $now_week, weeks start on Monday, not Sunday. This is a mismatch
+  // against $now_wkdy, but it doesn't matter because all we are looking for
+  // in $now_week is a *change* -- we don't care about the actual value.
+  $now_week  = intval(gmdate('W', $now));
+  $now_month = gmdate('Y-m', $now);
+  $now_year  = intval(gmdate('Y', $now));
+  $now_date  = gmdate('Y-m-d', $now);
+  $now_hour  = intval(gmdate('H', $now));
+  
+  // Gather the last time each cronplus hook was invoked
+  $cronplus_hourly_last  = intval(variable_get('cronplus_hourly_last', 0));
+  $cronplus_daily_last   = intval(variable_get('cronplus_daily_last', 0));
+  $cronplus_weekly_last  = intval(variable_get('cronplus_weekly_last', 0));
+  $cronplus_monthly_last = intval(variable_get('cronplus_monthly_last', 0));
+  $cronplus_yearly_last  = intval(variable_get('cronplus_yearly_last', 0));
+  
+  $last_cron_hour = intval(gmdate('H', $cronplus_hourly_last));
+  $last_cron_day  = gmdate('Y-m-d', $cronplus_daily_last);
+  $last_cron_week = intval(gmdate('W', $cronplus_weekly_last));
+  $last_cron_month = gmdate('Y-m', $cronplus_monthly_last);
+  $last_cron_year = intval(gmdate('Y', $cronplus_yearly_last));
+  
+  // Preferred hour affects daily, weekly, monthly, and yearly runs
+  $prefer_hour = intval(variable_get('cronplus_preferred_hour', 0));
+  // Preferred wkdy affects weekly, monthly, and yearly runs
+  $prefer_wkdy = intval(variable_get('cronplus_preferred_wkdy', 0));
+  $interval = $now - $last_cron;   // Seconds since last run
+
+  // Make the appropriate runs. In each case, we try to run in the preferred
+  // window, but if it's been too long since the last run, we toss the
+  // preference and just get the job done. Note that those "too long" values
+  // are just arbitrarily assigned. They need to be a little bigger than the
+  // real length of the corresponding time interval so that the module will
+  // tend to converge onto the preferred timings over the long term.
+
+  // Hourly
+  if ($now_hour != $last_cron_hour || $interval >= 4000) {
+    cronplus_invoke_hook('hourly', $now, $last_cron);
+  }
+  // Daily
+  if (substr($last_cron_day, 0, 10) != $now_date && ($now_hour >= $prefer_hour || $interval > 96000)) {
+    // The sleep() calls in the following logic ensure that calls to cronplus_invoke_hook()
+    // cannot occur multiple times in the same second, no matter how fast the system is.
+    // This is needed because log entries have a precision of only seconds, and we want
+    // to ensure that they are displayed in a sensible order for the administrator.
+    // Note that it's not needed for the hourly call.
+    //
+    // The maximum combined delay from the sleep() calls is 4 seconds, worst case,
+    // and that is only possible one time per year.
+    sleep(1);
+    cronplus_invoke_hook('daily', $now, $last_cron);
+  }
+  // Weekly
+  if ($now_week != $last_cron_week && (($now_wkdy >= $prefer_wkdy && $now_hour >= $prefer_hour) || $interval > (86400*8))) {
+    sleep(1);
+    cronplus_invoke_hook('weekly', $now, $last_cron);
+  }
+  // Monthly
+  if ($now_month != $last_cron_month && (($now_wkdy >= $prefer_wkdy && $now_hour >= $prefer_hour) || $interval > 86400*35)) {
+    sleep(1);
+    cronplus_invoke_hook('monthly', $now, $last_cron);
+  }
+  // Yearly
+  if ($now_year > $last_cron_year && (($now_wkdy >= $prefer_wkdy && $now_hour >= $prefer_hour) || $interval > (86400*380))) {
+    sleep(1);
+    cronplus_invoke_hook('yearly', $now, $last_cron);
+  }
+
+  // Record the current run time
+  variable_set('cronplus_last_cron', $now);
+}
+
+/**
+ * Invokes the proper functions in all other modules that define them. $now is passed
+ * down the tree because that is the "official" timestamp for this cron run as a whole,
+ * even though the execution start time of each function call may be a later.
+ */
+function cronplus_invoke_hook($period, $now, $last_cron) {
+  $now_fmt = gmdate('Y-m-d H:i:s', $now);
+  $function_name = 'cronplus_'. $period;
+  $last_this = variable_get($function_name .'_last', 0);
+  variable_set($function_name .'_last', $now);
+  watchdog('cronplus', 'Processing %period cron for %d UTC, calling {module}_%func() for all modules', array('%d' => $now_fmt, '%period' => t($period), '%func' => $function_name), WATCHDOG_NOTICE);
+  @module_invoke_all($function_name, $now, $last_cron, $last_this);
+  @module_invoke_all('cronplus', $period, $now, $last_cron, $last_this);
+} 
+
+/**
+ * Returns an associative array filled with integers pointing to themselves, or
+ * to the corresponding values from the $values array, if specified. The values
+ * are translated if $translate is TRUE.
+ */
+function _cronplus_int_options($min, $max, $values=NULL, $translate=FALSE) {
+  $options = array();
+  for ($i=$min; $i<=$max; $i++) {
+    if (is_array($values) && isset($values[$i])) {
+      $options[$i] = $translate ? t($values[$i]) : $values[$i];
+    }
+      else {
+      $options[$i] = $i;
+    }
+  }
+  return $options;
+}

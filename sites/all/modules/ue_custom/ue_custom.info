@@ -1,0 +1,5 @@
+name = UE Custom
+version = 6.x-1.0
+description = Custom functions for <a href="http://www.urbanedgeny.com/">Urban Edge</a>
+core = 6.x
+package = Urban Edge

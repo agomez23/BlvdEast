@@ -1,0 +1,8 @@
+<?php
+	
+	//pathauto and some modules try to add options into the node form after we've removed certain fieldsets and tend to look weird.
+	function contactnodes_install()
+	{
+		db_query("UPDATE {system} SET weight = 50 WHERE name = 'contactnodes'");
+	}
+	

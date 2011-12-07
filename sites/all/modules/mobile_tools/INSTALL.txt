@@ -1,0 +1,8 @@
+$id
+To install the module, enable the module in the module administration panel.
+
+REDIRECTION
+===========
+The module allows flexible redirection of mobile and desktop users. The module also 
+
+

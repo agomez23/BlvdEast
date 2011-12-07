@@ -1,0 +1,66 @@
+$Id: API.txt,v 1.2 2005/06/03 13:07:06 syscrusher Exp $
+
+         INFORMATION FOR DEVELOPERS USING THE CRONPLUS HOOKS
+
+
+CronPlus implements some very simple hooks that can be used by
+developers in other modules.
+
+The following functions are available to you; in this document,
+replace the word "module" in function names with the actual name
+of your module. For example, if you create "foo_bar.module", then
+the hourly hook you can define (if you wish) is:
+
+  function foo_bar_cronplus_hourly($now, $last_cron, $last_this) {
+    // This code will be executed approximately once per hour
+  }
+
+The parameters for the functions are all the same:
+
+    $now    This is the integer timestamp (seconds since the
+            epoch, 1970-01-01 00:00:00 UTC) at which this
+            run of CronPlus began. Applications should normally
+            use this value as the nominal time at which their
+            internal events occur, although that is not
+            enforced in any way by CronPlus itself. The reason
+            for this suggestion is that this timestamp can
+            then uniquely identify a particular run of CronPlus.
+
+    $last_cron   This is the integer timestamp (same semantics
+            as $now) of the most recent previous run of CronPlus.
+            Note that this is *NOT* necessarily the same as the
+            last previous run of the specific hook being invoked
+            now.
+
+    $last_this   This is the integer timestamp (same semantics
+            as $now) of the most recent previous run of this
+            specific hook. Note that this value was a copy of
+            $now for that run, and *NOT* the actual clock time
+            at which the local module's function call was
+            invoked.
+
+If applicable, the time values default to zero to represent "never".
+
+In addition to the separate hook functions, CronPlus will call a
+"multiplex hook" that passes the $period ('hourly', 'daily', and
+so on) as the first parameter, then the other parameters the same
+as above. This is useful if the module wants to handle its own
+internal table of events that happen with each time period. The
+helper function cronplus_periods() can be used to obtain a list
+(with translations) of the available time periods, so that modules
+can build their internal table options dynamically without needing
+to worry about the specific periods.
+
+Here are the hook functions:
+
+    function module_cronplus_hourly($now, $last_cron, $last_this)
+
+    function module_cronplus_daily($now, $last_cron, $last_this)
+
+    function module_cronplus_weekly($now, $last_cron, $last_this)
+
+    function module_cronplus_monthly($now, $last_cron, $last_this)
+
+    function module_cronplus_yearly($now, $last_cron, $last_this)
+
+    function module_cronplus($period, $now, $last_cron, $last_this)

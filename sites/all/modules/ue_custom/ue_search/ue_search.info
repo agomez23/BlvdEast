@@ -1,0 +1,7 @@
+; $Id: ue_custom.module,v 1.102 2009/12/08 22:25:19 soxofaan Exp $
+name = UE Search
+version = 6.x-1.0
+description = Search functions for <a href="http://www.urbanedgeny.com/">Urban Edge</a>
+core = 6.x
+package = Urban Edge
+dependencies[] = views

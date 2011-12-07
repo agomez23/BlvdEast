@@ -1,0 +1,13 @@
+/* few styles for ue-feeds */
+
+#ue-feeds-admin-manage-form .field_select_company,
+#ue-feeds-admin-manage-form .field_select_property,
+#ue-feeds-admin-manage-form .field_syndication_targets
+{
+	margin:.5em 1em
+}
+
+#ue-feeds-admin-manage-form .building h4{margin-bottom:0;font-weight:bold}
+#ue-feeds-admin-manage-form .building fieldset{margin:0}
+
+.targettip .active{font-weight:bold}

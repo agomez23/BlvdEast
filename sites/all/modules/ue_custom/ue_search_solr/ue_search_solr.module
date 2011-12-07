@@ -1,0 +1,516 @@
+<?php
+	
+	function ue_search_solr_form_alter(&$form, $form_state, $form_id)
+	{
+		if($form_id == 'ue_custom_admin')
+		{
+			$form['ue_search_solr'] = array(
+				'#type' => 'fieldset',
+				'#title' => t('Listing Search'),
+				'#collapsible' => TRUE,
+				'#weight' => 0
+			);
+			
+			$form['ue_search_solr']['ue_search_solr_viewname'] = array(
+				'#type' => 'textfield',
+				'#title' => t('View name'),
+				'#default_value' => variable_get('ue_search_solr_viewname', 'results'),
+				'#description' => t('Name of the search results view (necessary to set search parameters)'),
+				'#required' => TRUE,
+			);
+		}
+	}
+	
+	function ue_search_solr_block($op = 'list', $delta = 0, $edit = array())
+	{
+		global $node;
+		switch ($op)
+		{
+			case 'list':
+				$blocks[] = array('info'=>t('Listing Search - Solr'));
+				return $blocks;
+			case 'configure':
+				$form = array();
+				if ($delta == 0)
+				{
+					$form['ue_search_solr_resultpath'] = array(
+						'#type' => 'textfield',
+						'#title' => t('Submit path'),
+						'#size' => 60,
+						'#description' => t('Path that the search block should submit to.'),
+						'#default_value' => variable_get('ue_search_solr_resultpath', '/results'),
+					);
+				}
+				return $form;
+			case 'save':
+				if ($delta == 0)
+				{
+					// Have Drupal save the string to the database.
+					variable_set('ue_search_solr_resultpath', $edit['ue_search_solr_resultpath']);
+				}
+				return;
+			case 'view': default:
+				$block['subject'] = '';
+				switch ($delta)
+				{
+					case 0:
+						$block['content'] = ue_search_solr_listing_search();
+						break;
+				}
+			return $block;
+		}
+	}
+	
+	function ue_search_solr_listing_search()
+	{
+		global $user;
+		
+		jquery_ui_add(array('ui.accordion', 'effects.drop'));
+		
+		$resultsPath = variable_get('ue_search_solr_resultpath', '/results');
+		
+		$rtn = '<form action="' . $resultsPath . '" class="search uniform" method="GET">';
+		
+		$get = filter_input_array(INPUT_GET);
+		
+		//if ($get['p']['min']>=1) $get['bd']=""; $get['ba']="";
+		//print_r($get);
+		
+		if($get)
+			$settings = array_merge($get, filter_input_array(INPUT_GET, array('k'=>FILTER_SANITIZE_SPECIAL_CHARS)));
+		
+		
+		if (arg(1)=="term") {
+			$tid = arg(2); $tree = taxonomy_get_parents_all($tid);
+			//print_r($tree);
+			if ($tree[2]) { 
+				$settings["p"]=array();
+				$settings["bd"]='';
+				$settings['nh1'] = $tree[1]->tid;
+				$settings['nh2'] = $tree[0]->tid;
+			}
+		}
+		//print_r($settings);
+		if($user->uid > 0 && count($get) == 0)
+		{
+			$profile = user_load($user->uid);
+			if(!empty($profile->search_params))
+			{
+				if(is_array($settings))
+					$settings = array_merge($profile->search_params, $settings);
+				else
+					$settings = $profile->search_params;
+			}
+		}
+		
+		$paramShow = array();
+		$rtn .= '<div class="search-top">';
+		if (arg(1)=="term") {
+			$rtn .= '<h3>Search ' . $tree[0]->name . '</h3>';
+		} else {
+			$rtn .= '<h3>' . (substr($_SERVER['REDIRECT_URL'],0,8) == $resultsPath ? 'Refine Search' : 'Search No Fee Rental Apartments') . '</h3>';
+		}
+		/*
+		LAUNCHING WITH RENTALS ONLY
+		$rtn .= "<div class=\"search-type\">";	
+		$rtn .= "<label for=\"search-type-rental\"><input type=\"radio\" name=\"search-type\" value=\"rental\" id=\"search-type-rental\"><span>For Rent</span></label>";
+		$rtn .= "<label for=\"search-type-sale\"><input type=\"radio\" name=\"search-type\" value=\"sale\" id=\"search-type-sale\"><span>For Sale</span></label>";
+		$rtn .= "</div>";
+		*/
+		$rtn .= '<br clear="both" />';
+		$rtn .= '</div>';
+		
+		
+		$neighborhoods = taxonomy_get_tree(1,0,1); //print_r($neighborhoods);
+		$bedrooms = taxonomy_get_tree(6,0,1);
+		$bthrooms = taxonomy_get_tree(7,0,1);
+		
+		$rtn .= '<div class="search-col1">';
+		$rtn .= '<select id="search-neighborhood" name="nh1">';
+		$rtn .= '<option value="">select area</option>';
+		foreach ($neighborhoods as $tid=>$term)
+		{
+			if($term->depth == 2 && !in_array($term->tid, array(1434)))
+			{
+				$rtn .= '<option value="' . $term->tid . ($settings['nh1'] == $term->tid ? '" selected>' : '">') . str_repeat('&nbsp;', ($term->depth * 2) - 4) . $term->name . '</option>';
+				if ($settings['nh1'] == $term->tid) $paramShowNeigh =  $term->name;
+			}
+			if(is_array($settings['nh']) && in_array($term->tid, $settings['nh']))
+				$selNeigh[] = $term->name;
+		}
+		$rtn .= '</select>';
+		
+		if(empty($settings['nh1']) || $settings['nh1'] == 'All')
+		{
+			$rtn .= '<select id="search-neighborhood2" name="nh2" disabled>';
+			$rtn .= '<option value="">select neighborhood (optional)</option>';
+			$rtn .= '</select>';
+		}
+		else
+		{
+			$rtn .= '<select id="search-neighborhood2" name="nh2">';
+			if(count($selNeigh))
+				$rtn .= '<option value="">' . implode(', ', $selNeigh) . '</option>';
+			else
+				$rtn .= '<option value="">select neighborhood (optional)</option>';
+			$rtn .= '</select>';
+		}
+		
+		$rtn .= '<div class="ui-widget-content ui-corner-bottom nh-popup">';
+		
+		$checkedCount = array();
+		
+		//generate check counts for each region.
+		foreach ($neighborhoods as $index=>$term)
+			if(is_array($settings['nh']) && in_array($term->tid, $settings['nh']))
+				$checkedCount[$term->parents[0]]++;
+		
+		foreach ($neighborhoods as $tid=>$term)
+		{
+			if($term->depth == 2 && !in_array($term->tid, array(1434)))
+			{
+				$nh2 = taxonomy_get_tree(1,$term->tid,1);
+				
+				$rtn .= '<div class="nh-accordion" id="nh-accordion-' . $term->tid . '">';
+				
+				$i = 0;
+				foreach ($nh2 as $tid=>$term)
+				{
+					if($term->depth == 2)
+					{
+						if($i > 0) $rtn .= '</div>';
+						$rtn .= '<div class="regionTitle">';
+						$rtn .= '<a href="#"><span class="label">' . $term->name . '</span>';
+						if($checkedCount[$term->tid]) $rtn .= '<span class="count">' . $checkedCount[$term->tid] . '</span>';
+						$rtn .= '</a></div><div class="regionSection">';
+					}
+					else
+					{
+						$rtn .= '<label for="nh' . $term->tid . '"><input type="checkbox" ' . (is_array($settings['nh']) && in_array($term->tid, $settings['nh']) ? 'checked ' : '') . ' name="nh[]" id="nh' . $term->tid . '" value="' . $term->tid . '"><span class="label">' . $term->name . '</span></label>';
+					}
+					$i++;
+				}
+				$rtn .= '</div>';
+				
+				$rtn .= '</div>';
+			}
+		}
+		
+		$rtn .= '</div>';
+		
+		$rtn .= '</div>';
+		
+		if ($paramShowNeigh) $paramShow[] =  $paramShowNeigh;
+		
+		$rtn .= '<div class="search-col2">';
+		$rtn .= '<span>Price</span>';
+		
+		// min starts at $500.
+		$prices[] = 500;
+		for($i = 1000; $i <= 4000; $i += 100) $prices[] = $i; // $100 stepping from $1,000 to $4,000.
+		for($i = 4500; $i <= 10000; $i += 500) $prices[] = $i; // $500 stepping from $4,000 to $10,000.
+		for($i = 15000; $i <= 50000; $i += 5000) $prices[] = $i; // $5,000 stepping from $10,000 to $50,000.
+		
+		$rtn .= '<select name="p[min]" id="search-price-min">';
+		$rtn .= '<option value="">low</option>';
+		foreach($prices as $index=>$i) { $rtn .= '<option value="' . $i . ($settings['p']['min'] == $i ? '" selected>$' : '">$') . number_format($i) . '</option>'; if ($settings['p']['min'] == $i) : $minrent =  number_format($i); endif; }
+		$rtn .= '</select>';
+		
+		// max starts at $1,500. (remove $500 - $1400)
+		array_splice($prices, 0, 6);
+		
+		$rtn .= '<select name="p[max]" id="search-price-min">';
+		$rtn .= '<option value="">high</option>';
+		foreach($prices as $index=>$i) { $rtn .= '<option value="' . $i . ($settings['p']['max'] == $i ? '" selected>$' : '">$') . number_format($i) . '</option>'; if ($settings['p']['max'] == $i && $minrent) : $rentRange =  '$'.$minrent.'-$'.number_format($i); endif; }
+		$rtn .= '</select>';
+		
+		if ($rentRange) $paramShow[] = $rentRange;
+		
+		//$rtn .= '<div style="clear:both"></div>';
+		
+		
+		$customBrTaxn = array(
+			array('0','Studio'), 
+			array('1','1 Bedroom'),
+			array('2','2 Bedrooms'),
+			array('3','3 Bedrooms'),
+			array('4','4 Bedrooms'),
+			array('5','5 or more'),
+			array('loft','Open Loft')
+		);
+		
+		$rtn .= '<select name="bd" id="search-bedrooms">';
+		$rtn .= '<option value=""># bedrooms</option>';
+		foreach ($customBrTaxn as $v) { $rtn .= '<option value="'.$v[0].'"' . ($settings['bd'] == $v[0] ? ' selected' : '') . '>'.$v[1].'</option>'; if ($settings['bd'] === $v[0]) : $paramShow[] = $v[1]; endif; }
+		$rtn .= '</select>';
+		
+		
+		$customBaTaxn = array(
+			array('1','1 bath'), 
+			array('15','1.5 bath'),
+			array('2','2 bath'),
+			array('25','2.5 bath'),
+			array('3','3 bath'),
+			array('35','3.5 bath'),
+			array('4','4 or more')
+		);
+		
+		$rtn .= '<select name="ba" id="search-bathrooms">';
+		$rtn .= '<option value=""># bathrooms</option>';
+		foreach ($customBaTaxn as $v) { $rtn .= '<option value="'.$v[0].'"' . ($settings['ba'] == $v[0] ? ' selected' : '') . '>'.$v[1].'</option>'; }
+		$rtn .= '</select>';
+		$rtn .= '</div>';
+		$rtn .= '<div style="clear:both"></div>';
+		
+		$rtn .= '<input type="text" name="k" value="' . (empty($settings['k']) ? 'enter building name or keyword' : $settings['k']) . '" class="text-keywords" id="search-keywords" />';
+		//$rtn .= '<br class="clear" />';
+		
+		
+		$rtn .= '<div class="search-checkboxes">';
+		$rtn .= '<label><input type="checkbox" name="pets" value="1"' . ($settings['pets'] ? ' checked' : '') . '>Pets Allowed</label>';
+		$rtn .= '<label><input type="checkbox" name="photos" id="search-photos" value="1"' . ($settings['photos'] ? ' checked' : '') . '>Has Photos</label>';
+		$rtn .= '<label><input type="checkbox" name="openhouse" id="search-openhouse" value="1"' . ($settings['openhouse'] ? ' checked' : '') . '>Open House</label>';
+		$rtn .= '<label><input type="checkbox" name="doorman" id="search-doorman" value="1"' . ($settings['doorman'] ? ' checked' : '') . '>Doorman</label>';
+		$rtn .= '</div>';
+		
+		$rtn .= '<br class="clear" />';
+		
+		$rtn .= '<div style=" text-align:right">';
+		//$rtn .= '<input type="text" name="id" value="' . (empty($settings['webid']) ? 'web ID' : $settings['id']) . '" class="text-webid" id="search-webid" size="5" />';
+		$rtn .= '<input type="submit" value="Search" class="searchbtn" id="search-submit" style="float:none" />';
+		$rtn .= '</div>';
+		//$rtn .= '<br class="clear" />';
+		
+		$rtn .= '</form>';
+		$rtn .= '<br class="clear" />';
+		
+		drupal_add_js(drupal_get_path('module', 'ue_search_solr') . '/ue_search_solr.js', 'module', 'footer');
+		drupal_add_css(drupal_get_path('module', 'ue_search_solr') . '/ue_search_solr.css', 'module');
+		
+		
+		switch( arg(1)){
+			case 'term':
+				if (count($paramShow)) drupal_set_title('Search: '.implode(', ',$paramShow)); 
+			break;
+			case 341: drupal_set_title('Real Estate Listings: Recently Added Rentals'); break;
+			case 'outdoor': drupal_set_title('Outdoor Rental Listings'); break;
+			case 'green': drupal_set_title('Green Rental Listings'); break;
+			case 'penthouse': drupal_set_title('Penthouse Rental Listings'); break;
+		}
+
+		return $rtn;
+	}
+	
+	/* we need to exclude indexing listings except for when our module is doing it. to filter on the market */
+	function ue_search_solr_apachesolr_types_exclude($namespace)
+	{
+		if($namespace != 'ue_search_solr')
+			return array('listing');
+	}
+	
+	/* implementation of hook_apachesolr_node_exclude($node, $namespace) */
+	function ue_search_solr_apachesolr_node_exclude($node, $namespace)
+	{
+		/* validate listings - for performance issues we only want to index ones that are on the market and valid. */
+		if($node->type == 'listing')
+		{
+			if($node->field_unit_availability[0]['value'] != 'On the Market')
+				return true;
+			
+			if($node->field_propertyid[0]['nid'] == 0)
+				return true;
+			
+			if(!$node->parent_node)
+				return true;
+		}
+	}
+	
+	/**
+	 * Implementation of hook_apachesolr_document_handlers.
+	 *
+	 * @param string $type
+	 *   Entity type. 'node', 'comment', and so forth. Used to evaluate whether this module
+	 *   should be interested in creating documents.
+	 * @param string $namespace
+	 *   Usually the name of the module that is initiating indexing. In this case
+	 *   we want to register a handler if the namespace is 'apachesolr_search'.
+	 * @return array $handlers
+	 *   An array of strings that are function names. Each function returns a $document from
+	 *   an entity (of type $type).
+	 */
+	function ue_search_solr_apachesolr_document_handlers($type, $namespace) {
+	  if ($type == 'node' && $namespace == 'ue_search_solr') {
+		return array('apachesolr_node_to_document');
+	  }
+	}
+	
+	function ue_search_solr_apachesolr_update_index(&$document, $node)
+	{
+		if($node->type == 'listing')
+		{
+			$prop = node_load($node->field_propertyid[0]['nid']);
+			
+			$document->bs_ue_pets_allowed = false;
+			foreach($prop->field_pets_allowed as $i => $val)
+				if($val['value'] == 'Pets OK')
+					$document->bs_ue_pets_allowed = true;
+			
+			$document->bs_ue_has_photos = (count($node->field_u_photos) > 0 && $node->field_u_photos['0']['fid']) || (count($prop->field_b_photos) > 0 && $prop->field_b_photos['0']['fid']);
+			
+			db_query('SELECT r.nid FROM {relativity} r INNER JOIN {content_field_openhousedate} ON {content_field_openhousedate}.nid = r.nid AND field_openhousedate_value > NOW() WHERE r.parent_nid = %d', $node->nid);
+			$document->bs_ue_open_house = db_affected_rows() > 0;
+			
+			$document->bs_ue_doorman = false;
+			foreach($prop->field_building_services as $i => $val)
+				if(stripos($val['value'], 'doorman') > 0)
+					$document->bs_ue_doorman = true;
+		}
+	}
+	
+	/**
+ * Implementation of hook_apachesolr_facets().
+ *
+ * Returns an array keyed by block delta.
+ */
+function ue_search_solr_apachesolr_facets() {
+  $facets = array();
+  $facets['bedrooms'] = array(
+  	'info' => t('Listing: Bedrooms'),
+	'facet_field' => 'bedrooms',
+	'content_types' => array('listing'),
+    'display_callback' => 'apachesolr_search_taxonomy_get_term',
+  );
+  return $facets;
+}
+	
+	/**
+	 * Implementation of hook_ctools_plugin_directory().
+	 */
+	function ue_search_solr_ctools_plugin_directory($module, $plugin) {
+		if ($module == 'ctools' && !empty($plugin)) {
+			return "plugins/$plugin";
+		}
+	}
+	
+	/**
+ * Execute a Solr search.
+ *
+ * Using hook_search() would make this module a first-class search module
+ * alongside Apache Solr Search, which we don't want. Instead, we execute the
+ * search directly and imitate what the core Search module does.
+ *
+ * @see search_data()
+ */
+function ue_search_solr_search_execute($search) {
+  // Store information about the search for use in other panes.
+  //apachesolr_panels_static_search_cache($search);
+
+  $results = NULL;
+  try {
+    $results = apachesolr_search_execute($search['keys'], $search['filters'], $search['sort'], $search['path'], $search['page'], 'ue_search_solr');
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    apachesolr_failure(t('Solr search'), $search['keys']);
+  }
+
+  // Imitate search_data() to present the results as Apache Solr Search would.
+  if (is_array($results) && count($results)) {
+    if (module_hook('apachesolr_search', 'search_page')) {
+      return module_invoke('apachesolr_search', 'search_page', $results);
+    }
+    else {
+      return theme('search_results', $results, 'apachesolr_search');
+    }
+  }
+}
+
+function ue_search_solr_apachesolr_modify_query(&$query, &$params, $caller)
+{
+	if($caller != 'ue_search_solr')
+	{
+		return;
+	}
+	
+	$nh = is_array($_GET['nh']) ? $_GET['nh'] : array();
+	
+	// if they select a region instead of neighborhood (ie. Manhattan) the nh2 value will be blank.
+	if(count($nh) == 0 && !empty($_GET['nh1']))
+		$nh[] = $_GET['nh1'];
+	
+	if(count($nh))
+	{
+		//print 'making nh_qry';
+		$nh_qry = apachesolr_drupal_query();
+		foreach($nh as $index => $value)
+		{
+			$nh_qry->add_filter('ue_nh', intval($value));
+		}
+		$query->add_subquery($nh_qry, 'OR');
+	}
+	
+	//drupal_set_message('nh: ' . print_r($nh, 1));
+	
+	//map human readable parameters into tids for bed/bath
+	$bed = array(0 => array(12, 13, 814), 1 => array(14, 823, 822), 2 => array(15, 824, 833), 3 => array(16, 825, 834), 4 => array(17, 826, 835), 5 => array(820), 'loft' => array());
+	$bath = array(1 => array(20), 15 => array(21, 827), 2 => array(22), 25 => array(23, 828), 3 => array(829), 35 => array(832, 830), 4 => array(831));
+	
+	if($_GET['bd'] != '')
+	{
+		$newBeds = $bed[$_GET['bd']];
+		if($newBeds)
+		{
+			//print 'making bed_qry';
+			$bed_qry = apachesolr_drupal_query();
+			foreach($newBeds as $index => $value)
+			{
+				$bed_qry->add_filter('ue_bd', $value);
+			}
+			$query->add_subquery($bed_qry, 'OR');
+		}
+	}
+	
+	if($_GET['ba'] != '')
+	{
+		$newBath = $bath[$_GET['ba']];
+		if($newBath)
+		{
+			//print 'making bath_qry';
+			$bath_qry = apachesolr_drupal_query();
+			foreach($newBath as $index => $value)
+			{
+				$bath_qry->add_filter('ue_ba', $value);
+			}
+			$query->add_subquery($bath_qry, 'OR');
+		}
+	}
+			
+	$price_min = $_GET['p']['min'] > 0 ? intval($_GET['p']['min']) : '*';
+	$price_max = $_GET['p']['max'] > 0 ? intval($_GET['p']['max']) : '*';
+	
+	if($price_min != '*' || $price_max != '*')
+	{
+		//print 'making price_qry';
+		$price_qry = apachesolr_drupal_query();
+		$price_qry->add_filter('ps_cck_field_price_money', '[' . $price_min . ' TO ' . $price_max . ']');
+		$query->add_subquery($price_qry);
+	}
+	//drupal_set_message('<textarea>' . print_r($query, 1) . '</textarea>');
+	
+	if($_GET['photos'])
+		$query->add_filter('bs_ue_has_photos', true);
+	
+	if($_GET['doorman'])
+		$query->add_filter('bs_ue_doorman', true);
+	
+	if($_GET['openhouse'])
+		$query->add_filter('bs_ue_open_house', true);
+	
+	if($_GET['pets'])
+		$query->add_filter('bs_ue_pets_allowed', true);
+	
+	$query->add_filter('type', 'listing');
+	
+	if($_GET['k'] && $_GET['k'] != 'enter building name or keyword')
+	$query->set_keys(check_plain($_GET['k']));
+}

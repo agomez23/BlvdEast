@@ -1,0 +1,7 @@
+
+Apache Solr NR Extras x.x-x.x, xxxx-xx-xx
+------------------------------
+
+Apache Solr NR Exras 6.x-2.x, xxxx-xx-xx
+------------------------------
+#906586 Avoid dependency on content_permissions by using function_exists()

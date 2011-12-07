@@ -1,0 +1,63 @@
+<?php
+	function urbanreach_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+		if($op == 'insert')
+		{
+			//print_r($node);
+			if($node->type == 'contact')
+			{
+				//print_r($node); exit;
+				$bid = $node->field_building[0]['nid'];
+				$building = node_load($bid);
+				$building_wsdl = $building->field_wsdl[0]['value'];
+				//print_r($building_wsdl);
+				if (isset($building_wsdl)) {
+					/* start UrbanReach WSDL */
+
+					require_once('lib/nusoap.php');
+			
+					$wsdl_url =  $building_wsdl;
+					$proxyhost = isset($_POST['proxyhost']) ? $_POST['proxyhost'] : '';
+					$proxyport = isset($_POST['proxyport']) ? $_POST['proxyport'] : '';
+					$proxyusername = isset($_POST['proxyusername']) ? $_POST['proxyusername'] : '';
+					$proxypassword = isset($_POST['proxypassword']) ? $_POST['proxypassword'] : '';
+					$useCURL = isset($_POST['usecurl']) ? $_POST['usecurl'] : '0';
+					$client = new nusoap_client($wsdl_url, false, $proxyhost, $proxyport, $proxyusername, $proxypassword);
+					
+					$node_name = explode(' ',$node->title);
+					$size = taxonomy_get_term($node->field_bedroom[0]['value']);
+					//print_r($size); exit;
+					$params   = array(
+						'firstName' => $node_name[0],
+						'lastName'	=> $node_name[1],
+						 'emailAddress' => $node->field_email[0]['email'],
+						 'company' => $node->field_employer[0]['value'].'',
+						 'addressLine1' => $node->field_current_residence[0]['value'].'',
+						 'city' => '',
+						 'state' => '',
+						 'zip' => '',
+						 'phone' => $node->field_phone[0]['value'].'',
+						 'aptSize' => $size->name,
+						 'source' => str_replace(" ","",$building->title),
+						 'comments' => "client: ".$node->field_comments[0]['value'].", crm: ".$node->field_crm_comments[0]['value'],
+						 'customerType'=> 'Walk In - Met with Agent',
+						 'buildingId' =>  'java.long.1'
+					);
+					//print_r($params);
+
+					$result = $client->call('addCustomer', $params, 'http://integration.urbanreach.thoughtvine.com', 'http://integration.urbanreach.thoughtvine.com');
+					if ($client->fault) { echo 'Errno. 433<!-- <h4>Fault (Expect - The request contains an invalid SOAP body)</h4><pre>'; print_r($result); echo '</pre> -->'; } else { drupal_set_message('WSDL SUCCESS'); }
+					//print_r($result);
+					//print_r($client); 
+					 
+					
+					//exit;
+					/* end UrbanReach WSDL */	
+				
+				}
+				
+				
+			}
+		}
+	}
+

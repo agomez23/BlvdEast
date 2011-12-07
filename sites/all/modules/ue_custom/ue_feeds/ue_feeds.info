@@ -1,0 +1,6 @@
+name = UE Feeds
+version = 6.x-1.0
+description = Feed functions for <a href="http://www.urbanedgeny.com/">Urban Edge</a>.
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom

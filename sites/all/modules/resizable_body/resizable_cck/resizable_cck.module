@@ -1,0 +1,124 @@
+<?php
+// $Id: resizable_cck.module,v 1.1.2.3 2009/03/25 06:41:07 george2 Exp $
+
+/**
+ * @file
+ * Extend CCK field options to include cols count and choices for height 
+ * adjustment 
+*/
+
+// Hooks --------------------------------------------------------------------------------------------
+/** 
+ * Implementation of hook_help()
+ */
+function resizable_cck_help($path, $arg) {
+  if ($path == 'admin/help#resizable_cck') {
+    return t('Change the col count for CCK textareas, and specify how the height of the body should be adjustable, either not at all, with a grippie (default), or using automatic height adjustment');
+  }
+}
+
+/**
+ * Implementation of hook_elements()
+ * we need to merge with the text_textarea array specified in cck's 
+ * text module (text). 
+ */
+function resizable_cck_elements(){
+  $elements['text_textarea']['#process'][] = 'resizable_cck_process';
+  return $elements;
+}
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function resizable_cck_form_alter(&$form, $form_state, $form_id) {
+  // it's a cck field edit form
+  if ($form_id == 'content_field_edit_form') {
+    // it's a text_textarea widget form
+    if ($form['#field']['widget']['type'] == 'text_textarea') {
+      // append custom form submit to save the new variables
+      $form['#submit'][] = 'resizable_cck_submit';
+
+      // and add a new fieldset with the cols and height adjustment inputs
+      $form['widget']['resizable_cck'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Resizing options'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#weight' => 0,
+        '#description' => t('Additional resizing options for the textarea.'),
+      );
+      $form['widget']['resizable_cck']['resizable_cck_cols'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Columns'),
+        '#description' => t('How many cols do you want the field to use? If the grippie is shown, this value will be overridden.'),
+        '#default_value' => variable_get('resizable_cck_cols_' . $form['#field']['field_name'] . '__' . $form['#field']['type_name'], 60),
+        '#size' => 3,
+        '#element_validate' => array('resizable_body_element_validate'),
+      );
+      $form['widget']['resizable_cck']['resizable_cck_resizable'] = array(
+        '#type' => 'select',
+        '#title' => t('Adjustable Height'),
+        '#description' => t('Should the field height be adjustable? When automatic height is enabled, the grippie will be disabled. Caution: Animated may be very slow for some users.'),
+        '#options' => array (t('None - Hide Grippie'), t('Manual - Show Grippie'), t('Autoresize, without animation'), t('Autoresize with animation')),
+        '#default_value' => variable_get('resizable_cck_resizable_' . $form['#field']['field_name'] . '__' . $form['#field']['type_name'], 1),
+        '#weight' => 10,
+        '#element_validate' => array('resizable_body_resizable_element_validate'),
+      );    
+    }
+  }
+  else if (substr($form_id, -10) == '_node_form' && is_array(($fields = variable_get('resizable_cck_fields_' . $form['type']['#value'], FALSE)))) {
+    // add drupal.behaviors code for autoresizing of cck fields
+    $js = <<<JSC
+      Drupal.behaviors.resizable_cck = function (context) {
+        $('.resizable-cck-auto-no-animation:not(.resizable-cck-processed)', context).addClass('resizable-cck-processed').elastic();
+        $('.resizable-cck-auto-with-animation:not(.resizable-cck-processed)', context).addClass('resizable-cck-processed').elastic(true);        
+        }
+JSC;
+    drupal_add_js($js, 'inline');
+  }
+  return $form;
+}
+
+// CALLBACKS --------------------------------------------------------------------------------
+
+/**
+ * Add the new variables for this content type to the variables table
+ */
+function resizable_cck_submit($form, &$form_state) {
+  variable_set('resizable_cck_cols_' . $form_state['values']['field_name'] . '__' . $form_state['values']['type_name'], $form_state['values']['resizable_cck_cols']);
+  variable_set('resizable_cck_resizable_' . $form_state['values']['field_name'] . '__'  . $form_state['values']['type_name'], $form_state['values']['resizable_cck_resizable']);
+  
+  // add variable to store what fields are resizable for this content type  
+  $resizable_fields = variable_get('resizable_cck_fields_' . $form_state['values']['type_name'], array());
+  if (!in_array($form_state['values']['field_name'], $resizable_fields)) {
+    array_push($resizable_fields, $form_state['values']['field_name']);
+  }
+  variable_set('resizable_cck_fields_' . $form_state['values']['type_name'], $resizable_fields);
+}
+
+/**
+ * #process callback as specified in the now modified text_textarea #process 
+ * array - alter the values of the cck field as specified by admin
+ */
+function resizable_cck_process($element, $edit, $form_state, $form){
+  $element['value']['#cols'] = variable_get('resizable_cck_cols_' . $element['#field_name'] . '__' . $form['type']['#value'], 60);
+
+  // include autoresize.js if needed
+  if (($autoresize = variable_get('resizable_cck_resizable_' . $element['#field_name'] . '__' . $form['type']['#value'], 1)) > 1) {
+    // include jquery function
+    drupal_add_js(drupal_get_path('module', 'resizable_body') . '/autoresize.js', 'module', 'header', FALSE, TRUE, FALSE); // to prevent aggregation
+    
+    // get element delta
+    $delta = $element['#delta'];
+
+    // add relevant class to define what js behavior should be applied to it
+    if ($autoresize == 2) { // auto, no animation
+      $element['value']['#attributes']['class'] = 'resizable-cck-auto-no-animation';
+    }
+    elseif ($autoresize == 3) { // auto, with animation
+      $element['value']['#attributes']['class'] = 'resizable-cck-auto-with-animation';
+    }
+  }
+  $element['value']['#resizable'] = ($autoresize == 1) ? TRUE : FALSE;
+  return $element;
+}

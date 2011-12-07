@@ -1,0 +1,7 @@
+name = UE Facebook
+version = 6.x-1.0
+description = UrbanEdge Facebook functionality.
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom
+dependencies[] = fb_stream

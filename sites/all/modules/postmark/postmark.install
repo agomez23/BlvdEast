@@ -1,0 +1,19 @@
+<?php
+// $Id: postmark.install,v 1.1 2010/04/27 15:30:01 alliprice Exp $
+
+/**
+ * @file
+ * PostMark installation functions.
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function postmark_uninstall() {
+  // Remove the SMTP library value
+  if (strpos(variable_get('smtp_library', ''), 'postmark')) {
+    variable_del('smtp_library');
+  }
+  variable_del('postmark_enabled');
+  variable_del('postmark_api_key');
+}

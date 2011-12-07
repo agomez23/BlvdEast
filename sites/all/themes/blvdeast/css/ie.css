@@ -1,0 +1,74 @@
+.rounded-corner{background:none;padding:0}
+
+.rounded-corner .wrap-corner .t-edge,
+.rounded-corner .wrap-corner .b-edge{background-image:url(../images/rounded-border.gif);height:18px}
+
+.rounded-corner .wrap-corner .l-edge,
+.rounded-corner .wrap-corner .r-edge{background-image:url(../images/rounded-border.gif)}
+
+.rounded-corner .wrap-corner .l,
+.rounded-corner .wrap-corner .r{background-image:url(../images/rounded-corners.gif);width:18px;height:18px}
+
+.rounded-corner .wrap-corner .r{background-position:-18px 0}
+
+.rounded-corner .wrap-corner .b-edge .l{background-position:0px -18px}
+.rounded-corner .wrap-corner .b-edge .r{background-position:-18px -18px}
+
+/* content background */
+#main{background:#FFF url(../images/page-mid.gif) repeat-y 0 0;border:none;padding:0;width:964px}
+#main-group{background:url(../images/page-top.gif) no-repeat 0 0;padding:10px 0 0;width:964px}
+#content-group{background:url(../images/page-bottom.gif) no-repeat 0 100%;padding:0 2px}
+
+/* tab boxes */
+.grid16-11 .drupal-tabs{background:url(../images/tabs-640-top.gif) 0 0 no-repeat;padding:0}
+.grid16-11 .drupal-tabs ul.tabs{padding:8px 8px 0}
+.grid16-11 .drupal-tabs .tabpage-container{border-left:solid 8px #e6e6dc;border-right:solid 8px #e6e6dc}
+.grid16-11 .drupal-tabs .tabpage-container-inner{background:url(../images/tabs-640-bottom.gif) 0 100% no-repeat;padding:0 8px 8px;margin:0 -8px}
+
+.grid16-8 .drupal-tabs{background:url(../images/tabs-460-top.gif) 0 0 no-repeat;padding:0}
+.grid16-8 .drupal-tabs ul.tabs{padding:8px 8px 0}
+.grid16-8 .drupal-tabs .tabpage-container{border-left:solid 8px #e6e6dc;border-right:solid 8px #e6e6dc}
+.grid16-8 .drupal-tabs .tabpage-container-inner{background:url(../images/tabs-460-bottom.gif) 0 100% no-repeat;padding:0 8px 8px;margin:0 -8px}
+
+/* tab buttons */
+ul.tabs li.active a:link,ul.primary li.active a,#content-tabs ul.tabs li.active a:link,#content-tabs ul.tabs li.active a:visited,
+ul.tabs a:hover,ul.primary li a:hover,#content-tabs ul.tabs li a:hover,#content-tabs ul.tabs li a:hover
+{background:url(../images/tab-left.gif) no-repeat 0 0;padding:0;border:none}
+ul.tabs li.active a:link span,ul.primary li.active a span,#content-tabs ul.tabs li.active a:link span,#content-tabs ul.tabs li.active a:visited span,
+ul.tabs a:hover span,ul.primary li a:hover span,#content-tabs ul.tabs li a:hover span,#content-tabs ul.tabs li a:hover span
+{background:url(../images/tab-right.gif) no-repeat 100% 0;display:block;line-height:26px;height:26px;padding:0 7px}
+
+ul.tabs a:hover,ul.primary li a:hover,#content-tabs ul.tabs li a:hover,#content-tabs ul.tabs li a:hover{background-position:0 -26px}
+ul.tabs a:hover span,ul.primary li a:hover span,#content-tabs ul.tabs li a:hover span,#content-tabs ul.tabs li a:hover span{background-position:100% -26px}
+
+/* green-red buttons */
+.block.right .form-button-red{background:url(../images/red_button-rtcol.gif) no-repeat 0 0;filter:none;width:167px;height:28px;padding:0;line-height:28px}
+.block.right .form-button-green{background:url(../images/green_button-rtcol.gif) no-repeat 0 0;filter:none;width:167px;height:28px;padding:0;line-height:28px}
+.pane-benefits .form-button-green{background:url(../images/green_button-benefits.gif) no-repeat 0 0;filter:none;width:146px;height:28px;padding:0;line-height:28px}
+/* hover */
+.block.right .form-button-red:hover{background-position:0 -28px}
+.block.right .form-button-green:hover, .pane-benefits .form-button-green:hover{background-position:0 -28px}
+/* search widget */
+.blvd-search .form-button-red{background:url(../images/red_button-search.gif) no-repeat 0 0;filter:none;width:69px;height:24px;padding:0;line-height:24px}
+.blvd-search .form-button-red:hover{filter:none;background-position:0 -24px}
+/* request appt */
+.block.right .view-block-req-appt .form-button-red{background:url(../images/red_button-request.gif) no-repeat 0 0;filter:none;width:167px;height:44px;padding:0;line-height:22px}
+.block.right .view-block-req-appt .form-button-red:hover{filter:none;background-position:0 -44px}
+/* favorites */
+.pane-flag-links .flag-favorites .flag-link-toggle{background:url(../images/green_button-favorites.gif) no-repeat 0 0;filter:none;width:151px;height:48px;padding:0 10px;line-height:24px}
+.pane-flag-links .flag-favorites .flag:hover{filter:none;background-position:0 -48px}
+
+/* menu items */
+#primary-menu li a:hover{background:none}
+/*
+#primary-menu li{background:url(../images/menu-sm.gif) no-repeat 50% -48px}
+#primary-menu li:hover{background-position:50% -48px}
+*/
+#header-bar-group .row{overflow:visible}
+#primary-menu{height:48px;bottom:-7px}
+.header-bar-group #primary-menu .menu li:hover {  margin-bottom:0; padding-bottom:0; background:none }
+.header-bar-group #primary-menu .menu a,.header-bar-group #primary-menu .menu a:hover{width:91px;height:48px;padding:0;line-height:36px;text-align:center;background:url(../images/menu-sm.gif) no-repeat 50% 0}
+.header-bar-group #primary-menu .menu a:hover {background-position:50% -48px}
+.header-bar-group #primary-menu .menu .ownersmanagers a, .header-bar-group #primary-menu .menu .ownersmanagers a:hover{width:162px;background-image:url(../images/menu-lg.gif)}
+.header-bar-group #primary-menu .menu .howitworks a, .header-bar-group #primary-menu .menu .howitworks a:hover,
+.header-bar-group #primary-menu .menu .community a, .header-bar-group #primary-menu .menu .community a:hover{width:105px;background-image:url(../images/menu-md.gif)}

@@ -1,0 +1,17 @@
+; $Id: ad_flash.info,v 1.4 2010/01/08 17:27:55 alexandrascu Exp $
+name = Flash Ad
+package = Ad
+dependencies[] = ad
+dependencies[] = getid3
+dependencies[] = upload
+description = Enhances the ad module to support flash ads.
+core = 6.x
+
+
+
+; Information added by drupal.org packaging script on 2010-09-20
+version = "6.x-2.7"
+core = "6.x"
+project = "ad_flash"
+datestamp = "1285015557"
+

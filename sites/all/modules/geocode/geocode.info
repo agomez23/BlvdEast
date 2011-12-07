@@ -1,0 +1,12 @@
+; $Id: geocode.info,v 1.1 2009/02/14 21:53:25 vauxia Exp $
+name = Geocode
+description = Pluggable geocoding engine for form elements.
+package = Geo
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-01-20
+version = "6.x-1.0-alpha2"
+core = "6.x"
+project = "geocode"
+datestamp = "1263951606"
+

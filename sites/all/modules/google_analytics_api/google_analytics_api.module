@@ -1,0 +1,164 @@
+<?php
+// $Id: google_analytics_api.module,v 1.21 2009/08/23 22:02:44 jkitching Exp $
+
+require 'gapi.class.php';
+
+/**
+ * Implementation of hook_menu().
+ */
+function google_analytics_api_menu() {
+  $items['admin/settings/google-analytics-api'] = array(
+    'title' => t('Google Analytics API settings'),
+    'description' => t('Manage the currently logged in Analytics account'),
+    'page callback' => 'drupal_get_form',
+    'file' => 'google_analytics_api.admin.inc',
+    'page arguments' => array('google_analytics_api_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function google_analytics_api_perm() {
+  return array('administer Google Analytics settings');
+}
+
+/**
+ * Return current token string.
+ */
+function google_analytics_api_current_token($silent = FALSE) {
+  $token = variable_get('google_analytics_api_token', null);
+  if (!$token && !$silent) {
+    drupal_set_message(t('A Google Analytics API method has been called that requires access to a Google account.  Please visit the ' . l('administration page', 'admin/settings/google_analytics_api') . ' to grant access.'));
+  }
+  return $token;
+}
+
+/**
+ * Return current profile ID.
+ */
+function google_analytics_api_current_profile_id($silent = FALSE) {
+  $profile_id = variable_get('google_analytics_api_profile_id', null);
+  if (!$profile_id && !$silent) {
+    drupal_set_message(t('A Google Analytics API method has been called that requires the selection of a Google Analytics profile.  Please visit the ' . l('administration page', 'admin/settings/google_analytics_api') . ' to set one.'));
+  }
+  return $profile_id;
+}
+
+/*
+ * Retrieve current profile object.
+ */
+function google_analytics_api_current_profile() {
+  $profiles = google_analytics_api_account_data();
+  foreach ($profiles as $profile) {
+    if ($profile->getProfileId() == google_analytics_api_current_profile_id()) {
+      return $profile;
+    }
+  }
+  return null;
+}
+
+/*
+ * Programatically trigger a login.
+ */
+function google_analytics_api_authenticate() {
+  return gapiAuthSub::authenticate();
+}
+
+/*
+ * Programatically trigger a logout.
+ */
+function google_analytics_api_logout() {
+  try {
+    google_analytics_api_gapi()->revokeToken();
+  }
+  catch (Exception $e) {
+  }
+  variable_set('google_analytics_api_token', null);
+  variable_set('google_analytics_api_profile_id', null);
+}
+
+/*
+ * Return a gapi object built from the currently stored token.
+ */
+function google_analytics_api_gapi() {
+  static $gapi;
+
+  if (user_access('administer Google Analytics settings')) {
+    if ($gapi) {
+      return $gapi;
+    }
+    $token = google_analytics_api_current_token();
+    if ($token) {
+      $gapi = gapiAuthSub::withToken($token);
+      return $gapi;
+    }
+  }
+  return FALSE;
+}
+
+/*
+ * Request account data (profile IDs and names).
+ */
+function google_analytics_api_account_data() {
+  try {
+    $data = google_analytics_api_gapi()->requestAccountData();
+  }
+  catch (Exception $e) {
+    return google_analytics_api_logout();
+  }
+  return $data;
+}
+
+/*
+ * Request report data.
+ * @param $request['#dimensions']  required
+ * @param $request['#metrics']     required
+ * @param $request['#sort_metric'] optional [default=none]
+ * @param $request['#filter']      optional [default=none]
+ * @param $request['#start_date']  optional [default=GA release date]
+ * @param $request['#end_date']    optional [default=today]
+ * @param $request['#start_index'] optional [default=1]
+ * @param $request['#max_results'] optional [default=10,000]
+ */
+function google_analytics_api_report_data($request) {
+  // Make sure parameters are all there with a default value.
+  $params = array(
+    '#dimension' => null,
+    '#metrics' => null,
+    '#sort_metric' => null,
+    '#filter' => null,
+    '#start_date' => null,
+    '#end_date' => null,
+    '#start_index' => 1,
+    '#max_results' => 10000,
+  );
+  foreach ($params as $name => $value) {
+    if (!isset($request[$name])) {
+      $request[$name] = $value;
+    }
+  }
+
+  $gapi = google_analytics_api_gapi();
+  if (!$gapi) {
+    return FALSE;
+  }
+
+  // TODO: Insert a check to see if we have this query cached.
+  try {
+    $data = google_analytics_api_gapi()->requestReportData(
+      variable_get('google_analytics_api_profile_id', 0),
+      $request['#dimensions'], $request['#metrics'], $request['#sort_metric'],
+      $request['#filter'], $request['#start_date'], $request['#end_date'],
+      $request['#start_index'], $request['#max_results']);
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('Google Analytics API: @message', array('@message' => $e->getMessage())));
+    return FALSE;
+  }
+  return $data;
+}

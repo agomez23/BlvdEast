@@ -1,0 +1,5 @@
+name = UE Cache
+version = 6.x-1.0
+description = This module is a straight copy of the cookie functionality of <a href="http://drupal.org/project/boost">Boost</a>, to use it without the other unncessary functionality. Only useful with installations where nginx is serving up pages straight from memcache.
+core = 6.x
+package = Urban Edge

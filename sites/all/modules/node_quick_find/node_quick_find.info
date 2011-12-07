@@ -1,0 +1,11 @@
+name = "Node Quick Find"
+description = "Provides a block with an autocomplete field on the title"
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2011-03-03
+version = "6.x-1.2"
+core = "6.x"
+project = "node_quick_find"
+datestamp = "1299166869"
+

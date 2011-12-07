@@ -1,0 +1,270 @@
+WD php: Notice: Undefined index: version in drush_pm_list() (line 312 of /home/darrin/.drush/drush/commands/pm/pm.drush.inc).                                                             [31;40m[1m[error][0m
+WD php: Notice: Undefined index: version in drush_pm_list() (line 312 of /home/darrin/.drush/drush/commands/pm/pm.drush.inc).                                                             [31;40m[1m[error][0m
+WD php: Notice: Undefined index: version in drush_pm_list() (line 312 of /home/darrin/.drush/drush/commands/pm/pm.drush.inc).                                                             [31;40m[1m[error][0m
+WD php: Notice: Undefined index: version in drush_pm_list() (line 312 of /home/darrin/.drush/drush/commands/pm/pm.drush.inc).                                                             [31;40m[1m[error][0m
+ Package                         Name                                                                    Type    Status         Version        
+ @font-your-face                 @font-your-face (fontyourface)                                          Module  Disabled       6.x-1.3        
+ @font-your-face                 Common fonts (common_fonts)                                             Module  Not installed  6.x-1.3        
+ @font-your-face                 Font Squirrel API (fontsquirrel)                                        Module  Not installed  6.x-1.3        
+ @font-your-face                 Google Fonts API (google_fonts_api)                                     Module  Disabled       6.x-1.3        
+ @font-your-face                 KERNEST (kernest)                                                       Module  Not installed  6.x-1.3        
+ Ad                              Ad (ad)                                                                 Module  Not installed  6.x-2.2        
+ Ad                              Ad actions (ad_actions)                                                 Module  Not installed  6.x-2.2        
+ Ad                              Ad channel (ad_channel)                                                 Module  Not installed  6.x-2.2        
+ Ad                              Ad click filter (click_filter)                                          Module  Not installed  6.x-2.2        
+ Ad                              Ad embed (ad_embed)                                                     Module  Not installed  6.x-2.2        
+ Ad                              Ad file cache (ad_cache_file)                                           Module  Not installed  6.x-2.2        
+ Ad                              Ad Owners (ad_owners)                                                   Module  Not installed  6.x-2.2        
+ Ad                              Ad report (ad_report)                                                   Module  Not installed  6.x-2.2        
+ Ad                              Ad Weight Probability (ad_weight_probability)                           Module  Not installed  6.x-2.2        
+ Ad                              External Ad (ad_external)                                               Module  Not installed  6.x-2.2        
+ Ad                              Flash Ad (ad_flash)                                                     Module  Not installed  6.x-2.7        
+ Ad                              HTML Ad (ad_html)                                                       Module  Not installed  6.x-2.2        
+ Ad                              Image Ad (ad_image)                                                     Module  Not installed  6.x-2.2        
+ Ad                              Remote ads (ad_remote)                                                  Module  Not installed  6.x-2.2        
+ Ad                              Text Ad (ad_text)                                                       Module  Not installed  6.x-2.2        
+ Administration                  Administration menu (admin_menu)                                        Module  Disabled       6.x-1.6        
+ Administration                  Content management filter (cmf)                                         Module  Not installed  6.x-2.0        
+ Advanced Navigation Pack        Jquery Menu (jquerymenu)                                                Module  Not installed  6.x-3.3        
+ Ajax                            Ajax (ajax)                                                             Module  Enabled        6.x-1.14       
+ Ajax                            Ajax plugin - captcha (ajax_captcha)                                    Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - comment (ajax_comment)                                    Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - disable_redirect (ajax_disable_redirect)                  Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - fckeditor (ajax_fckeditor)                                Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - logintoboggan (ajax_logintoboggan)                        Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - quicktabs (ajax_quicktabs)                                Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - thickbox (ajax_thickbox)                                  Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - tinymce (ajax_tinymce)                                    Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - webform (ajax_webform)                                    Module  Not installed  6.x-1.14       
+ Ajax                            Ajax plugin - wysiwyg (ajax_wysiwyg)                                    Module  Not installed  6.x-1.14       
+ Ajax                            Ajax ui (ajax_ui)                                                       Module  Enabled        6.x-1.14       
+ Caching                         Boost (boost)                                                           Module  Not installed  6.x-1.18       
+ Caching                         CacheRouter (cacherouter)                                               Module  Not installed  6.x-1.0-rc1    
+ Caching                         Memcache Admin (memcache_admin)                                         Module  Not installed  6.x-1.5        
+ CCK                             CCK Fieldgroup Tabs (cck_fieldgroup_tabs)                               Module  Enabled        6.x-1.2        
+ CCK                             Content (content)                                                       Module  Enabled        6.x-2.8        
+ CCK                             Content Copy (content_copy)                                             Module  Enabled        6.x-2.8        
+ CCK                             Content Permissions (content_permissions)                               Module  Not installed  6.x-2.8        
+ CCK                             Content Taxonomy (content_taxonomy)                                     Module  Enabled        6.x-1.0-rc2    
+ CCK                             Content Taxonomy Autocomplete (content_taxonomy_autocomplete)           Module  Enabled        6.x-1.0-rc2    
+ CCK                             Content Taxonomy Options (content_taxonomy_options)                     Module  Enabled        6.x-1.0-rc2    
+ CCK                             Content Taxonomy Tree (content_taxonomy_tree)                           Module  Not installed  6.x-1.0-rc2    
+ CCK                             Email (email)                                                           Module  Enabled        6.x-1.2        
+ CCK                             Embedded Audio Field (emaudio)                                          Module  Not installed  6.x-1.24       
+ CCK                             Embedded Image Field (emimage)                                          Module  Not installed  6.x-1.24       
+ CCK                             Embedded Media Field (emfield)                                          Module  Not installed  6.x-1.24       
+ CCK                             Embedded Media Thumbnail (emthumb)                                      Module  Not installed  6.x-1.24       
+ CCK                             Embedded Video Field (emvideo)                                          Module  Not installed  6.x-1.24       
+ CCK                             Embedded Wave Field (emwave)                                            Module  Not installed  6.x-1.24       
+ CCK                             Fieldgroup (fieldgroup)                                                 Module  Enabled        6.x-2.8        
+ CCK                             FileField (filefield)                                                   Module  Enabled        6.x-3.7        
+ CCK                             FileField Meta (filefield_meta)                                         Module  Not installed  6.x-3.7        
+ CCK                             Geocoded value (geocode_widget)                                         Module  Not installed  6.x-1.0-alpha2 
+ CCK                             ImageField (imagefield)                                                 Module  Enabled        6.x-3.7        
+ CCK                             Link (link)                                                             Module  Not installed  6.x-2.9        
+ CCK                             Location CCK (location_cck)                                             Module  Not installed  6.x-3.1        
+ CCK                             Node Reference (nodereference)                                          Module  Enabled        6.x-2.8        
+ CCK                             Node Relationships (noderelationships)                                  Module  Enabled        6.x-1.6        
+ CCK                             Number (number)                                                         Module  Enabled        6.x-2.8        
+ CCK                             Option Widgets (optionwidgets)                                          Module  Enabled        6.x-2.8        
+ CCK                             Phone - CCK (phone)                                                     Module  Not installed  6.x-2.17       
+ CCK                             Text (text)                                                             Module  Enabled        6.x-2.8        
+ CCK                             User Reference (userreference)                                          Module  Enabled        6.x-2.8        
+ Context                         Context (context)                                                       Module  Enabled        6.x-2.0        
+ Context                         Context Contrib (context_contrib)                                       Module  Enabled        6.x-2.0        
+ Context                         Context UI (context_ui)                                                 Module  Enabled        6.x-2.0        
+ Core - optional                 Aggregator (aggregator)                                                 Module  Not installed  6.19           
+ Core - optional                 Blog (blog)                                                             Module  Not installed  6.19           
+ Core - optional                 Blog API (blogapi)                                                      Module  Not installed  6.19           
+ Core - optional                 Book (book)                                                             Module  Not installed  6.19           
+ Core - optional                 Color (color)                                                           Module  Enabled        6.19           
+ Core - optional                 Comment (comment)                                                       Module  Disabled       6.19           
+ Core - optional                 Contact (contact)                                                       Module  Not installed  6.19           
+ Core - optional                 Content translation (translation)                                       Module  Not installed  6.19           
+ Core - optional                 Database logging (dblog)                                                Module  Enabled        6.19           
+ Core - optional                 Forum (forum)                                                           Module  Not installed  6.19           
+ Core - optional                 Help (help)                                                             Module  Enabled        6.19           
+ Core - optional                 Locale (locale)                                                         Module  Not installed  6.19           
+ Core - optional                 Menu (menu)                                                             Module  Enabled        6.19           
+ Core - optional                 OpenID (openid)                                                         Module  Not installed  6.19           
+ Core - optional                 Path (path)                                                             Module  Enabled        6.19           
+ Core - optional                 PHP filter (php)                                                        Module  Enabled        6.19           
+ Core - optional                 Ping (ping)                                                             Module  Not installed  6.19           
+ Core - optional                 Poll (poll)                                                             Module  Not installed  6.19           
+ Core - optional                 Profile (profile)                                                       Module  Enabled        6.19           
+ Core - optional                 Search (search)                                                         Module  Enabled        6.19           
+ Core - optional                 Statistics (statistics)                                                 Module  Enabled        6.19           
+ Core - optional                 Syslog (syslog)                                                         Module  Not installed  6.19           
+ Core - optional                 Taxonomy (taxonomy)                                                     Module  Enabled        6.19           
+ Core - optional                 Throttle (throttle)                                                     Module  Disabled       6.19           
+ Core - optional                 Tracker (tracker)                                                       Module  Not installed  6.19           
+ Core - optional                 Trigger (trigger)                                                       Module  Disabled       6.19           
+ Core - optional                 Update status (update)                                                  Module  Enabled        6.19           
+ Core - optional                 Upload (upload)                                                         Module  Not installed  6.19           
+ Core - required                 Block (block)                                                           Module  Enabled        6.19           
+ Core - required                 Filter (filter)                                                         Module  Enabled        6.19           
+ Core - required                 Node (node)                                                             Module  Enabled        6.19           
+ Core - required                 System (system)                                                         Module  Enabled        6.19           
+ Core - required                 User (user)                                                             Module  Enabled        6.19           
+ Date/Time                       Calendar (calendar)                                                     Module  Not installed  6.x-2.2        
+ Date/Time                       Calendar iCal (calendar_ical)                                           Module  Not installed  6.x-2.2        
+ Date/Time                       Calendar Popup (jcalendar)                                              Module  Not installed  6.x-2.2        
+ Date/Time                       Date (date)                                                             Module  Enabled        6.x-2.x-dev    
+ Date/Time                       Date API (date_api)                                                     Module  Enabled        6.x-2.x-dev    
+ Date/Time                       Date Locale (date_locale)                                               Module  Not installed  6.x-2.x-dev    
+ Date/Time                       Date PHP4 (date_php4)                                                   Module  Not installed  6.x-2.x-dev    
+ Date/Time                       Date Popup (date_popup)                                                 Module  Enabled        6.x-2.x-dev    
+ Date/Time                       Date Repeat API (date_repeat)                                           Module  Not installed  6.x-2.x-dev    
+ Date/Time                       Date Timezone (date_timezone)                                           Module  Enabled        6.x-2.x-dev    
+ Date/Time                       Date Tools (date_tools)                                                 Module  Not installed  6.x-2.x-dev    
+ Development                     Devel (devel)                                                           Module  Enabled        6.x-1.22       
+ Development                     Devel generate (devel_generate)                                         Module  Not installed  6.x-1.22       
+ Development                     Devel node access (devel_node_access)                                   Module  Not installed  6.x-1.22       
+ Development                     IE CSS Optimizer (ie_css_optimizer)                                     Module  Not installed  6.x-1.0        
+ Development                     Location Generate (location_generate)                                   Module  Not installed  6.x-3.1        
+ Development                     Performance Logging (performance)                                       Module  Not installed  6.x-1.22       
+ Development                     SimpleTest (simpletest)                                                 Module  Not installed  6.x-2.10       
+ Development                     Theme developer (devel_themer)                                          Module  Not installed  6.x-1.18       
+ Drupal for Facebook             Canvas Pages (fb_canvas)                                                Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook             Drupal for Facebook (fb)                                                Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook             Drupal for Facebook Applications (fb_app)                               Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook             Drupal for Facebook Devel (fb_devel)                                    Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook             Facebook Connect (fb_connect)                                           Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook             Profile Tabs (fb_tab)                                                   Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook             User Management (fb_user)                                               Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - contrib   Drupal for Facebook Actions (fb_actions)                                Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - contrib   Extended Permissions (fb_permission)                                    Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - contrib   Friend Features (fb_friend)                                             Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - contrib   Register Users (fb_register)                                            Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - optional  Drupal for Facebook Forms (fb_form)                                     Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - optional  Drupal for Facebook Streams (fb_stream)                                 Module  Not installed  6.x-3.x-dev    
+ Drupal for Facebook - optional  Drupal for Facebook Views (fb_views)                                    Module  Not installed  6.x-3.x-dev    
+ Drupal for Firebug              Drupal for Firebug (drupalforfirebug)                                   Module  Not installed  6.x-1.3        
+ Drupal for Firebug              Drupal for Firebug Preprocessor (drupalforfirebug_preprocess)           Module  Not installed  6.x-1.3        
+ Flags                           Flag (flag)                                                             Module  Not installed  6.x-1.3        
+ Flags                           Flag actions (flag_actions)                                             Module  Not installed  6.x-1.3        
+ Geo                             Geocode (geocode)                                                       Module  Not installed  6.x-1.0-alpha2 
+ ImageCache                      IM raw (im_raw)                                                         Module  Not installed  6.x-1.2        
+ ImageCache                      ImageAPI (imageapi)                                                     Module  Enabled        6.x-1.8        
+ ImageCache                      ImageAPI GD2 (imageapi_gd)                                              Module  Enabled        6.x-1.8        
+ ImageCache                      ImageAPI ImageMagick (imageapi_imagemagick)                             Module  Disabled       6.x-1.8        
+ ImageCache                      ImageCache (imagecache)                                                 Module  Enabled        6.x-2.0-beta10 
+ ImageCache                      Imagecache Autorotate (imagecache_autorotate)                           Module  Not installed  6.x-1.7        
+ ImageCache                      Imagecache Canvas Actions (imagecache_canvasactions)                    Module  Not installed  6.x-1.7        
+ ImageCache                      Imagecache Color Actions (imagecache_coloractions)                      Module  Not installed  6.x-1.7        
+ ImageCache                      Imagecache Custom Actions (imagecache_customactions)                    Module  Not installed  6.x-1.7        
+ ImageCache                      Imagecache Text Actions (imagecache_textactions)                        Module  Not installed  6.x-1.7        
+ ImageCache                      ImageCache UI (imagecache_ui)                                           Module  Enabled        6.x-2.0-beta10 
+ Location                        Location (location)                                                     Module  Not installed  6.x-3.1        
+ Location                        Location Add Another (location_addanother)                              Module  Not installed  6.x-3.1        
+ Location                        Location Fax (location_fax)                                             Module  Not installed  6.x-3.1        
+ Location                        Location Phone (location_phone)                                         Module  Not installed  6.x-3.1        
+ Location                        Location Search (location_search)                                       Module  Not installed  6.x-3.1        
+ Location                        Location Taxonomy (location_taxonomy)                                   Module  Not installed  6.x-3.1        
+ Location                        Node Locations (location_node)                                          Module  Not installed  6.x-3.1        
+ Location                        User Locations (location_user)                                          Module  Not installed  6.x-3.1        
+ Mail                            Mime Mail (mimemail)                                                    Module  Not installed  6.x-1.0-alpha3 
+ Mail                            Mime Mail CSS Compressor (mimemail_compress)                            Module  Not installed  6.x-1.0-alpha3 
+ Mail                            PHPMailer (phpmailer)                                                   Module  Not installed  6.x-2.2        
+ Media                           FLV Media Player (flvmediaplayer)                                       Module  Not installed  6.x-1.0-beta4  
+ Meta tags                       Nodewords (nodewords)                                                   Module  Not installed  6.x-1.11       
+ Meta tags                       Nodewords - basic meta tags (nodewords_basic)                           Module  Not installed  6.x-1.11       
+ Meta tags                       Nodewords - extra meta tags (nodewords_extra)                           Module  Not installed  6.x-1.11       
+ Meta tags                       Nodewords - site verification  meta tags (nodewords_verification_tags)  Module  Not installed  6.x-1.11       
+ Mobile                          Browscap (Mobile Tools contrib) (mt_browscap)                           Module  Not installed  6.x-1.12       
+ Mobile                          Mobile Tools (mobile_tools)                                             Module  Not installed  6.x-1.12       
+ Modal frame                     Modal Frame API (modalframe)                                            Module  Enabled        6.x-1.7        
+ Modal frame                     Modal Frame Example (modalframe_example)                                Module  Not installed  6.x-1.7        
+ Node relationships              Node relativity (relativity)                                            Module  Enabled        6.x-1.3        
+ OMG Modules                     Contact Nodes (contactnodes)                                            Module  Not installed                 
+ Other                           AddThis (addthis)                                                       Module  Not installed  6.x-2.9        
+ Other                           Advanced help (advanced_help)                                           Module  Not installed  6.x-1.2        
+ Other                           Advanced help example (help_example)                                    Module  Not installed  6.x-1.2        
+ Other                           Advanced User Management (advuser)                                      Module  Not installed  6.x-2.3        
+ Other                           Anchor (anchorfield)                                                    Module  Not installed  6.x-1.1        
+ Other                           Better Messages (better_messages)                                       Module  Not installed  6.x-1.13       
+ Other                           CKEditor (ckeditor)                                                     Module  Not installed  6.x-1.1        
+ Other                           Clone module (clone)                                                    Module  Not installed  6.x-1.2        
+ Other                           Colorbox (colorbox)                                                     Module  Not installed  6.x-1.0-beta6  
+ Other                           Cronplus (cronplus)                                                     Module  Not installed  6.x-1.0-beta4  
+ Other                           Embedded Inline Media (eminline)                                        Module  Not installed  6.x-1.24       
+ Other                           getID3() (getid3)                                                       Module  Not installed  6.x-1.4        
+ Other                           IMCE (imce)                                                             Module  Not installed  6.x-1.4        
+ Other                           Libraries (libraries)                                                   Module  Not installed  6.x-1.0-alpha1 
+ Other                           Mapstraction (mapstraction)                                             Module  Not installed  6.x-1.0        
+ Other                           Masquerade (masquerade)                                                 Module  Not installed  6.x-1.4        
+ Other                           Menu breadcrumb (menu_breadcrumb)                                       Module  Not installed  6.x-1.3        
+ Other                           Nice Menus (nice_menus)                                                 Module  Not installed  6.x-1.3        
+ Other                           Node Quick Find (node_quick_find)                                       Module  Not installed  6.x-1.1        
+ Other                           Nodeaccess (nodeaccess)                                                 Module  Not installed  6.x-1.3        
+ Other                           Pathauto (pathauto)                                                     Module  Enabled        6.x-1.4        
+ Other                           Skinr (skinr)                                                           Module  Not installed  6.x-1.5        
+ Other                           Switchtheme (switchtheme)                                               Module  Not installed  6.x-1.1        
+ Other                           Tabs (tabs)                                                             Module  Enabled        6.x-1.3        
+ Other                           Taxonomy Manager (taxonomy_manager)                                     Module  Enabled        6.x-2.2        
+ Other                           Taxonomy Super Select (taxonomy_super_select)                           Module  Enabled        6.x-1.0        
+ Other                           Term Node Count (term_node_count)                                       Module  Not installed  6.x-1.3        
+ Other                           Thickbox (thickbox)                                                     Module  Not installed  6.x-1.6        
+ Other                           Token (token)                                                           Module  Enabled        6.x-1.14       
+ Other                           Token actions (token_actions)                                           Module  Not installed  6.x-1.14       
+ Other                           TokenSTARTER (tokenSTARTER)                                             Module  Not installed  6.x-1.14       
+ Other                           Uniform (uniform)                                                       Module  Not installed                 
+ Performance                     CDN integration (cdn)                                                   Module  Not installed  6.x-1.1        
+ Pressflow                       Cookie cache bypass (cookie_cache_bypass)                               Module  Not installed                 
+ Pressflow                       Path alias cache (path_alias_cache)                                     Module  Not installed                 
+ Resizable Fields                Resizable Body and Comments (resizable_body)                            Module  Not installed  6.x-2.0        
+ Resizable Fields                Resizable CCK Text Fields (resizable_cck)                               Module  Not installed  6.x-2.0        
+ Rules                           Rules (rules)                                                           Module  Not installed  6.x-1.3        
+ Rules                           Rules Administration UI (rules_admin)                                   Module  Not installed  6.x-1.3        
+ Rules                           Rules Forms support (rules_forms)                                       Module  Not installed  6.x-1.3        
+ Rules                           Rules Scheduler (rules_scheduler)                                       Module  Not installed  6.x-1.3        
+ Rules                           Rules Simpletest (rules_test)                                           Module  Not installed  6.x-1.3        
+ sal                             sal (sal)                                                               Module  Enabled                       
+ Spam control                    CAPTCHA (captcha)                                                       Module  Not installed  6.x-2.2        
+ Spam control                    Image CAPTCHA (image_captcha)                                           Module  Not installed  6.x-2.2        
+ Statistics                      Google Analytics (googleanalytics)                                      Module  Enabled        6.x-2.2        
+ Style                           Scaffold (scaffold)                                                     Module  Not installed  6.x-1.x-dev    
+ Taxonomy                        Taxonomy CSV import/export (taxonomy_csv)                               Module  Not installed  6.x-5.4        
+ Taxonomy                        Taxonomy Import/Export via XML (taxonomy_xml)                           Module  Not installed  6.x-1.3        
+ Theme                           Role Theme Switcher (role_theme_switcher)                               Module  Not installed  6.x-1.6        
+ Urban Edge                      UE Cache (ue_cache)                                                     Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Custom (ue_custom)                                                   Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Custom Early (ue_early)                                              Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Editors (ue_editors)                                                 Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Expire (ue_expire)                                                   Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Facebook (ue_facebook)                                               Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Feeds (ue_feeds)                                                     Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Nodewords (ue_nodewords)                                             Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Search (ue_search)                                                   Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Search Multi (ue_search_multi)                                       Module  Not installed  6.x-1.0        
+ Urban Edge                      UE Widgets (ue_widgets)                                                 Module  Not installed  6.x-1.0        
+ urbanreach                      urbanreach (urbanreach)                                                 Module  Not installed  6.x-1.0        
+ User interface                  BeautyTips API (beautytips)                                             Module  Enabled        6.x-2.0        
+ User interface                  BeautyTips UI (beautytips_ui)                                           Module  Not installed  6.x-2.0        
+ User interface                  IMCE Wysiwyg API bridge (imce_wysiwyg)                                  Module  Not installed  6.x-1.x-dev    
+ User interface                  jQuery UI (jquery_ui)                                                   Module  Enabled        6.x-1.x-dev    
+ User interface                  jQuery Update (jquery_update)                                           Module  Enabled        6.x-2.x-dev    
+ User interface                  Wysiwyg (wysiwyg)                                                       Module  Not installed  6.x-2.1        
+ Views                           Better Exposed Filters (better_exposed_filters)                         Module  Enabled        6.x-1.0        
+ Views                           Views (views)                                                           Module  Enabled        6.x-2.11       
+ Views                           Views Custom Field (views_customfield)                                  Module  Enabled        6.x-1.0        
+ Views                           Views Cycle (views_cycle)                                               Module  Not installed  6.x-1.0        
+ Views                           Views exporter (views_export)                                           Module  Disabled       6.x-2.11       
+ Views                           Views UI (views_ui)                                                     Module  Enabled        6.x-2.11       
+ Webform                         Webform (webform)                                                       Module  Enabled        6.x-3.2        
+ Other                           Bluemarine (bluemarine)                                                 Theme   Disabled       6.19           
+ Other                           Chameleon (chameleon)                                                   Theme   Disabled       6.19           
+ Other                           Cube (cube)                                                             Theme   Disabled                      
+ Other                           Fusion Core (fusion_core)                                               Theme   Disabled       6.x-1.0        
+ Other                           Fusion Starter (fusion_starter)                                         Theme   Disabled       6.x-1.0        
+ Other                           Fusion Starter Lite (fusion_starter_lite)                               Theme   Disabled       6.x-1.0        
+ Other                           Garland (garland)                                                       Theme   Disabled       6.19           
+ Other                           Marvin (marvin)                                                         Theme   Disabled       6.19           
+ Other                           Minnelli (minnelli)                                                     Theme   Disabled       6.19           
+ Other                           Pushbutton (pushbutton)                                                 Theme   Disabled       6.19           
+ Other                           Rubik (rubik)                                                           Theme   Disabled                      
+ Other                           Simply Modern (simply_modern)                                           Theme   Disabled       6.x-1.5        
+ Other                           Subalease (subalease)                                                   Theme   Enabled                       
+ Other                           Tao (tao)                                                               Theme   Enabled                       
+ Other                           Zen (zen)                                                               Theme   Enabled        6.x-2.0        
+

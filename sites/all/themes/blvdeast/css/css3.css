@@ -1,0 +1,139 @@
+@charset "utf-8";
+/* CSS3 52framework */
+
+.header-bar-group
+{
+	border-bottom:solid 1px #213848;
+}
+
+#main{border-radius:20px;-moz-border-radius:20px;-webkit-border-radius:20px;}
+
+/* generic tabs styles */
+ul.tabs a:link,#content-tabs ul.tabs li a:link,#content-tabs ul.tabs li a:visited{-webkit-border-radius:12px;-moz-border-radius:12px;border-radius:12px;background-color: #FFFFFF; color: #3391D8; }
+ul.tabs a:hover,ul.primary li a:hover,#content-tabs ul.tabs li a:hover,#content-tabs ul.tabs li a:hover{ background-color:#8F8F86; color: #FFFFFF; } 
+ul.tabs li.active a:link,ul.primary li.active a,#content-tabs ul.tabs li.active a:link,#content-tabs ul.tabs li.active a:visited{text-shadow:#8F8F86 2px 2px; }
+
+/* homepage slideshow */
+.view-homepage-slideshow .views_slideshow_singleframe_teaser_section img{-webkit-border-radius:16px;-moz-border-radius:16px;border-radius:16px;overflow:hidden}
+.panels-home .panel-topright{text-shadow:#DDD 2px 2px}
+
+/* benefits */
+.pane-benefits h3{text-shadow:#FFF 1px 1px}
+
+/* tab page styles */
+.drupal-tabs{-webkit-border-radius:16px;-moz-border-radius:16px;border-radius:16px;/*behavior: url(border-radius.htc);*/}
+.drupal-tabs .tabpage-container-inner{-webkit-border-radius:13px;-moz-border-radius:13px;border-radius:13px}
+
+/* listing details - slideshows */
+.view-node-slideshow .views_slideshow_slide img{-webkit-border-radius:10px;-moz-border-radius:10px;border-radius:10px;overflow:hidden}
+
+/* listing details - map / streetview */
+.panels-listing .left .view-node-map .gmap-gmap,
+.panels-listing .left .streetview{-webkit-border-radius:.6em;-moz-border-radius:.6em;border-radius:.6em}
+
+/* basic button styles */
+.form-button,form input.form-submit,.form-submit,
+.pane-flag-links .flag-favorites .flag-link-toggle{
+	-webkit-border-radius:.6em;-moz-border-radius:.6em;border-radius:.6em;
+	text-shadow:#FFF 1px 1px;
+	background:-webkit-gradient(linear,left top,left bottom,from(#EFEFEF),to(#D1D1D1)) no-repeat;
+	background:-moz-linear-gradient(#EFEFEF 0%, #D1D1D1 100%) no-repeat;
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#EFEFEF', endColorstr='#D1D1D1')
+}
+.form-button:hover,form input.form-submit:hover,.form-submit:hover{
+	background:-webkit-gradient(linear,left top,left bottom,from(#E3E3E3),to(#C4C4C4)) no-repeat;
+	background:-moz-linear-gradient(#E3E3E3 0%, #C4C4C4 100%) no-repeat;
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#E3E3E3', endColorstr='#C4C4C4')
+}
+
+/* green button styles */
+form input.form-button-green, a.form-button-green,
+.pane-flag-links .flag-favorites .flag-link-toggle{
+	color:#fff;
+	text-shadow:#549119 1px 1px;
+	background:-webkit-gradient(linear,left top,left bottom,from(#89CE49),to(#5BAB0F)) no-repeat;
+	background:-moz-linear-gradient(#89CE49 0%, #5BAB0F 100%) no-repeat;
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#89CE49', endColorstr='#5BAB0F')
+}
+.form-button-green:hover,
+.pane-flag-links .flag-favorites .flag:hover{
+	background:-webkit-gradient(linear,left top,left bottom,from(#78b53f),to(#4d910d)) no-repeat;
+	background:-moz-linear-gradient(#78b53f 0%, #4d910d 100%) no-repeat;
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#78b53f', endColorstr='#4d910d')
+}
+
+/* red button styles */
+form input.form-button-red, a.form-button-red{
+	text-shadow:#991818 1px 1px;
+	background:-webkit-gradient(linear,left top,left bottom,from(#e52525),to(#b21d1d)) no-repeat;
+	background:-moz-linear-gradient(#e52525 0%, #b21d1d 100%) no-repeat;
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#e52525', endColorstr='#b21d1d')
+}
+form input.form-button-red:hover, a.form-button-red:hover{
+	background:-webkit-gradient(linear,left top,left bottom,from(#b21d1d),to(#e52525)) no-repeat;
+	background:-moz-linear-gradient(#b21d1d 0%, #e52525 100%) no-repeat;
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#b21d1d', endColorstr='#e52525')
+}
+
+
+/* phone number block */
+#slogan {text-shadow:1px 1px 1px #1F567F}
+.block.header-phone{text-shadow:1px 1px 1px #47B2FF}
+.phone-blvd {text-shadow:1px 1px 1px #1F567F}
+
+/* apply css3 styles to rounded-corner panel style and remove images */
+html.borderradius .rounded-corner{-webkit-border-radius:16px;-moz-border-radius:16px;border-radius:16px}
+html.borderradius .wrap-corner{-webkit-border-radius:13px;-moz-border-radius:13px;border-radius:13px}
+
+html.borderradius .wrap-corner,
+html.borderradius .t-edge,
+html.borderradius .l-edge,
+html.borderradius .b-edge,
+html.borderradius .r-edge,
+html.borderradius .wrap-corner .l,
+html.borderradius .wrap-corner .r{background:none}
+
+html.borderradius .rounded-corner .wrap-corner .t-edge, html.borderradius .rounded-corner .wrap-corner .b-edge,
+html.borderradius .rounded-corner .wrap-corner .l, html.borderradius .rounded-corner .wrap-corner .r {
+    display:none
+}
+
+html.borderradius .rounded-corner .wrap-corner .r-edge{padding:5px}
+
+/* apply css3 styles to login block */
+html.borderradius .header-login-container{-webkit-border-radius:0 0 8px 8px;-moz-border-radius:0 0 8px 8px;border-radius:0 0 8px 8px;background:#264862;padding:0 8px 8px}
+html.borderradius .header-login-container #block-user-0{-webkit-border-radius:0 0 8px 8px;-moz-border-radius:0 0 8px 8px;border-radius:0 0 8px 8px;background:#fff;padding:0 8px 8px}
+
+
+/* 
+	The CSS3 Text-Shadow property contains the following values
+	horizontal-offset (length, required) | vertical-offset (length, required) | blur-radius (length, optional) | shadow-color (color, optional) 
+*/
+.shadow {	text-shadow:1px 1px 1px #666;}/*<-- edit the color you wish to use in your shadows */
+
+
+
+.rounded {
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	border:1px solid #ccc;
+}
+
+.rounded_top_right {
+	border-top-right-radius:5px;
+	-moz-border-radius-topright:5px;
+	-webkit-border-top-right-radius:5px;
+	border:1px solid #ccc;
+}
+
+.box_shadow {
+	-webkit-box-shadow: 2px 2px 3px #ccc;
+	-moz-box-shadow: 2px 2px 3px #ccc;
+	box-shadow: 2px 2px 3px #ccc;
+}
+
+.rotate {
+	-webkit-transform: rotate(-15deg);
+	-moz-transform: rotate(-15deg);
+}

@@ -1,0 +1,14 @@
+; $Id: geocode_widget.info,v 1.2 2009/03/02 18:14:07 vauxia Exp $
+name = Geocoded value
+description = Geocode widget for a of CCK field types, including Geo, Text, and Postal
+package = CCK
+core = 6.x
+dependencies[] = content
+dependencies[] = geocode
+
+; Information added by drupal.org packaging script on 2010-01-20
+version = "6.x-1.0-alpha2"
+core = "6.x"
+project = "geocode"
+datestamp = "1263951606"
+

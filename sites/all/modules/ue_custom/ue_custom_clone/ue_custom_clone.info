@@ -1,0 +1,8 @@
+name = UE Custom Clone
+version = 6.x-1.0
+description = Ensures parent node is set when cloning a listing.
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom
+dependencies[] = clone
+dependencies[] = relativity

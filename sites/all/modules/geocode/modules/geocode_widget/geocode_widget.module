@@ -1,0 +1,116 @@
+<?php // $Id: geocode_widget.module,v 1.8 2009/12/23 00:50:30 jerdavis Exp $
+
+
+/**
+ * Implementation of hook_widget_info().
+ * Supply a widget for fields from geo_field and other modules.
+ */
+function geocode_widget_widget_info() {
+  return array(
+    'geocode_geo' => array(
+      'label' => t('Geocoded value from another field'),
+      'multiple values' => CONTENT_HANDLE_MODULE,
+      'field types' => array('geo'),
+    ),
+    'geocode_text' => array( // TODO hide if irrelevent
+      'label' => t('Geocoded value from another field'),
+      'field types' => array('text'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_widget_settings().
+ */
+function geocode_widget_widget_settings($op, $widget) {
+  module_load_include('inc', 'geocode_widget', 'includes/geocode_widget.admin');
+  return geocode_widget_admin_widget_settings($op, $widget);
+}
+
+/**
+ * Implementation of hook_widget().
+ */
+function geocode_widget_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  static $processed;
+
+  // Use a value field, which has no UI.
+  $element = array(
+    '#type' => 'value',
+    '#value' => $items,
+    '#geocode_fields' => $field['widget']['geocode_fields'],
+    '#gis_type' => $field['gis_type'],
+    '#process' => array('geocode_widget_register_element'),
+  );
+  return $element;
+}
+
+/**
+ * Implementaion of hook_form_alter().
+ *
+ * Add an after_build element to the form itself. The value-setting code
+ * for geocode elements will have access to the fully-built form in that
+ * step.
+ */
+function geocode_widget_form_alter(&$form, $form_state, $form_id) {
+  if ($form['#id'] == 'node-form') {
+    $form['#after_build'][] = 'geocode_widget_set_form_value';
+  }
+}
+
+/**
+ * A #process callback for geocode widgets.
+ *
+ * This ensures that the form's #after_build code is aware of the element
+ * that should be converted.
+ */
+function geocode_widget_register_element($element, $edit, &$form_state, $form) {
+  if ($form_state['submitted']) {
+    $form_state['storage']['geocode'][] = $element;
+  }
+  return $element;
+}
+
+/**
+ * The actual value-setting code, called from #after_build on the entire form.
+ */
+function geocode_widget_set_form_value($form, &$form_state) {
+  if ($form_state['submitted']) {
+
+    if (!isset($form_state['storage']['geocode'])) return $form;
+
+    foreach ($form_state['storage']['geocode'] as $key => $element) {
+      foreach ($element['#geocode_fields'] as $field => $info) {
+
+        if (!$info['status']) continue;
+
+        $type = 'wkt:'. $element['#geocode_fields'][$field]['return'];
+
+        $values = array();
+    
+        if (is_array($form_state['values'][$field])) {
+          foreach ($form_state['values'][$field] as $delta => $value) {
+            if ($geo = geocode($info['handler'], $value, $type, $info['options'])) {
+              $values[$delta]['geo'] = $geo;
+            }
+          }
+        }
+        if ($values) {
+          form_set_value($element, $values, $form_state);
+        }
+      }
+    }
+  }
+
+  // Clean up after myself.
+  unset($form_state['storage']['geocode']);
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function geocode_widget_theme() {
+  module_load_include('theme.inc', 'geocode_widget', 'theme/geocode_widget');
+  return geocode_widget_theme_theme();
+}

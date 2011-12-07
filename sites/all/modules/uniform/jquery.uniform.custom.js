@@ -1,0 +1,1 @@
+$(function(){$(".uniform select, .uniform :checkbox, .uniform :radio, .uniform :file, .uniform :input").uniform();});

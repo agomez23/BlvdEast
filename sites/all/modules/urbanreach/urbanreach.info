@@ -1,0 +1,5 @@
+name = urbanreach
+version = 6.x-1.0
+description = urbanreach wsdl
+core = 6.x
+package = urbanreach

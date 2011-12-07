@@ -1,0 +1,150 @@
+/* blvd css */
+p { line-height:1.5;}
+
+.header-right #secondary-menu li a { font-size:1em; }
+.header-minibar-group { background: #3391D8 }
+.header-bar-group { background: #3391D8; border-bottom: 1px solid #2B77AF; }
+.header-bar-group .primary-menu a { font-size:14px;text-shadow: #1F567F 1px 1px 2px; }
+.header-bar-group .primary-menu a:hover { text-shadow:none; }
+.header-right #secondary-menu li { margin:0; }
+
+/*.header-right.auth li.first { display:none; }*/
+.header-right .global-social { clear:none; padding:5px 0 0 15px; width:60px;}
+
+/* secondary-menu */
+header .secondary-menu { white-space:nowrap; padding:4px 0; text-align:right; }
+header .secondary-menu a { margin-left:20px; color:#FFF; text-shadow:1px 1px 1px #0a2233; font-size:12px; text-decoration:underline }
+header .secondary-menu h2 { display:none}
+#main { margin:15px auto; border:2px solid #e9eae4;border-top-width:0; }
+/*.header-bar-group .menu li a {background-color:#4AA9EF; }*/
+.header-bar-group #primary-menu .menu li:hover {  margin-bottom:-10px; padding-bottom:12px; background:url('../images/nav-bump.png') no-repeat bottom center; }
+
+.panels-home .panel-center { margin-bottom:20px;}
+
+/* owner/renter tips, icons */
+.renter-tip, .owner-tip { margin-top:20px; background-position:15px 0; background-repeat:no-repeat; padding-left: 80px; min-height:64px; }
+.renter-tip.communication { background-image:url('../images/icons/people.png');}
+.renter-tip.appointments { background-image:url('../images/icons/phone.png');}
+.renter-tip.documents { background-image:url('../images/icons/writing.png');}
+.renter-tip.contact { background-image:url('../images/icons/phone-handle.png');}
+.renter-tip.fee { background-image:url('../images/icons/calculator.png');}
+.renter-tip.trust { background-image:url('../images/icons/trust.png');}
+.owner-tip.information { background-image:url('../images/icons/pencil.png');}
+.owner-tip.communication { background-image:url('../images/icons/people.png');}
+.owner-tip.accessibility { background-image:url('../images/icons/house.png');}
+.owner-tip.pictures { background-image:url('../images/icons/camera.png');}
+.owner-tip.appointments { background-image:url('../images/icons/phone.png');}
+.owner-tip.documents { background-image:url('../images/icons/writing.png');}
+.owner-tip.contact { background-image:url('../images/icons/phone-handle.png');}
+.owner-tip.fee { background-image:url('../images/icons/calculator.png');}
+.owner-tip.trust { background-image:url('../images/icons/trust.png');}
+
+.owner-tip.fee li, .renter-tip.fee li { font-size:85%; list-style:none  }
+.fee ol  { margin-left:0;}
+.fee ol li label { font-weight:bold; clear:left; float:left; width:60px; white-space:nowrap; }
+
+/* owners/renters */
+.copy-tabs, #node-80, #node-78 { font-size:1.1em; color:#444; padding:8px; }
+.copy-tabs p, #node-80 p, .page-contact-blvd-east p { line-height:1.8; } 
+.copy-tabs strong {font-weight:bold; }
+.copy-tabs a, strong.blue { font-weight:bold; color:#3391D8; }
+.page-contact-blvd-east .panel-title { margin-left:10px; margin-right:10px; font-size:2em; }
+.page-contact-blvd-east .pane-node { padding:10px;}
+
+#how-owners ul, #how-renters ul { margin-left:0; list-style-image:url('../images/checkmark.gif'); }
+#how-owners ul li, #how-renters ul li, #owner-process ol li { margin-bottom:10px;}
+
+.header-bar-group .menu li, .header-bar-group .links li { margin:0 4px 0.4em; list-style:none }
+
+a.signup-button { display:block; text-align:center; border-radius: 15px;-moz-border-radius: 15px; background-color:#89D833; padding:10px 20px; margin:30px 0 0 50px; font-weight:bold; font-size:18px; color:#fff; text-shadow:1px 1px 2px #8CAF36; border:1px solid #95BF2F; width:150px; }
+a.signup-button:hover { text-decoration:none; background-color:#AEEF68; text-shadow:1px 1px 1px #7C9F27; }
+
+/* post listing block */
+.pane-benefits .form-button{font-size:1.7em;margin:10px auto 0;width:130px}
+.pane-benefits h3{text-align:center} /* ;color:#5cac10 */
+.pane-benefits li, .pane-tools li{ font-size:13px; list-style:none; margin-left:0; margin-bottom:9px; background:url('../images/icons/star-benefits.png') top left no-repeat; padding-left:22px}
+.panel-topright .pane-benefits ul, .right .pane-benefits ul, .pane-tools ul { padding:0; margin:0; }
+.panel-topright .pane-benefits li, .right .pane-benefits li { font-size:13px; }
+.pane-tools li {font-weight:bold}
+.front .panel-topright .pane-benefits li { font-size:13px;}
+.right .pane-benefits.without-ul ul, .panel-topright .pane-benefits.without-action .form-button { display:none}
+.page-post-listing .panel-topright .panel-region-separator { height:0;}
+
+/* post listing header */
+div.panel-pane h3.pane-title { margin-bottom: 19px; }
+
+/* tools alignment */
+div.pane-block-14 h3.pane-title { margin-left: 20px; }
+
+/* social block */
+.pane-social{text-align:center}
+.pane-social img{margin:0 .5em}
+.panel-right img { max-width:100% }
+
+#views_slideshow_singleframe_teaser_section_featured-block_1 .views-field-title { text-align:center; font-weight:bold; }
+
+tr.even, tr.odd {
+    background:none;
+    border-bottom:none;
+    padding: 0;
+}
+thead th {border-bottom: 3px solid #E9EAE4; }
+/* user form */
+/*#user-login, .panels-home { padding:20px;}*/
+.page-user form { padding:20px;}
+.page-user .form-item, .page-user .form-submit-wrapper { float:none; clear:left}
+
+.page-user h1 { font-size:2.5em;}
+.view-my-listings tr, .view-favorite-listings tr {background:none; border-bottom:1px solid #E9EAE4; }
+.view-my-listings td, .view-favorite-listings td  { padding:4px 2px; }
+.view-my-listings td a, .view-favorite-listings td a { text-decoration:none}
+
+/* search */
+.panels-search .right h3.pane-title { font-size:1.2em; clear:left; background:url('../images/control_closed.png') left center no-repeat; padding-left:20px; }
+.panels-search .right h3.pane-title.open {background: url('../images/control_open.png') left center no-repeat; }
+.panels-search .right .facet-secondary .pane-content { display:none; }
+.panels-search .right .pane-content { padding-left:20px;}
+.panels-search #edit-min,
+.panels-search #edit-max { float:left; width:70px; margin-right:3px; }
+.panels-search #edit-min-wrapper label { display:none}
+.panels-search #edit-min-wrapper, .panels-search #edit-max-wrapper { display:inline; }
+.panels-search .form-submit-wrapper input.form-submit.form-button-red { font-size:11px; line-height:1.2;padding:2px 3px; vertical-align:top; margin:0; }
+.panels-search .form-submit-wrapper { display:inline; }
+/*html.js .panels-search .form-submit-wrapper { display:none }*/
+.page-search .panel-pane.pane-apachesolr-form { width:auto; float:left; font-size:11px; margin:5px 0 5px 40px; }
+.page-search .panel-pane.pane-apachesolr-form label {  display:inline;display:none; font-size:11px; }
+.page-search .panel-pane.pane-apachesolr-form div { display:inline}
+.page-search .panel-pane.pane-apachesolr-form .form-item { margin:0;}
+.page-search .panel-pane.pane-apachesolr-form input { font-size:11px; height:auto; padding:2px; margin:0 }
+.page-search .panel-pane.pane-apachesolr-form #apachesolr-panels-search-form .form-text { width:180px; font-size:12px}
+
+/* USER REG */
+.page-user .form-item, .page-user .form-submit-wrapper { clear:none; }
+#edit-profile-terms-wrapper { clear:left}
+
+/* page social */
+#tools {}
+
+/* misc */
+#edit-jump-wrapper { display:block; text-align:center; }
+
+/* town */
+#municipal label { font-weight:bold; clear:left; float:left; width:250px; white-space:nowrap;}
+
+/* footer */
+#footer h5 { color:#000; font-size:11px; }
+#footer p { font-size:10px; }
+#footer p.copyright { background:url('../images/blvdeast_footer-logo.png') 100% 100% no-repeat; padding-top:50px;}
+
+/* search green */
+#primary-menu-inner ul.menu li.search a { color: #a6e463; }
+
+/* post-home */
+a.home-post { font-size: 16px; }
+
+/* fbconnect */
+
+h2.title {
+    margin-left: 40px; 
+    margin-top:  40px;
+}

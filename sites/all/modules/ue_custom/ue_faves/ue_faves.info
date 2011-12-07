@@ -1,0 +1,7 @@
+name = UE Favorites
+version = 6.x-1.0
+description = Adds 'favorites' link to user profile.
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom
+dependencies[] = flag

@@ -1,0 +1,379 @@
+<?php
+	
+	function ue_search_form_alter(&$form, $form_state, $form_id)
+	{
+		if($form_id == 'ue_custom_admin')
+		{
+			$form['ue_search'] = array(
+				'#type' => 'fieldset',
+				'#title' => t('Listing Search'),
+				'#collapsible' => TRUE,
+				'#weight' => 0
+			);
+			
+			$form['ue_search']['ue_search_viewname'] = array(
+				'#type' => 'textfield',
+				'#title' => t('View name'),
+				'#default_value' => variable_get('ue_search_viewname', 'results'),
+				'#description' => t('Name of the search results view (necessary to set search parameters)'),
+				'#required' => TRUE,
+			);
+		}
+	}
+	
+	function ue_search_block($op = 'list', $delta = 0, $edit = array())
+	{
+		global $node;
+		switch ($op)
+		{
+			case 'list':
+				$blocks[] = array('info'=>t('Listing Search'));
+				return $blocks;
+			case 'configure':
+				$form = array();
+				if ($delta == 0)
+				{
+					$form['ue_search_resultpath'] = array(
+						'#type' => 'textfield',
+						'#title' => t('Submit path'),
+						'#size' => 60,
+						'#description' => t('Path that the search block should submit to.'),
+						'#default_value' => variable_get('ue_search_resultpath', '/results'),
+					);
+				}
+				return $form;
+			case 'save':
+				if ($delta == 0)
+				{
+					// Have Drupal save the string to the database.
+					variable_set('ue_search_resultpath', $edit['ue_search_resultpath']);
+				}
+				return;
+			case 'view': default:
+				$block['subject'] = '';
+				switch ($delta)
+				{
+					case 0:
+						$block['content'] = ue_search_listing_search();
+						break;
+				}
+			return $block;
+		}
+	}
+	
+	function ue_search_listing_search()
+	{
+		global $user;
+		$resultsPath = variable_get('ue_search_resultpath', '/results');
+		
+		$rtn = '<form action="' . $resultsPath . '" class="search uniform" method="GET">';
+		
+		$get = filter_input_array(INPUT_GET);
+		
+		if($get)
+			$settings = array_merge($get, filter_input_array(INPUT_GET, array('k'=>FILTER_SANITIZE_SPECIAL_CHARS)));
+		
+		
+		if (arg(1)=="term") {
+			$tid = arg(2); $tree = taxonomy_get_parents_all($tid);
+			//print_r($tree);
+			if ($tree[2]) { 
+				$settings["p"]=array();
+				$settings["bd"]='';
+				$settings['nh1'] = $tree[1]->tid;
+				$settings['nh2'] = $tree[0]->tid;
+			}
+		}
+		//print_r($settings);
+		if($user->uid > 0)
+		{
+			$profile = user_load($user->uid);
+			if(!empty($profile->search_params))
+			{
+				if(is_array($settings))
+					$settings = array_merge($profile->search_params, $settings);
+				else
+					$settings = $profile->search_params;
+			}
+		}
+		
+		$paramShow = array();
+		$rtn .= '<div class="search-top">';
+		if (arg(1)=="term") {
+			$rtn .= '<h3>Search ' . $tree[0]->name . '</h3>';
+		} else {
+			$rtn .= '<h3>' . (substr($_SERVER['REDIRECT_URL'],0,8) == $resultsPath ? 'Refine Search' : 'Search Real Estate Listings') . '</h3>';
+		}
+		/*
+		LAUNCHING WITH RENTALS ONLY
+		$rtn .= "<div class=\"search-type\">";	
+		$rtn .= "<label for=\"search-type-rental\"><input type=\"radio\" name=\"search-type\" value=\"rental\" id=\"search-type-rental\"><span>For Rent</span></label>";
+		$rtn .= "<label for=\"search-type-sale\"><input type=\"radio\" name=\"search-type\" value=\"sale\" id=\"search-type-sale\"><span>For Sale</span></label>";
+		$rtn .= "</div>";
+		*/
+		$rtn .= '<br clear="both" />';
+		$rtn .= '</div>';
+		
+		
+		$neighborhoods = taxonomy_get_tree(1,0,1);
+		$bedrooms = taxonomy_get_tree(6,0,1);
+		$bthrooms = taxonomy_get_tree(7,0,1);
+		
+		foreach ($neighborhoods as $tid=>$term)
+		{
+			if($term->depth == 4)
+				$areas[$term->parents[0]][] = (object)array(name=>$term->name, tid=>$term->tid);
+		}
+		
+		$rtn .= '<div class="search-col1">';
+		$rtn .= '<select id="search-neighborhood" name="nh1">';
+		$rtn .= '<option value="">select area</option>';
+		foreach ($neighborhoods as $tid=>$term)
+		{
+			if(($term->depth == 2 && !in_array($term->tid, array(1434))) || ($term->depth == 3 && in_array(90, $term->parents)))
+			{
+				$rtn .= '<option value="' . $term->tid . ($settings['nh1'] == $term->tid ? '" selected>' : '">') . str_repeat('&nbsp;', ($term->depth * 2) - 4) . $term->name . '</option>';
+				if ($settings['nh1'] == $term->tid) $paramShowNeigh =  $term->name;
+			}
+		}
+		$rtn .= '</select>';
+		
+		if(empty($settings['nh1']) || $settings['nh1'] == 'All' || !$areas[$settings['nh1']])
+		{
+			$rtn .= '<select id="search-neighborhood2" name="nh2" disabled>';
+			$rtn .= '<option value="">select neighborhood (optional)</option>';
+			$rtn .= '</select>';
+		}
+		else
+		{
+			$rtn .= '<select id="search-neighborhood2" name="nh2">';
+			$rtn .= '<option value="' . $settings['nh1'] . '">select neighborhood (optional)</option>';
+			foreach ($areas[$settings['nh1']] as $tid=>$term)
+			{
+				$rtn .= '<option value="' . $term->tid . ($settings['nh2'] == $term->tid ? '" selected>' : '">') . $term->name . '</option>';
+				if ($settings['nh2'] == $term->tid) $paramShowNeigh =  $term->name;
+			}
+			$rtn .= '</select>';
+		}
+		
+		$rtn .= '</div>';
+		
+		if ($paramShowNeigh) $paramShow[] =  $paramShowNeigh;
+		
+		$rtn .= '<div class="search-col2">';
+		$rtn .= '<span>Price</span>';
+		
+		// min starts at $500.
+		$prices[] = 500;
+		for($i = 1000; $i <= 4000; $i += 100) $prices[] = $i; // $100 stepping from $1,000 to $4,000.
+		for($i = 4500; $i <= 10000; $i += 500) $prices[] = $i; // $500 stepping from $4,000 to $10,000.
+		for($i = 15000; $i <= 50000; $i += 5000) $prices[] = $i; // $5,000 stepping from $10,000 to $50,000.
+		
+		$rtn .= '<select name="p[min]" id="search-price-min">';
+		$rtn .= '<option value="">low</option>';
+		foreach($prices as $index=>$i) { $rtn .= '<option value="' . $i . ($settings['p']['min'] == $i ? '" selected>$' : '">$') . number_format($i) . '</option>'; if ($settings['p']['min'] == $i) : $minrent =  number_format($i); endif; }
+		$rtn .= '</select>';
+		
+		// max starts at $1,500. (remove $500 - $1400)
+		array_splice($prices, 0, 6);
+		
+		$rtn .= '<select name="p[max]" id="search-price-min">';
+		$rtn .= '<option value="">high</option>';
+		foreach($prices as $index=>$i) { $rtn .= '<option value="' . $i . ($settings['p']['max'] == $i ? '" selected>$' : '">$') . number_format($i) . '</option>'; if ($settings['p']['max'] == $i && $minrent) : $rentRange =  '$'.$minrent.'-'.$i; endif; }
+		$rtn .= '</select>';
+		
+		if ($rentRange) $paramShow[] = $rentRange;
+		
+		//$rtn .= '<div style="clear:both"></div>';
+		
+		
+		$customBrTaxn = array(
+			array('0','Studio'), 
+			array('1','1 Bedroom'),
+			array('2','2 Bedrooms'),
+			array('3','3 Bedrooms'),
+			array('4','4 Bedrooms'),
+			array('5','5 or more'),
+			array('loft','Open Loft')
+		);
+		
+		$rtn .= '<select name="bd" id="search-bedrooms">';
+		$rtn .= '<option value=""># bedrooms</option>';
+		foreach ($customBrTaxn as $v) { $rtn .= '<option value="'.$v[0].'"' . ($settings['bd'] == $v[0] ? ' selected' : '') . '>'.$v[1].'</option>'; if ($settings['bd'] === $v[0]) : $paramShow[] = $v[1]; endif; }
+		$rtn .= '</select>';
+		
+		
+		$customBaTaxn = array(
+			array('1','1 bath'), 
+			array('15','1.5 bath'),
+			array('2','2 bath'),
+			array('25','2.5 bath'),
+			array('3','3 bath'),
+			array('35','3.5 bath'),
+			array('4','4 or more')
+		);
+		
+		$rtn .= '<select name="ba" id="search-bathrooms">';
+		$rtn .= '<option value=""># bathrooms</option>';
+		foreach ($customBaTaxn as $v) { $rtn .= '<option value="'.$v[0].'"' . ($settings['ba'] == $v[0] ? ' selected' : '') . '>'.$v[1].'</option>'; }
+		$rtn .= '</select>';
+		$rtn .= '</div>';
+		$rtn .= '<div style="clear:both"></div>';
+		
+		$rtn .= '<input type="text" name="k" value="' . (empty($settings['k']) ? 'enter building name, address or keyword' : $settings['k']) . '" class="text-keywords" id="search-keywords" />';
+		//$rtn .= '<br class="clear" />';
+		
+		
+		$rtn .= '<div class="search-checkboxes">';
+		$rtn .= '<label><input type="checkbox" name="pets" value="1"' . ($settings['pets'] ? ' checked' : '') . '>Pets Allowed</label>';
+		$rtn .= '<label><input type="checkbox" name="photos" id="search-photos" value="1"' . ($settings['photos'] ? ' checked' : '') . '>Has Photos</label>';
+		$rtn .= '<label><input type="checkbox" name="openhouse" id="search-openhouse" value="1"' . ($settings['openhouse'] ? ' checked' : '') . '>Open House</label>';
+		$rtn .= '<label><input type="checkbox" name="doorman" id="search-doorman" value="1"' . ($settings['doorman'] ? ' checked' : '') . '>Doorman</label>';
+		$rtn .= '</div>';
+		$rtn .= '<br class="clear" />';
+		
+		$rtn .= '<div style=" text-align:right">';
+		//$rtn .= '<input type="text" name="id" value="' . (empty($settings['webid']) ? 'web ID' : $settings['id']) . '" class="text-webid" id="search-webid" size="5" />';
+		$rtn .= '<input type="submit" value="Search" class="searchbtn" id="search-submit" style="float:none" />';
+		$rtn .= '</div>';
+		//$rtn .= '<br class="clear" />';
+		
+		$rtn .= '</form>';
+		$rtn .= '<br class="clear" />';
+		
+		drupal_add_js(drupal_get_path('module', 'ue_search') . '/ue_search.js', 'module', 'footer');
+		drupal_add_css(drupal_get_path('module', 'ue_search') . '/ue_search.css', 'module');
+		drupal_add_js('nhdata = ' . json_encode($areas), 'inline');
+		if (count($paramShow) && arg(1)!="term") drupal_set_title('Search: '.implode(', ',$paramShow)); 
+		if (arg(1)==341) drupal_set_title('Recently Added Listings');
+		
+		return $rtn;
+	}
+
+	function ue_search_views_query_alter(&$view, &$query)
+	{
+		global $user, $pageView;
+		
+		if($view->name == variable_get('ue_search_viewname', 'results') && in_array($view->current_display, array('page_2', 'block_4')))
+		{
+			$input = $view->get_exposed_input();
+			
+			if($view->current_display == 'page_2')
+				$pageView = $view;
+			
+			// custom where condition for open house.
+			if($_GET['openhouse'])
+				$query->where[0]['clauses'][] = 'node.nid IN (SELECT parent_nid FROM relativity WHERE nid IN (SELECT nid FROM content_field_openhousedate WHERE field_openhousedate_value > NOW()))';
+			
+			// adds another group of where statements for photos (unit OR building photos) - fix for photo filter after moving from nodes to file field.
+			if($_GET['photos'])
+			{
+				$phWhere = array('clauses' => array(), 'args' => array(), 'type' => 'OR');
+				$phWhere['clauses'][] = 'EXISTS (SELECT delta FROM content_field_u_photos p WHERE p.nid = node.nid AND field_u_photos_list IS NOT NULL)';
+				$phWhere['clauses'][] = 'EXISTS (SELECT delta FROM content_field_b_photos pb WHERE pb.nid = node_relativity.nid AND field_b_photos_list IS NOT NULL)';
+				$query->where[] = $phWhere;
+			}
+			
+			// custom sorting for unformatted results view.
+			if($_GET['sort'] == 'price-high')
+				$query->orderby = array('node_data_field_price_field_price_value DESC');
+			else if($_GET['sort'] == 'date')
+				$query->orderby = array('node_revisions_timestamp DESC');
+			
+			// have keyword searches search properties & units.
+			/*
+			if($user->uid == 1 && !empty($input['k']))
+			{
+				$where = $query->where[0];
+				$sindex = array_search('kstart', $where['args']);
+				$eindex = array_search('kend', $where['args']);
+				
+				$keywords = array_slice($where['args'], $sindex + 1, $eindex - $sindex - 1);
+				array_splice($where['args'], $eindex, 1, $keywords);
+				array_splice($where['args'], $sindex, 1);
+				
+				$sindex = array_search('kstart', $where['args']);
+				$eindex = array_search('kend', $where['args']);
+				array_splice($where['args'], $sindex, $eindex + 1 - $sindex);
+				
+				for($c = 0; $c < count($where['clauses']); $c++)
+				{
+					if(strpos($where['clauses'][$c], 'search_index.word') !== false)
+					{
+						$where['clauses'][$c] = str_repeat('node_relativity__search_index.word = \'%s\' OR ', count($keywords));
+						$where['clauses'][$c] .= str_repeat('search_index.word = \'%s\' OR ', count($keywords));
+						$where['clauses'][$c] = substr($where['clauses'][$c], 0, strlen($where['clauses'][$c]) - 4);
+						break;
+					}
+				}
+				
+				//remove fake keyword clauses - have to count $i down with this method.
+				for($i = count($where['clauses']) - 1; $i > $c + 1; $i--) if(strpos($where['clauses'][$i], 'search_index.word') !== false) array_splice($where['clauses'], $i, 1);
+				
+				$query->where[0] = $where;
+			}
+			*/
+		}
+	}
+	
+	function ue_search_views_query_substitutions($view)
+	{
+		global $user;
+	}
+	
+	function ue_search_views_pre_view(&$view, &$display_id, &$args)
+	{
+		global $user;
+		
+		if($view->name == variable_get('ue_search_viewname', 'results') && in_array($display_id, array('page_2', 'block_4')))
+		{
+			$input = $view->get_exposed_input();
+			
+			// if webid is set then ignore everything else
+			if(!empty($input['id']) && $input['id'] != 'web ID')
+				drupal_goto('node/' . $input['id']);
+			else
+				unset($input['id']);
+			
+			//change photo operator
+			$input['ph-op'] = $input['photos'] ? 'not empty' : '';
+			
+			//building amenities
+			if($input['doorman']) $input['bserv'] .= 'doorman';
+			if(!empty($input['bserv'])) $input['bserv-op'] = 'contains';
+			
+			//reset keyword
+			if($input['k'] == 'enter building name, address or keyword') $input['k'] ='';
+			
+			// remove empty params to avoid errors.
+			if(empty($input['p']['min'])) unset($input['p']['min']);
+			if(empty($input['p']['max'])) unset($input['p']['max']);
+			foreach($input as $key=>$value) if(empty($input[$key]) && !in_array($key, array('bd', 'ba'))) unset($input[$key]);
+			
+			//save settings to user profile
+			if($user->uid > 0)
+				user_save($user, array('search_params'=>$input));
+			
+			//map human readable parameters into tids for bed/bath
+			$bed = array(0 => array(12, 13, 814), 1 => array(14, 823, 822), 2 => array(15, 824, 833), 3 => array(16, 825, 834), 4 => array(17, 826, 835), 5 => array(820), 'loft' => array());
+			$bath = array(1 => array(20), 15 => array(21, 827), 2 => array(22), 25 => array(23, 828), 3 => array(829), 35 => array(832, 830), 4 => array(831));
+			
+			
+			//$input['bd'] = $bed[$input['bd']];
+			// new method
+			$newBeds = array();
+			for ($i=$input['bd']; $i<=5; $i++) { $newBeds = array_merge($newBeds,$bed[$i]); }
+			
+			$input['bd'] = $newBeds;
+			$input['ba'] = $bath[$input['ba']];
+			$input['pets'] = $input['pets'] ? 'Pets OK' : '';
+			
+			unset($input['nh1']);
+			unset($input['nh2']);
+			unset($input['doorman']);
+			unset($input['photos']);
+			
+			$view->set_exposed_input($input);
+		}
+	}
+?>

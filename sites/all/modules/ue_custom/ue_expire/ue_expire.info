@@ -1,0 +1,7 @@
+name = UE Expire
+version = 6.x-1.0
+description = Auto-expire listings after two weeks without being updated. 
+core = 6.x
+package = Urban Edge
+dependencies[] = ue_custom
+dependencies[] = mimemail

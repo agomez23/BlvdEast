@@ -1,0 +1,36 @@
+<?
+	
+	/**
+	* Fix module weight to be heavier than CCK field group module, 
+	* so hook_form_alter() has access to field groups
+	*/
+	function ue_early_update_1() {
+		$items = array();
+		$items[] = update_sql("UPDATE {system} SET weight = 10 WHERE `name` = 'ue_early';");
+		drupal_set_message('Updated custom module weight.');
+		return $items;
+	}
+	
+	/* delete all sub-nodes when property or listing is deleted. except companies */
+	function ue_early_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+		switch($op)
+		{
+			case 'delete':
+				if($node->type == 'listing' || $node->type == 'property')
+				{
+					$result = db_query('SELECT nid FROM {relativity} WHERE parent_nid = %d', $node->nid);
+					while($child = db_fetch_object($result))
+					{
+						$childNode = node_load($child->nid);
+						if($childNode->type != 'company')
+							node_delete($child->nid);
+					}
+					/* clear extra delete messages and only print main item deleted. */
+					drupal_get_messages();
+					drupal_set_message('<em>' . $node->title . '</em> has been deleted.');
+				}
+			break;
+		}
+	}
+?>

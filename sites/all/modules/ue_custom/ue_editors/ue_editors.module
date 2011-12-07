@@ -1,0 +1,295 @@
+<?php
+	//set constants for listing permissions
+	define('UE_EDITORS_PERM_CHANGE_LISTING_UID',	'change listing owner independently of property');
+	define('UE_EDITORS_PERM_EDITORS',				'manage editors');
+	define('UE_EDITORS_PERM_EDITORS_OWN',			'manage editors for their own property');
+	define('UE_EDITORS_PERM_EDITORS_ALL',			'manage editors for any property');
+	
+	function ue_editors_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+	{
+		if($op == 'presave')
+		{
+			if($node->type == 'property')
+			{
+				if($node->nid)
+				{
+					//saving existing property - if uid is changing, propogate to listings.
+					$currentNode = node_load($node->nid);
+					if($node->uid != $currentNode->uid)
+					{
+						$listings = ue_custom_get_listings($node->nid);
+						
+						if($listings)
+							foreach($listings as $index => $listing)
+								ue_editors_set_uid($listing, $node->uid);
+					}
+				}
+			}
+			else if($node->type == 'listing')
+			{
+				if(!user_access(UE_EDITORS_PERM_CHANGE_LISTING_UID) && $node->nid)
+				{
+					//existing node and not a UE editor - make sure uid doesn't change.
+					$currentNode = node_load($node->nid);
+					$node->uid = $currentNode->uid;
+				}
+				elseif(!$node->nid)
+				{
+					//adding a new listing - get parent property and set listing uid to the same.
+					//when a feed runs the property id won't be present in the arguments.
+					//when adding a listing manually the parent_node value isn't present.
+					if($node->parent_node) $prop = node_load($node->parent_node);
+					else $prop = node_load(arg(4));
+					
+					$node->uid = $prop->uid;
+				}
+			}
+		}
+	}
+	
+	function ue_editors_node_access_records($node)
+	{
+		if($node->type == 'listing')
+		{
+			//inherit all grants from properties to new listings.
+			
+			$result = db_query('SELECT realm, gid, grant_view, grant_update, grant_delete FROM {node_access} WHERE nid = %d', $node->parent_node);
+			
+			while($grant = db_fetch_array($result))
+				$grants[] = $grant;
+			
+			return $grants;
+		}
+	}
+	
+	function ue_editors_theme($existing = NULL, $type = NULL, $theme = NULL, $path = NULL) {
+		return array(
+			'ue_editors_editors_form' => array('arguments' => array('form'))
+		);
+	}
+	
+	function ue_editors_menu()
+	{
+		$items = array();
+		
+		$items['node/%node/editors'] = array(
+			'title' => 'Manage Editors',
+			'description' => 'Manage editors for a property and its listings.',
+			'page callback' => 'ue_editors_editors',
+			'page arguments' => array(1),
+			'access callback' => 'ue_editors_access',
+			'access arguments' => array(UE_EDITORS_PERM_EDITORS, 1),
+			'type' => MENU_LOCAL_TASK,
+		);
+		
+		return $items;
+	}
+	
+	function ue_editors_access($op, $node, $account = NULL)
+	{
+		global $user;
+		
+		if(empty($account))
+			$account = $user;
+		
+		//allow permission edit if admin nodes, property owner & permission, or permission to edit all.
+		if($op == UE_EDITORS_PERM_EDITORS)
+			return $node->type == 'property' && (user_access('administer nodes', $account) || $user->uid == $node->uid && user_access(UE_EDITORS_PERM_EDITORS_OWN, $account) || user_access(UE_EDITORS_PERM_EDITORS_ALL, $account));
+	}
+	
+	function ue_editors_editors_access()
+	{
+		global $user;
+		return $user->uid == 1;
+	}
+
+	function ue_editors_editors($node)
+	{
+		$rtn .= '<p><b>Property Owner:</b> ' . l($node->name, 'user/' . $node->uid) . '</p>';
+			
+		$rtn .= drupal_get_form('ue_editors_editors_form', $node);
+		
+		return $rtn;
+	}
+
+	//Menu callback. Draws the grant tab.
+	function ue_editors_editors_form(&$form_state, $node)
+	{
+		$form_values =& $form_state['values'];
+		
+		if(!$form_values) $form_values = array();
+		
+		// Load users from node_access.
+		$result = db_query("SELECT uid, name, grant_update FROM {node_access} LEFT JOIN {users} ON uid = gid WHERE nid = %d AND realm = '%s' ORDER BY name", $node->nid, 'nodeaccess_uid');
+		while ($account = db_fetch_object($result))
+			$form_values['uid'][$account->uid] = array('name' => $account->name);
+
+		$users = $form_values['uid'];
+		
+		$form['nid'] = array('#type' => 'value', '#value' => $node->nid);
+		
+		// Users table.
+		if (is_array($users))
+		{
+			$form['uid'] = array('#tree' => TRUE);
+			foreach ($users as $key => $field)
+			{
+				$form['uid'][$key] = array('#type' => 'checkbox', '#title' => $field['name']);
+			}
+		}
+		
+		// Autocomplete returns errors if users don't have access to profiles.
+		if (user_access('access user profiles'))
+			$form['keys'] = array('#type' => 'textfield', '#default_value' => '', '#size' => 40, '#autocomplete_path' => 'user/autocomplete');
+		else
+			$form['keys'] = array('#type' => 'textfield', '#default_value' => '', '#size' => 40);
+		
+		$form['add'] = array('#type' => 'submit', '#value' => t('Add Editor'));
+		
+		$form['remove'] = array('#type' => 'submit', '#value' => t('Remove Selected'));
+		
+		$form['done'] = array('#type' => 'submit', '#value' => t('Done'));
+		
+		return $form;
+	}
+	
+	/**
+	* Validate function for nodeaccess_grants_form.
+	*/
+	function ue_editors_editors_form_validate($form, &$form_state)
+	{
+		$form_values =& $form_state['values'];
+		
+		// Delete unkept users.
+		if (is_array($form_values['uid']))
+			foreach ($form_values['uid'] as $uid => $row)
+				if ($row === 1)
+					unset($form_values['uid'][$uid]);
+		
+		if (!$form_values['uid'])
+			unset($form_values['uid']);
+		
+		if ($form_state['clicked_button']['#id'] != 'edit-done')
+		{
+			_ue_editors_editors_form_submit($form, $form_state);
+			$form_state['rebuild'] = TRUE;
+		}
+		else
+			unset($form_state['rebuild']);
+	}
+	
+	/**
+	* Submit function for nodeaccess_grants_form.
+	*/
+	function ue_editors_editors_form_submit($form, &$form_state)
+	{
+	}
+	
+	/**
+	* Private function to submit the per-node grants table. We use this so any
+	* user notifications aren't displayed when a userreference field causes the
+	* updating.
+	*/
+	function _ue_editors_editors_form_submit($form, &$form_state)
+	{
+		drupal_set_message(t('Editors saved.'));
+		
+		$form_values =& $form_state['values'];
+		
+		$nid = $form_values['nid'];
+		
+		foreach ($form_values['uid'] as $uid => $remove) if(!$remove) $editors[] = $uid;
+		
+		if ($form_values['keys'])
+		{
+			$account = user_load(array('name' => $form_values['keys']));
+			$editors[] = $account->uid;
+		}
+		
+		$node->nid = $nid;
+		ue_editors_set_editors($node, $editors);
+		
+		$listings = ue_custom_get_listings($node->nid, true);
+		
+		if($listings)
+			foreach($listings as $index => $listing)
+				ue_editors_set_editors($listing, $editors);
+	}
+	
+	/**
+	* Theme function for nodeaccess_grants_form.
+	*/
+	function theme_ue_editors_editors_form($form)
+	{
+		
+		// Search form.
+		$output .= '<p><div class="search-form">';
+		$output .= '<strong>' . t('Add new editor:') . '</strong>';
+		$output .= '<div class="container-inline">';
+		$output .= drupal_render($form['keys']);
+		$output .= drupal_render($form['add']);
+		$output .= '</div></div></p>';
+		
+		// Users table.
+		$users = element_children($form['uid']);
+		
+		if (count($users) > 0)
+		{
+			$header = array(t('User'));
+		
+			foreach ($users as $key)
+				$rows[] = array(drupal_render($form['uid'][$key]));
+			
+			$output .= theme('table', $header, $rows);
+		}
+		
+		$output .= drupal_render($form);
+		
+		return $output;
+	}
+	
+	function ue_editors_perm()
+	{
+		return array(
+			UE_EDITORS_PERM_CHANGE_LISTING_UID,
+			UE_EDITORS_PERM_EDITORS_OWN,
+			UE_EDITORS_PERM_EDITORS_ALL,
+		);
+	}
+	
+	// below is where the work is done. setting owners and editors.
+	
+	// helper function to save uid on a nid or node object. returns result of save (probably the saved node object)
+	function ue_editors_set_uid($node, $uid)
+	{
+		if(!is_object($node)) $node = node_load($node); //function called with nid.
+			
+		$node->uid = $uid;
+		return node_save($node);
+	}
+	
+	// helper function to save editors on a nid or node object. removes all previous grants.
+	function ue_editors_set_editors($node, $editors, $grants = NULL)
+	{
+		if(!is_object($node)) $node = node_load($node); //function called with nid.
+		if(empty($grants)) $grants = array('grant_view' => TRUE, 'grant_update' => TRUE, 'grant_delete' => TRUE);
+		$realm = 'nodeaccess_uid';
+		
+		foreach ($editors as $uid)
+		{
+			$grant = array_merge($grants, array('gid' => $uid, 'realm' => $realm));
+			$grants_to_save[] = $grant;
+		}
+		
+		node_access_write_grants($node, $grants_to_save, $realm);
+		
+		// Save role and user grants to our own table.
+		db_query("DELETE FROM {nodeaccess} WHERE nid = %d AND realm = '%s'", $node->nid, $realm);
+		foreach ($grants as $grant)
+		{
+			db_query("INSERT IGNORE INTO {nodeaccess} (nid, gid, realm, grant_view, grant_update, grant_delete) VALUES (%d, %d, '%s', %d, %d, %d)",
+			$nid, $grant['gid'], $grant['realm'], $grant['grant_view'], $grant['grant_update'], $grant['grant_delete']);
+		}
+	}
+	
+?>

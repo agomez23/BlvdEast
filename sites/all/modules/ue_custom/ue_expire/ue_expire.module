@@ -1,0 +1,200 @@
+<?php
+	
+	function ue_expire_menu()
+	{
+		$items['admin/settings/urban-edge/expire/run'] = array(
+			'page callback' => 'ue_expire_cron_expire',
+			'access callback' => 'ue_expire_expire_access',
+			'type' => MENU_CALLBACK,
+		);
+		
+		return $items;
+	}
+	
+	function ue_expire_expire_access()
+	{
+		global $user;
+		return $user->uid == 1;
+	}
+	
+	function ue_expire_cron_expire()
+	{
+		$sql = "
+		SELECT n.nid FROM {node} n
+		INNER JOIN {content_type_listing} l ON l.nid = n.nid AND field_unit_availability_value = '%s'
+		INNER JOIN relativity r ON r.nid = n.nid
+		WHERE type = '%s' AND changed < %d AND n.status = 1
+		ORDER BY r.parent_nid LIMIT 0,100";
+		
+		$nodes = db_query($sql, 'On the Market', 'listing', strtotime('-2 weeks'));
+		
+		$properties = array();
+		$users = array();
+		
+		while($nid = db_result($nodes))
+		{
+			$listing = node_load($nid, NULL, true);
+			
+			if(!$properties[$listing->parent_node])
+			{
+				$properties[$listing->parent_node] = node_load($listing->parent_node, NULL, true);
+				
+				$prop =& $properties[$listing->parent_node];
+				$users[$prop->uid][] = $properties[$listing->parent_node];
+				
+				if($prop->field_contact_build_owner[0]['nid'])
+					$prop->company = node_load($prop->field_contact_build_owner[0]['nid']);
+				elseif($prop->field_contact_build_mgr[0]['nid'])
+					$prop->company = node_load($prop->field_contact_build_mgr[0]['nid']);
+				elseif($prop->field_contact_lease_mgr[0]['nid'])
+					$prop->company = node_load($prop->field_contact_lease_mgr[0]['nid']);
+			}
+			else
+				$prop =& $properties[$listing->parent_node];
+			
+			$prop->listings[] = $listing;
+		}
+		
+		$output .= ue_expire_render_list($properties, true);
+		
+		drupal_mail('ue_expire', 'admin_daily', 'darrin@urbanedgeny.com', user_preferred_language($user), array('account' => $user, 'props' => $props));
+		
+		foreach($users as $uid => $props)
+		{
+			$account = user_load($uid);
+			drupal_mail('ue_expire', 'user_daily', 'darrin@urbanedgeny.com', user_preferred_language($account), array('account' => $account, 'props' => $props));
+		}
+		
+		return $output;
+	}
+	
+	function ue_expire_mail($key, &$message, $params)
+	{
+		$language = $message['language'];
+		$variables = user_mail_tokens($params['account'], $language);
+		
+		$message['headers']['MIME-Version'] = '1.0';
+		$message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+		$message['headers']['Content-Transfer-Encoding'] = '8Bit';
+		
+		switch($key)
+		{
+			case 'admin_daily':
+				$variables['!expired'] = ue_expire_render_list($params['props'], true);
+			break;
+			case 'user_daily':
+				$variables['!expired'] = ue_expire_render_list($params['props']);
+			break;
+		}
+		
+		$message['subject'] .= _ue_expire_mail_text($key .'_subject', $language, $variables);
+		$message['body'][] = _ue_expire_mail_text($key .'_body', $language, $variables);
+	}
+	
+	function ue_expire_render_list(&$props, $showOwner = false)
+	{
+		$header[] = t('Unit #');
+		if($showOwner)
+			$header[] = t('Owner');
+		
+		foreach($props as $i => $prop)
+		{
+			if(!$rows[$prop->nid])
+			{
+				$rows[$prop->nid][] = array('data' => l($prop->title, 'node/' . $prop->nid), 'style' => 'font-weight:bold');
+				if($showOwner)
+					$rows[$prop->nid][] = l($prop->company->title, 'node/' . $prop->company->nid);
+			}
+			
+			foreach($prop->listings as $j => $listing)
+				$rows[$prop->nid . '-' . $listing->nid][] = l($listing->title, 'node/' . $listing->nid);
+		}
+		
+		$output .= theme('table', $header, $rows, array('width' => $showOwner ? '60%' : '30%'));
+		
+		return $output;
+	}
+	
+	/**
+	* Returns a mail string for a variable name.
+	*
+	* Used by ue_expire_mail() and the settings forms to retrieve strings.
+	*/
+	function _ue_expire_mail_text($key, $language = NULL, $variables = array())
+	{
+		$langcode = isset($language) ? $language->language : NULL;
+		
+		if ($admin_setting = variable_get('ue_expire_mail_'. $key, FALSE))
+		{
+			// An admin setting overrides the default string.
+			return strtr($admin_setting, $variables);
+		}
+		else
+		{
+			// No override, return default string.
+			switch ($key)
+			{
+				case 'admin_daily_subject':
+					return t('Listings expiring on !site', $variables, $langcode);
+				case 'admin_daily_body':
+					return t("<h1>Listings expiring on !site</h1>\n\n!expired", $variables, $langcode);
+				case 'user_daily_subject':
+					return t('Listings expiring on !site', $variables, $langcode);
+				case 'user_daily_body':
+					return t("<h1>Listings expiring on !site</h1>\n!username,\n\nThe following listings are about to expire on !site:\n\n!expired", $variables, $langcode);
+			}
+		}
+	}
+	
+	function ue_expire_form_alter(&$form, $form_state, $form_id)
+	{
+		if($form_id == 'ue_custom_admin')
+		{
+			$form['ue_expire'] = array(
+				'#type' => 'fieldset',
+				'#title' => t('Listing Expire'),
+				'#collapsible' => TRUE,
+				'#weight' => 0
+			);
+			
+			$form['ue_expire']['admin_daily']= array(
+				'#type' => 'fieldset',
+				'#title' => t('Admin E-mail'),
+				'#collapsible' => TRUE,
+				'#description' => t('Customize listing expiration emails sent to administrators.'),
+			);
+			$form['ue_expire']['admin_daily']['admin_daily_subject'] = array(
+				'#type' => 'textfield',
+				'#title' => t('Subject'),
+				'#default_value' => _ue_expire_mail_text('admin_daily_subject'),
+				'#maxlength' => 180,
+			);
+			$form['ue_expire']['admin_daily']['admin_daily_body'] = array(
+				'#type' => 'textarea',
+				'#title' => t('Body'),
+				'#default_value' => _ue_expire_mail_text('admin_daily_body'),
+				'#rows' => 15,
+			);
+			
+			$form['ue_expire']['user_daily']= array(
+				'#type' => 'fieldset',
+				'#title' => t('User E-mail'),
+				'#collapsible' => TRUE,
+				'#description' => t('Customize listing expiration emails sent to users.'),
+			);
+			$form['ue_expire']['user_daily']['user_daily_subject'] = array(
+				'#type' => 'textfield',
+				'#title' => t('Subject'),
+				'#default_value' => _ue_expire_mail_text('user_daily_subject'),
+				'#maxlength' => 180,
+			);
+			$form['ue_expire']['user_daily']['user_daily_body'] = array(
+				'#type' => 'textarea',
+				'#title' => t('Body'),
+				'#default_value' => _ue_expire_mail_text('user_daily_body'),
+				'#rows' => 15,
+			);
+		}
+	}
+	
+?>

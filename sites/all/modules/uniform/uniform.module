@@ -1,0 +1,11 @@
+<?
+	drupal_add_js(drupal_get_path('module', 'uniform') . '/jquery.uniform.js', 'module', 'footer');
+	drupal_add_css(drupal_get_path('module', 'uniform') . '/css/uniform.default.css');
+	drupal_add_js(drupal_get_path('module', 'uniform') . '/jquery.uniform.custom.js', 'module');
+	//drupal_add_js('$(function(){$(".uniform select, .uniform :checkbox, .uniform :radio, .uniform :file, .uniform :input").uniform();});', 'inline');
+	/*
+	drupal_add_js(drupal_get_path('module', 'uniform') . '/jquery.jqtransform.js', 'module', 'footer');
+	drupal_add_css(drupal_get_path('module', 'uniform') . '/jqtransform.css');
+	drupal_add_js('$(function(){$("form").jqTransform();});', 'inline', 'footer');
+	*/
+?>

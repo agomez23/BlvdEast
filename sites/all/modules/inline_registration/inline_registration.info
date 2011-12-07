@@ -1,0 +1,12 @@
+name = "Inline Registration"
+description = "Allows anonymous users to register via the node/add page."
+package = Other
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "inline_registration"
+datestamp = "1298619450"
+

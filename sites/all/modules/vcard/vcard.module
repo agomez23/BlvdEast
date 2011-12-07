@@ -1,0 +1,363 @@
+<?php
+// $Id: vcard.module,v 1.17.2.6 2009/10/21 09:59:09 sanduhrs Exp $
+
+/**
+ * vCard is a file format standard for electronic business cards.
+ * vCards are often attached to e-mail messages, but can be exchanged in other ways,
+ * such as on the World Wide Web. (http://en.wikipedia.org/wiki/Vcard)
+ *
+ * This module creates downloadable vCards based on profile fields.
+ * It is possible to output hCards (http://en.wikipedia.org/wiki/Hcard)
+ * on a user's profile page via themeable function.
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function vcard_requirements($phase) {
+  $requirement = array();
+  // Ensure translations don't break at install time
+  $t = get_t();
+  $init = _vcard_init();
+
+  if ($phase == 'runtime') {
+    $requirement['vcard'] = array(
+      'title' => t('PEAR Contact_Vcard_Build'),
+      'value' => $init ? t('Available.') : t('Not available.'),
+      'description' => t(l('PEAR Contact_Vcard_Build package', 'http://pear.php.net/package/Contact_Vcard_Build') .' for vcard generation.'),
+      'severity' => $init ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    );
+  }
+
+  return $requirement;
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function vcard_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#vcard':
+      return t("
+        <p>
+        vCard automates the exchange of personal information typically found on a traditional business card. vCard is used in applications such as Internet mail, voice mail, Web browsers, telephony applications, call centers, video conferencing, PIMs (Personal Information Managers), PDAs (Personal Data Assistants), pagers, fax, office equipment, and smart cards. vCard information goes way beyond simple text, and includes elements like pictures, company logos, live Web addresses, and so on.
+        </p>
+        <p>
+        Web browsers and !aggregation_tools can also extract and use vCard-like information when it is displayed on the page using !hcard - an embedded !microformat.
+        Read the module's documentation for more information on how to add hCard support to your theme.
+        </p>
+        <pre>",
+        array(
+          '!aggregation_tools' => l('aggregation tools', 'https://addons.mozilla.org/en-US/firefox/addon/2240'),
+          '!hcard' => l('hCard', 'http://microformats.org/wiki/hcard'),
+          '!microformat' => l('microformat', 'http://microformats.org'),hook
+        )
+      );
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ *
+ * @return an array of permissions
+ */
+function vcard_perm() {
+  return array('administer vcard', 'have vcard', 'download vcard', 'download vcard with e-mail');
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @return an array of menu items
+ */
+function vcard_menu() {
+  $items = array();
+
+  $items['admin/settings/vcard'] = array(
+    'title' => 'vCard',
+    'description' => "Configure the profile field mapuserpings.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('vcard_admin_settings'),
+    'access arguments' => array('administer vcard'),
+    'file' => 'vcard.admin.inc',
+  );
+  $items['user/%/vcard'] = array(
+    'title' => t('vcard'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'vcard_fetch',
+    'page arguments' => array(1),
+    'access callback' => 'vcard_perm_check',
+  );
+
+  return $items;
+}
+
+/**
+ * Check download permissions
+ * Custom menu access callback
+ *
+ * @return boolean
+ */
+function vcard_perm_check() {
+  if (user_access('download vcard') OR user_access('download vcard with e-mail')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_user().
+ * Adds a vcard icon and link to the user page
+ */
+function vcard_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  
+  switch ($op) {
+    case 'view':
+    // Check permissions
+    if (user_access('have vcard', $account) && vcard_perm_check() && _vcard_init()) {
+      // Attach vCard to profile
+      $account->content['vcard'] = array(
+        '#type' => 'user_profile_item',
+        '#title' => t('vCard'),
+        '#value' => theme('image', drupal_get_path('module', 'vcard') .'/vcard.png', t('Download vcard')) .' '. l(t('Download vcard'), 'user/'. $account->uid .'/vcard', array('absolute' => FALSE, 'html' => TRUE)),
+        '#weight' => 10,
+        '#attributes' => array('class' => 'vcard-link'),
+      );
+    }
+  }
+}
+
+/**
+ * Retrieve a user's vcard
+ */
+function vcard_get($uid) {
+  $account = user_load(array('uid' => $uid));
+  $vcard = _vcard_init();
+
+  $first = vcard_get_field('givenname', $account);
+  $last = vcard_get_field('familyname', $account);
+  if (!empty($first) && !empty($last)) {
+      $vcard->setName($last, $first, '', '', '');
+      $vcard->setFormattedName($first .' '. $last);
+  }
+  else {
+      $vcard->setName($account->name, '', '', '', '');
+      $vcard->setFormattedname($account->name);
+  }
+  
+  if (user_access('download vcard with e-mail')) {
+    $vcard->addEmail($account->mail);
+  }
+  $vcard->addNickname($account->name);
+
+  // Birthday
+  $birthday = vcard_get_field('birthday', $account);
+  if (!empty($birthday)) {
+    if (is_array($birthday)) {
+      $bday = $birthday['year'] .'-'. $birthday['month'] .'-'. $birthday['day'];
+      $vcard->setBirthday($bday);
+    }
+    else {
+      $vcard->setBirthday($bday);
+    }
+  }
+
+  // Organization
+  $org = vcard_get_field('organization', $account);
+  if (!empty($org)) {
+    $vcard->addOrganization($org);
+  }
+
+  // URL
+  $url = vcard_get_field('url', $account);
+  if (!empty($url)) {
+    $vcard->setURL($url);
+  }
+
+  // Telephone
+  $tel = vcard_get_field('telephone', $account);
+  if (!empty($tel)) {
+    $vcard->addTelephone($tel);
+  }
+
+  // Address
+  $street = vcard_get_field('street', $account);
+  $city = vcard_get_field('city', $account);
+  $province = vcard_get_field('province', $account);
+  $postal = vcard_get_field('postal', $account);
+  $country = vcard_get_field('country', $account);
+
+  $vcard->addAddress('', '', $street, $city, $province, $postal, $country);
+
+  if ($account->location['latitude'] && $account->location['longitude']) {
+    $vcard->setGeo($account->location['latitude'], $account->location['longitude']);
+  }
+
+  return $vcard;
+}
+
+/**
+ * VCard for direct download
+ */
+function vcard_fetch($uid) {
+  $vcard = vcard_get($uid);
+  header('Content-type: text/x-vcard');
+  header('Content-Disposition: attachment; filename="'. $account->name .'.vcf"');
+  print $vcard->fetch();
+  exit;
+}
+
+/**
+ * Map profile data to vcard fields
+ */
+function vcard_get_field($field, $account) {
+  static $vcard_map;
+  if (empty($vcard_map[$account->uid])) {
+    $vcard_map[$account->uid] = _vcard_get_map($account);
+  }
+  if (is_array($vcard_map[$account->uid][$field])) {
+    foreach ($vcard_map[$account->uid][$field] as $key => $value) {
+      $vcard_map[$account->uid][$field][$key] = check_plain($value);
+    }
+  }
+  else {
+    $vcard_map[$account->uid][$field] = check_plain($vcard_map[$account->uid][$field]);
+  }
+  return $vcard_map[$account->uid][$field];
+}
+
+/**
+ * Ensures the vcard PEAR library is available and returns the vCard builder
+ * object.
+ *
+ * @return vCard object, null if library is not available.
+ */
+function _vcard_init() {
+  if (@include_once('Contact_Vcard_Build.php')) {
+    $vcard = new Contact_Vcard_Build();
+  }
+  return $vcard ? $vcard : FALSE;
+}
+
+/**
+ *
+ */
+function _vcard_properties() {
+  return array(
+    'givenname'     => t('Given Name'),
+    'familyname'    => t('Family name'),
+    'birthday'      => t('Birthday'),
+    'organization'  => t('Organization'),
+    'telephone'     => t('Telephone'),
+    'url'           => t('URL'),
+    'street'        => t('Street'),
+    'city'          => t('City'),
+    'postal'        => t('Postal'),
+    'province'      => t('Province'),
+    'country'       => t('Country'),
+  );
+}
+
+/**
+ *
+ */
+function _vcard_get_map($account) {
+  $map = array();
+  $result = db_query('SELECT fid, name FROM {profile_fields}');
+  while ($field = db_fetch_object($result)) {
+    $mapped = variable_get('vcard_profile_'. $field->fid, 0);
+    if ($mapped) {
+      $map[$mapped] = $account->{$field->name};
+    }
+  }
+
+  return $map;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function vcard_theme($existing, $type, $theme, $path) {
+  return array(
+    'vcard' => array(
+      'arguments' => array('account' => NULL),
+    ),
+  );
+}
+
+
+/**
+ * Displays user contact information decorated with hCard microformats.
+ *
+ * Use this in your theme to replace theme_user_profile() or
+ * theme_profile_listing()
+ *
+ * Uses hCard as the default xHTML
+ * see http://microformats.org/wiki/hcard
+ *
+ * @param $account user object
+ */
+function theme_vcard($account) {
+  // photo
+  if (variable_get('user_pictures', 0)) {
+    if ($account->picture && file_exists($account->picture)) {
+      $picture = file_create_url($account->picture);
+    }
+    else if (variable_get('user_picture_default', '')) {
+      $picture = variable_get('user_picture_default', '');
+    }
+    if ($picture) {
+      $photo = '<img class="photo" src="'. $picture .'" alt="photo" />';
+    }
+  }
+
+  // name
+  $firstname = vcard_get_field('givenname', $account);
+  $lastname = vcard_get_field('familyname', $account);
+  if ($firstname && $lastname) {
+    $name = '<div class="n">';
+    $name .= '<span class="given-name">'. $firstname ."</span>\n";
+    $name .= '<span class="family-name">'. $lastname ."</span>\n";
+    $name .= '<span class="nickname">'. $account->name ."</span>\n";
+    $name .= "</div>\n";
+  }
+  else {
+    $name = '<div class="fn">'. $account->name ."</div>\n";
+  }
+
+  $street   = vcard_get_field('street', $account);
+  $city     = vcard_get_field('city', $account);
+  $province = vcard_get_field('province', $account);
+  $postal   = vcard_get_field('postal', $account);
+  $country  = vcard_get_field('country', $account);
+
+  if ($street || $city || $province || $postal || $country ) {
+    $address = '<div class="adr">';
+    $address .= ($street) ? '<div class="street-address">'. $street ."</div>\n" : '';
+    $address .= ($city) ? '<span class="locality">'. $city ."</span>\n" : '';
+    $address .= ($province) ? '<span class="region">'. $province ."</span>\n" : '';
+    $address .= ($postal) ? '<span class="postal-code">'. $postal ."</span>\n" : '';
+    $address .= ($country) ? '<span class="country-name">'. $country ."</span>\n" : '';
+    $address .=  "</div>\n";
+  }
+
+  if ($telephone = vcard_get_field('telephone', $account)) {
+    $tel = '<div class="tel">'. $telephone ."</div>\n";
+  }
+
+  if ($org = vcard_get_field('organization', $account)) {
+    $org = '<div class="org">'. $org ."</div>\n";
+  }
+
+  $output .= '<div class="vcard">';
+  $output .= $photo;
+  $output .= $name;
+  $output .= $org;
+  $output .= $address;
+  $output .= $tel;
+  $output .= '<br class="clear" />';
+  $output .= "</div>\n";
+  return $output;
+}
+

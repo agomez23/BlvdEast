@@ -1,0 +1,59 @@
+<?
+	function ue_custom_property_progress()
+	{
+		$rtn = '';
+		global $globalForm, $user;
+		//Find all field groups.
+		if(is_array($globalForm))
+		{
+			$formtype = $globalForm['#parameters'][0];
+			foreach($globalForm as $key => $value)
+			{ 
+				//Filter out core field groups.
+				if(is_array($value) && $value['#type'] == 'fieldset' && is_array($value['#attributes']) && $value['#attributes']['class'] != 'menu-item-form')
+				{
+					$groups[] = $value;
+				}
+			}
+			if(is_array($groups) && count($groups) > 0)
+			{
+				$rtn .= '<ul>';
+				foreach($groups as $key => $value)
+				{ 
+					$rtn .= '<li><a rel="form" href="#' . $value['#attributes']['class'] . '">' . $value['#title'] . '</a>';
+					$subgroups = '';
+					foreach($value as $key2 => $value2)
+					{
+						if(is_array($value2) && $value2[0]['#type'] == 'anchorfield')
+						{
+							$subgroups .= '<li class="anchor_li"><a href="#' . $key2 . '" class="anchor_li_a">' . $value2['#title'] . '</a></li>';
+						}
+					}
+					if(strlen($subgroups) > 0)
+					{
+						$rtn .= '<ul id="anchor_key_'.str_replace(' ','_',$value['#title']).'">' . $subgroups . '</ul></li>';
+					} else {
+						$rtn .= '</li>';
+					}
+				}
+				$rtn .= '</ul>';
+				$rtn .= '<a class="savework"><img src="/sites/all/themes/ue2/images/save-your-work.png"></a>';
+			}
+			
+			
+			$scrollJs = '$(function(){';
+			
+			if(!empty($user->roles[6]))
+				$scrollJs .= '$("fieldset[class~=group]").not(".' . $groups[0]['#attributes']['class'] . '").hide();';
+			else
+				$scrollJs .= '$("fieldset[class]").not(".' . $groups[0]['#attributes']['class'] . '").hide();';
+			
+			$scrollJs .= '});';
+			
+			drupal_add_js(drupal_get_path('module', 'ue_custom') . '/form-progress.js');
+			drupal_add_js($scrollJs, "inline");
+		}
+		
+		return $rtn;
+	}
+?>

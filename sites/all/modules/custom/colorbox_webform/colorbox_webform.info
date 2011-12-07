@@ -1,0 +1,5 @@
+name = Colorbox Webform
+description = A plugin to provide webform access via colorbox popups.
+core = 6.x
+dependencies[] = colorbox
+dependencies[] = webform

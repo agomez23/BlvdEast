@@ -1,0 +1,131 @@
+<?php
+// $Id: inline_registration.module,v 1.1.4.6 2010/07/05 07:53:52 livido Exp $
+
+/**
+ * @file
+ *
+ */
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function noderef_inherit_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+    $form['noderef_inherit'] = array(
+      '#type'           => 'fieldset',
+      '#title'          => t('Nodereference Inherit'),
+      '#description'    => t(''),
+      '#weight'         => 20,
+      '#collapsible'    => TRUE,
+      '#collapsed'      => variable_get('noderef_inherit_'. $form['#node_type']->type, 0) ? FALSE : TRUE,
+    );
+	/*
+    $form['noderef_inherit']['inline_registration'] = array(
+      '#type'           => 'checkbox',
+      '#title'          => t('Registration inline'),
+      '#default_value'  => variable_get('inline_registration_'. $form['#node_type']->type, 0),
+      '#description'    => t('Enable user creation from this content.'),
+    );
+    $form['inline_registration']['inline_registration_weight'] = array(
+      '#type'           => 'weight',
+      '#title'          => t('Weight of field'),
+      '#default_value'  => variable_get('inline_registration_weight_'. $form['#node_type']->type, -10),
+      '#description'    => t("Select weight for this field into content creation form."),
+      '#delta' => 50,
+    );
+	*/
+	
+	//get full content type info.
+	$type = content_types($form['#node_type']->type);
+	
+	//get vocabs assigned to current content type.
+	$localvocabs = taxonomy_get_vocabularies($type['type']);
+	
+	if(count($type['fields']))
+	{
+		foreach($type['fields'] as $field_name => $field)
+		{
+			if($field['type'] == 'nodereference')
+			{
+				
+				$form['noderef_inherit'][$field_name] = array(
+				  '#type'           => 'fieldset',
+				  '#title'          => t('@label - @type', array('@label' => $field['widget']['label'], '@type' => $field['field_name'])),
+				  '#weight'         => 20,
+				  '#collapsible'    => TRUE,
+				);
+				
+				//get referenceable types.
+				foreach($field['referenceable_types'] as $reftype => $enabled)
+				{
+					if($enabled)
+					{
+						// get vocabs assigned to content type.
+						$vocabs = taxonomy_get_vocabularies($reftype);
+						
+						// loop through vocabs assigned to current type.
+						foreach($localvocabs as $vocab)
+						{
+							// see if vocab exists on both content types.
+							if(in_array($vocab->vid, array_keys($vocabs)))
+							{
+								$enabledvocabs[$vocab->vid] = t($vocab->name);
+							}
+						}
+						
+						$form['noderef_inherit'][$field_name]['taxonomy'] = array(
+							'#type'		=> 'fieldset',
+							'#title'	=> t('Inherit Taxonomy'),
+						);
+						
+						$form['noderef_inherit'][$field_name]['taxonomy'][$vocab->vid] = array(
+							'#type'		=> 'checkboxes',
+							'#title'	=> t('Inherit vocabularies'),
+							'#options'	=> $enabledvocabs,
+						);
+						
+						$form['noderef_inherit'][$field_name]['taxonomy']['hide'] = array(
+							'#type'				=> 'checkbox',
+							'#title'			=> t('Hides term selection for inherited vocabularies on %type edit form.', array('%type' => $type['name'])),
+							'#default_value'	=> variable_get('inline_registration_'. $form['#node_type']->type, 0),
+						);
+						
+						// integrate location module
+						if(module_exists('location'))
+						{
+							$form['noderef_inherit'][$field_name]['location'] = array(
+							  '#type'           => 'checkbox',
+							  '#title'          => t('Location'),
+							  '#default_value'  => variable_get('inline_registration_'. $form['#node_type']->type, 0),
+							);
+						}
+				
+						//print_r($vocabs);
+					}
+				}
+			}
+		}
+	}
+  }
+  
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function noderef_inherit_nodeapi(&$node, $op, $teaser, $page) {
+  // Save user uid to node_revisions table when require e-mail verification.
+  /*
+  global $user;
+  if($user->uid != 0) return;
+  switch ($op) {
+    case 'insert':
+      if (!empty($node->vid)) {
+        db_query('UPDATE {node_revisions} SET uid = %d WHERE vid = %d', $node->uid, $node->vid);
+      }
+      break;
+  }
+  return;
+  */
+}

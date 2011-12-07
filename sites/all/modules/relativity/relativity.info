@@ -1,0 +1,13 @@
+; $Id: relativity.info,v 1.1.6.2 2008/03/21 21:37:14 darius Exp $
+name = Node relativity
+description = "Links nodes to form relationship graphs."
+package = "Node relationships"
+core=6.x
+
+
+; Information added by drupal.org packaging script on 2010-11-11
+version = "6.x-1.4"
+core = "6.x"
+project = "relativity"
+datestamp = "1289448107"
+

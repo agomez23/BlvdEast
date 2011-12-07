@@ -1,0 +1,11 @@
+; $Id: cronplus.info,v 1.2 2008/12/19 10:09:27 syscrusher Exp $
+name = Cronplus
+description = "Cronplus intercepts Drupal's normal cron hook to provide API calls at (nominally) fixed time intervals rather than every cron cycle."
+core = 6.x
+
+; Information added by drupal.org packaging script on 2008-12-19
+version = "6.x-1.0-beta4"
+core = "6.x"
+project = "cronplus"
+datestamp = "1229681717"
+

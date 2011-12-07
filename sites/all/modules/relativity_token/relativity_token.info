@@ -1,0 +1,4 @@
+name = Node relativity path token
+description = "Provides token for building paths based on parent item paths."
+package = "Node relationships"
+core=6.x

@@ -1,0 +1,11 @@
+<?php
+	
+	/**
+	* Fix module weight to be heavier than CCK field group module, 
+	* so hook_form_alter() has access to field groups
+	*/
+	function ue_specific_install() {
+		$items = array();
+		$items[] = update_sql("UPDATE {system} SET weight = 10 WHERE `name` = 'ue_specific';");
+		return $items;
+	}

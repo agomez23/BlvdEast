@@ -1,0 +1,174 @@
+<?php
+
+// $Id: flvmediaplayer.install,v 1.1.2.6.2.2.2.6 2009/04/10 22:37:33 arthuregg Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function flvmediaplayer_schema() {
+
+  $schema['flvmediaplayer_node'] = array(
+    'description' => t('Stores node data'),
+    'fields' => array(
+      'nid' => array(
+        'description' => t('Node Id'),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'config' => array(
+        'description' => t('Node configuration data'),
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+
+  $schema['flvmediaplayer_profiles'] = array(
+    'description' => t('Stores the profile data.'),
+    'fields' => array(
+      'pid' =>  array('type' => 'serial'),
+      'type' => array(
+        'description' => t('Description of the profile'),
+        'type' => 'varchar',
+        'length' => 255,
+        ),
+      'name' => array(
+        'description' => t('Name of the profile'),
+        'type' => 'varchar',
+        'length' => 255,
+        ),
+      'config' => array(
+        'description' => t('Configuration data'),
+        'type' => 'text',
+        'size' => 'medium',
+        ),
+     ),
+     'primary key' => array ('pid'),
+  );
+
+  // cache schema
+  $schema['cache_flvmediaplayer'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_flvmediaplayer']['description'] = t('Cache table for the FLV Media PLayer module to store configuration and node data');
+
+  return $schema;
+}
+
+/**
+ * implementation of hook_uninstall()
+ */
+function flvmediaplayer_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('flvmediaplayer');
+
+  // Remove tables.
+  drupal_uninstall_schema('flvmediaplayer');
+  variable_del('flvmediaplayer_%');
+  variable_del('flvmp_%');
+}
+
+
+/**
+ * implementation of hook_install
+ */
+function flvmediaplayer_install() {
+  // Create tables.
+  drupal_install_schema('flvmediaplayer');
+}
+
+
+/**
+ * update the player path to the new file name
+ */
+function flvmediaplayer_update_6000() {
+  $oldplayer = variable_get('flvmediaplayer_player', 'jw_player_4.x.player') ;
+  $pattern = '/.player$/';
+  variable_set('flvmediaplayer_player', preg_replace($pattern, '.inc', $oldplayer));
+  drupal_set_message(t('Updated your player path to the new format'));
+  return array();
+}
+
+
+/**
+ * Clears caches and does a configuration update for the new version structure
+ */
+function flvmediaplayer_update_6002() {
+  // rebuild the menu options
+  menu_rebuild();
+  // clear the flvmediaplayer cache
+  cache_clear_all('*', 'cache_flvmediaplayer', true);
+  $ret = array();
+  // get all of the profiles from the db- don't use the API so the values can be updated
+  $results = db_query('SELECT * FROM {flvmediaplayer_profiles}');
+
+  $params = array('');
+  $flvmp = array('name', );
+  while($result = db_fetch_array($results)) {
+    // get the data out
+    $data = unserialize($result['config']);
+
+    // handle the body display
+    if ($data['player_node_body']) {
+      $new_config['flvmp_player_display'][] = 'display_body';
+    }
+    // handle the embed display
+    if ($data['embed_enable']) {
+      $new_config['flvmp_player_display'][] = 'body_embed';
+    }
+    // handle the embed display
+    if ($data['embed_teaser']) {
+      $new_config['flvmp_player_display'][] = 'display_teaser_embed';
+    }
+
+    $new_config['flvmp_name'] = $data['name'];
+    $new_config['flvmp_player_path'] = $data['player_path'];
+    $new_config['flvmp_file_location_hook'] = $data['file_location_hook'];
+    $new_config['flashvar_file'] = $data['file_location'];
+    $new_config['param_bgcolor'] = $data['color_background'];
+    $new_config['param_height'] = $data['player_height'];
+    $new_config['param_width'] = $data['player_width'];
+    $new_config['param_fullscreen'] = $data['playback_fullscreen'];
+    $new_config['param_quality'] = $data['playback_quality'];
+    $new_config['param_allowscriptaccess'] = $data['playback_allowscriptaccess'];
+
+    $new_config['flvmp_embed_profile'] = $data['embed_profile'];
+    $new_config['flvmp_external_config'] = $data['external_config'];
+
+    $new_config['flvmp_plugins'] = $data['external_plugins'];
+    $new_config['flvmp_flashvars'] = $data['external_flashvars'];
+    //$new_config[''] = $data[''];
+
+    // list of items to remove
+    $unset = array('player_node_body', 'embed_enable', 'embed_teaser', 'name',
+      'player_path', 'file_location', 'file_location_hook',
+      'color_background', 'player_height', 'player_width',
+      'playback_fullscreen', 'playback_quality', 'playback_allowscriptaccess', 'embed_profile',
+      'external_config', 'external_plugins', 'external_flashvars'
+    );
+    foreach($unset as $item) {
+      unset($data[$item]);
+    }
+
+     // now start mapping the remaing values
+    foreach ($data as $key => $value) {
+       if (strstr($key, 'flvmp_')) {
+        $new_config[$key] = $value;
+      }
+      // move over all the obvious flvmp settings
+      elseif (strstr($key, 'external_')) {
+        $new_key = str_replace('external_', 'flvmp_', $key);
+        $new_config[$new_key] = $value;
+      }
+      elseif($value) {
+        // remove the prefix and convert to flash var
+        $replace = preg_replace('/^.*_/', 'flashvar_', $key);
+        $new_config[$replace] = $value;
+      }
+    }
+    // now update the configuration
+    db_query('UPDATE {flvmediaplayer_profiles} SET config = "%s" WHERE name = "%s"', serialize($new_config), $result['name']);
+  }
+
+  return $ret;
+}
+

@@ -1,0 +1,245 @@
+<?php
+// $Id: resizable_body.module,v 1.1.2.8.2.2 2009/03/25 06:41:07 george2 Exp $
+
+/**
+ * @file
+ * Module to allow for each content type the setting of: 
+ * - #rows, #cols and #resizable for body field and comment field of nodetypes
+ * - removal of grippie - drag bar
+ * - removal of "split summary at cursor" teaser button
+ * - auto growing text area as the text length increases
+*/
+
+/** 
+ * Implementation of hook_help()
+ */
+function resizable_body_help($path, $arg) {
+  if ($path == 'admin/help#resizable_body') {
+    return t('This module allows you to set rows and cols for the body and comment field for each nodetype. Also, specify how the height of the field can be adjustable, either hide the grippie, show the grippie (default), or set it to automatic with or without animation. There is also an option remove the teaser button for the body.');
+  }
+}
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function resizable_body_form_alter(&$form, $form_state, $form_id) {
+  //
+  // node type edit form
+  //
+  if ($form_id == 'node_type_form') {
+  
+    // create fieldset to prevent things getting messy
+    $form['submission']['resizable_body'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Resizing Options'),
+      '#weight' => 8,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    
+    // content_types.inc will save the form field as resizable_body_rows_{$nodetype}, so don't need to manually append it here
+    $form['submission']['resizable_body']['resizable_body_rows'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Rows'),
+      '#description' => t('How many rows do you want the bodyfield to use? Ignore if you don\'t want a body field for this content type.'),
+      '#default_value' => variable_get('resizable_body_rows_' . $form['#node_type']->type, 12),  // need to append the nodetype though to retrieve the var
+      '#size' => 3,
+      '#weight' => 0,
+      '#element_validate' => array('resizable_body_element_validate'),
+    );
+    $form['submission']['resizable_body']['resizable_body_cols'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Columns'),
+      '#description' => t('How many cols do you want the bodyfield to use? If the grippie is shown, this value will be overridden.'),
+      '#default_value' => variable_get('resizable_body_cols_' . $form['#node_type']->type, 60),
+      '#size' => 3,
+      '#weight' => 0,
+      '#element_validate' => array('resizable_body_element_validate'),
+    );
+    $form['submission']['resizable_body']['resizable_body_split'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use "Split Summary at Cursor" teaser button?'),
+      '#description' => t('Should the user be able to manually define teaser text?'),
+      '#default_value' => variable_get('resizable_body_split_' . $form['#node_type']->type, TRUE),
+      '#weight' => 0,
+    );
+    $form['submission']['resizable_body']['resizable_body_resizable'] = array(
+      '#type' => 'select',
+      '#title' => t('Adjustable Height'),
+      '#description' => t('Should the field height be adjustable? When automatic height is enabled, the grippie will be disabled. Caution: Animated may be very slow for some users.'),
+      '#options' => array (t('None - Hide Grippie'), t('Manual - Show Grippie'), t('Autoresize, without animation'), t('Autoresize with animation')),
+      '#default_value' => variable_get('resizable_body_resizable_' . $form['#node_type']->type, 1),
+      '#weight' => 10,
+      '#element_validate' => array('resizable_body_resizable_element_validate'),
+    );
+
+    // if comment module is enabled, then add options for the comment field
+    if (module_exists('comment')) {
+      $form['comment']['resizable_body'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Resizing Options'),
+        '#weight' => 8,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['comment']['resizable_body']['resizable_body_cresizable'] = array(
+        '#type' => 'select',
+        '#title' => t('Vertically grow the height of the field as the user types'),
+      '#description' => t('Should the field height be adjustable? When automatic height is enabled, the grippie will be disabled. Caution: Animated may be very slow for some users.'),
+        '#options' => array (t('None - Hide Grippie'), t('Manual - Show Grippie'), t('Autoresize, without animation'), t('Autoresize with animation')),
+        '#default_value' => variable_get('resizable_body_resizable_' . $form['#node_type']->type, 1),
+        '#weight' => 10,
+        '#element_validate' => array('resizable_body_resizable_element_validate'),
+      );
+      $form['comment']['resizable_body']['resizable_body_crows'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Comment field rows'),
+        '#description' => t('How many rows do you want the comment field to use?'),
+        '#default_value' => variable_get('resizable_body_crows_' . $form['#node_type']->type, 5),
+        '#size' => 3,
+        '#required' => TRUE,
+        '#element_validate' => array('resizable_body_element_validate'),    
+      );
+      $form['comment']['resizable_body']['resizable_body_ccols'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Comment field cols'),
+       '#description' => t('How many cols do you want the comment field to use? If the grippie is shown, this value will be overridden.'),
+       '#default_value' => variable_get('resizable_body_cols_' . $form['#node_type']->type, 60),
+        '#size' => 3,
+        '#required' => TRUE,
+        '#element_validate' => array('resizable_body_element_validate'),    
+      );
+    }
+  }
+
+  //
+  // contenttype node form
+  //
+  elseif (substr($form_id, -10) == '_node_form') {
+    $nodetype = $form['type']['#value'];
+    
+    // include autoresize.js if needed
+    if (($autoresize = variable_get('resizable_body_resizable_' . $nodetype, 0)) > 1) {
+      // include jquery function
+      drupal_add_js(drupal_get_path('module', 'resizable_body') . '/autoresize.js', 'module', 'header', FALSE, TRUE, FALSE); // to prevent aggregation
+      
+      // apply to body field
+      // after hours of debugging, it would appear ff3/linux will throw a hissy fit until this in the footer
+      // @todo - is the above still the case with garland?
+      if ($autoresize == 2) { // no animation
+        drupal_add_js('$("#edit-body").elastic();', 'inline');
+      }
+      elseif ($autoresize == 3) {
+        drupal_add_js('$("#edit-body").elastic(true);', 'inline');
+      }      
+    }
+
+    $form['body_field']['body']['#rows'] = variable_get('resizable_body_rows_' . $nodetype, 12);
+    $form['body_field']['body']['#cols'] = variable_get('resizable_body_cols_' . $nodetype, 60);
+    $form['body_field']['body']['#resizable'] = (variable_get('resizable_body_resizable_' . $nodetype, TRUE) == 1) ? TRUE : FALSE;
+    
+    // remove "split summary at cursor" button and related elements if necessary
+    if (variable_get('resizable_body_split_' . $nodetype, TRUE) == FALSE) {
+      $form['body_field']['#after_build'] = NULL;
+      $form['body_field']['teaser_js'] = NULL;
+      $form['body_field']['teaser_include'] = NULL;
+    }
+
+  }
+  
+  //
+  // comment form for comment module and panels module
+  //
+  elseif ($form_id == 'comment_form' || $form_id == 'panels_comment_form') {
+    $node = node_load($form['nid']['#value']);
+
+    // include resizable_body.js if needed
+    if (($autoresize = variable_get('resizable_body_cresizable_' . $node->type, 0)) > 1) {    
+      drupal_add_js(drupal_get_path('module', 'resizable_body') . '/autoresize.js', 'module', 'header', FALSE, TRUE, FALSE); // we need to hardcore all those options to get to the final one to prevent aggregation
+      
+      // apply to comment field
+      if ($autoresize == 2) { // no animation
+        drupal_add_js('$("#edit-comment").elastic();', 'inline');
+      }
+      elseif ($autoresize == 3) {
+        drupal_add_js('$("#edit-comment").elastic(true);', 'inline');
+      }
+    }
+    
+    $form['comment_filter']['comment']['#rows'] = variable_get('resizable_body_crows_' . $node->type, 5);
+    $form['comment_filter']['comment']['#cols'] = variable_get('resizable_body_ccols_' . $node->type, 60);
+    $form['comment_filter']['comment']['#resizable'] = (variable_get('resizable_body_cresizable_' . $node->type, TRUE) == 1) ? TRUE : FALSE;
+  }
+}
+
+/**
+ * Validate the integer fields
+ */
+function resizable_body_element_validate($element, &$form_state) {
+  if (!is_numeric($element['#value']) || $element['#value'] < 0) {
+    form_set_error($element['#name'], $element['#title'] . ' ' . t('must be a positive numerical value.'));
+  }
+}
+
+/* 
+ * Validate the resizable type selector
+*/
+function resizable_body_resizable_element_validate($element, &$form_state) {
+  if (!is_numeric($element['#value']) || $element['#value'] < 0 || $element['#value'] > 3) {
+    form_set_error($element['#name'], t('@element_title is not a valid selection.', array('element_title' => $element['#title']))); 
+  }
+}
+
+/**
+ * Implementation of hook_node_type().
+ *
+ * op = 'delete'
+ * delete all vars for that content type
+ *
+ * op = 'update'
+ * change vars for the old content type name to the new
+ */
+function resizable_body_node_type($op, $info) {
+  if ($op == 'delete'){
+    variable_del('resizable_body_rows_' . $info->type);
+    variable_del('resizable_body_cols_' . $info->type);
+    variable_del('resizable_body_resizable_' . $info->type);
+    variable_del('resizable_body_split_' . $info->type);
+
+    variable_del('resizable_body_crows_' . $info->type);
+    variable_del('resizable_body_ccols_' . $info->type);
+    variable_del('resizable_body_cresizable_' . $info->type);    
+  }
+
+  elseif ($op == 'update'){
+    // get old content type variables
+    $v1 = variable_get('resizable_body_rows_' . $info->oldtype, 12);
+    $v1_5 = variable_get('resizable_body_cols_' . $info->oldtype, 60);
+    $v2 = variable_get('resizable_body_resizable_' . $info->oldtype, TRUE);
+    $v3 = variable_get('resizable_body_split_' . $info->oldtype, TRUE);
+
+    $v4 = variable_get('resizable_body_crows_' . $info->oldtype, 5);
+    $v4_5 = variable_get('resizable_body_ccols_' . $info->oldtype, 60);
+    $v5 = variable_get('resizable_body_cresizable_' . $info->oldtype, TRUE);    
+
+    // delete them
+    variable_del('resizable_body_rows_' . $info->type);
+    variable_del('resizable_body_cols_' . $info->type);
+    variable_del('resizable_body_resizable_' . $info->type);
+    variable_del('resizable_body_split_' . $info->type);
+
+    variable_del('resizable_body_crows_' . $info->type);
+    variable_del('resizable_body_ccols_' . $info->type);
+    variable_del('resizable_body_cresizable_' . $info->type);    
+
+    // and rename to new content type variables
+    variable_set('resizable_body_rows_' . $info->type, $v1);
+    variable_set('resizable_body_cols_' . $info->type, $v1);
+    variable_set('resizable_body_resizable_' . $info->type, $v2);
+    variable_set('resizable_body_split_' . $info->type, $v3);
+
+    variable_set('resizable_body_crows_' . $info->type, $v4);
+    variable_set('resizable_body_ccols_' . $info->type, $v4);
+    variable_set('resizable_body_cresizable_' . $info->type, $v5);
+  }
+}

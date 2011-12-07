@@ -1,0 +1,10 @@
+; $Id: already_in.info,v 1.1 2009/12/14 20:56:49 mattv Exp $ 
+name = Already in
+description = "Redirects authenticated users who visit user/(register|password|login) to /user page instead."
+core = 6.x
+; Information added by drupal.org packaging script on 2010-08-02
+version = "6.x-1.0"
+core = "6.x"
+project = "already_in"
+datestamp = "1280720170"
+

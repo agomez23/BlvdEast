@@ -1,0 +1,11 @@
+name = Domain Access
+description = A domain-based access control system
+package = Domain Access
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-02-27
+version = "6.x-2.10"
+core = "6.x"
+project = "domain"
+datestamp = "1298819767"
+

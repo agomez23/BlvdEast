@@ -1,0 +1,14 @@
+; $Id: im_raw.info,v 1.2 2008/10/07 14:26:47 adrinux Exp $
+name = "IM raw"
+description = "Adds an imagecache action that allows raw imagemagick commands to be used."
+package = ImageCache
+dependencies[] = imageapi
+dependencies[] = imagecache
+
+core = 6.x
+; Information added by drupal.org packaging script on 2009-03-11
+version = "6.x-1.2"
+core = "6.x"
+project = "im_raw"
+datestamp = "1236809444"
+

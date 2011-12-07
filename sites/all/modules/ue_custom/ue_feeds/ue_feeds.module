@@ -1,0 +1,600 @@
+<?php
+	//set constants for syndication permissions
+	define('UE_FEEDS_PERM_MANAGE_FEEDS',			'administer ue feeds');
+	define('UE_FEEDS_PERM_MANAGER',					'access syndication manager');
+	define('UE_FEEDS_PERM_SET_TARGETS',				'set syndication targets');
+	
+	require_once 'includes/ue_feeds.cron.inc';
+	require_once 'includes/ue_feeds.node.inc';
+	require_once 'includes/ue_feeds.import.inc';
+	require_once 'includes/ue_feeds.export.inc';
+	require_once 'includes/ue_feeds_admin_test.inc';
+	require_once 'includes/simplexml-extended.inc';
+	
+	$ue_feeds_adapters = array();
+	$ue_feeds_filters = array();
+	
+	//loads all necessary includes on-demand.
+	function ue_feeds_load_includes()
+	{
+		require_once 'adapter.inc';
+		require_once 'intermediate.inc';
+		require_once 'feed.inc';
+		require_once 'filter.inc';
+
+		$dir = dirname(__FILE__);
+
+		//include all feed adapters here.
+		foreach (array_merge(glob("$dir/adapters/*.inc"), glob("$dir/filters/*.inc")) as $filename)
+			include_once $filename;
+	}
+	
+	function ue_feeds_register_adapter($name, $description, $class)
+	{
+		global $ue_feeds_adapters;
+		
+		$ref = new ReflectionClass($class);
+		
+		//$ue_feeds_adapters[] = array('name' => $name, 'description' => $description, 'class' => $class, 'input' => $ref->implementsInterface(ue_feeds_adapter_input), 'output' => $ref->implementsInterface(ue_feeds_adapter_output));
+		
+		$adapter = array('name' => $name, 'description' => $description, 'class' => $class);
+		
+		if($ref->implementsInterface(ue_feeds_adapter_input)) $ue_feeds_adapters['input'][$adapter['class']] = $adapter;
+		if($ref->implementsInterface(ue_feeds_adapter_output)) $ue_feeds_adapters['output'][$adapter['class']] = $adapter;
+	}
+	
+	function ue_feeds_register_filter($name, $description, $class)
+	{
+		global $ue_feeds_filters;
+		
+		$ref = new ReflectionClass($class);
+		
+		$filter = array('name' => $name, 'description' => $description, 'class' => $class);
+		
+		$ue_feeds_filters[$filter['class']] = $filter;
+	}
+
+	function ue_feeds_menu()
+	{
+		$items['admin/ue-feeds'] = array(
+			'title' => 'UE Feeds',
+			'page callback' => 'ue_feeds_admin_list',
+			'access callback' => 'user_access',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGER),
+			'description' => 'Configure UE feeds.',
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_NORMAL_ITEM,
+		);
+		
+		$items['admin/ue-feeds/list'] = array(
+			'title' => 'List',
+			'type' => MENU_DEFAULT_LOCAL_TASK,
+			'weight' => -1,
+		);
+		
+		$items['admin/ue-feeds/manage'] = array(
+			'title' => 'Manage',
+			'page callback' => 'ue_feeds_admin_manage',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGER),
+			'file' => 'includes/ue_feeds.manage.inc',
+			'type' => MENU_LOCAL_TASK,
+		);
+		
+		$items['admin/ue-feeds/add'] = array(
+			'title' => 'Add',
+			'page callback' => 'ue_feeds_admin_add',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGE_FEEDS),
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_LOCAL_TASK,
+		);
+		
+		$items['admin/ue-feeds/adapters'] = array(
+			'title' => 'Adapters',
+			'page callback' => 'ue_feeds_admin_adapters',
+			'access callback' => 'user_access',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGE_FEEDS),
+			'description' => 'View UE adapters.',
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_LOCAL_TASK,
+		);
+		
+		$items['admin/ue-feeds/zipcodes'] = array(
+			'title' => 'Zipcode Mapping',
+			'page callback' => 'ue_feeds_admin_zip',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGE_FEEDS),
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_LOCAL_TASK,
+		);
+		
+		$items['admin/ue-feeds/edit'] = array(
+			'title' => 'Edit feed',
+			'page callback' => 'ue_feeds_admin_edit',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGE_FEEDS),
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/ue-feeds/run/%'] = array(
+			'title' => 'Run feed',
+			'page callback' => 'ue_feeds_run',
+			'page arguments' => array(3),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/ue-feeds/cron/%'] = array(
+			'title' => 'Run feed',
+			'page callback' => 'ue_feeds_run',
+			'page arguments' => array(3, true),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/ue-feeds/download'] = array(
+			'title' => 'Download images',
+			'page callback' => 'ue_feeds_download_images',
+			'page arguments' => array(3),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/ue-feeds/delete'] = array(
+			'title' => 'Delete feed',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('ue_feeds_admin_delete_confirm'),
+			'access arguments' => array(UE_FEEDS_PERM_MANAGE_FEEDS),
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/ue-feeds/test/%'] = array(
+			'title' => 'Test feed',
+			'page callback' => 'ue_feeds_admin_test',
+			'page arguments' => array(3),
+			'access arguments' => array(UE_FEEDS_PERM_MANAGE_FEEDS),
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['autocomplete/ue-feeds/test'] = array(
+			'page callback' => 'ue_feeds_admin_test_autocomplete',
+			'access arguments' => array('access content'),
+			'file' => 'includes/ue_feeds_admin_test.inc',
+			'type' => MENU_CALLBACK,
+		);
+		
+		$items['admin/ue-feeds/files'] = array(
+			'title' => 'Files',
+			'page callback' => 'ue_feeds_admin_downloads_list',
+			'access callback' => 'user_access',
+			'access arguments' => array(UE_FEEDS_PERM_MANAGER),
+			'description' => 'List pending files.',
+			'file' => 'includes/ue_feeds.admin.inc',
+			'type' => MENU_NORMAL_ITEM,
+		);
+		
+		return $items;
+	}
+	
+	function ue_feeds_perm()
+	{
+		return array(
+			UE_FEEDS_PERM_MANAGE_FEEDS,
+			UE_FEEDS_PERM_SET_TARGETS,
+			UE_FEEDS_PERM_MANAGER
+		);
+	}
+	
+	function ue_feeds_get_adapters($reset = false)
+	{
+		global $ue_feeds_adapters;
+		
+		ue_feeds_load_includes();
+		
+		$adapters = array_merge($ue_feeds_adapters['input'], $ue_feeds_adapters['output']);
+		
+		return $adapters;
+	}
+	
+	function ue_feeds_load($fid)
+	{
+		ue_feeds_load_includes();
+		
+		$result = db_query('SELECT * FROM {ue_feeds} WHERE fid = %d', $fid);
+		
+		while ($row = db_fetch_object($result))
+		{
+			$feed = ue_feeds_feed::factory_by_row($row);
+			return $feed;
+		}
+	}
+	
+	function ue_feeds_delete($fid)
+	{
+		$feed = ue_feeds_load($fid);
+		$feed->delete();
+		
+		ue_feeds_get_feeds(null, true);
+	}
+	
+	function ue_feeds_get_feeds($type = null, $reset = false)
+	{
+		static $feeds;
+		
+		ue_feeds_load_includes();
+		
+		// Retrieve a list of all feeds, regardless of the parameters.
+		if(!isset($feeds) || $reset)
+		{
+			$feeds = array();
+		
+			// Database feeds.
+			$result = db_query('SELECT * FROM {ue_feeds} f ORDER BY dir, name');
+			
+			while ($row = db_fetch_object($result))
+			{
+				$feeds[] = ue_feeds_feed::factory_by_row($row);
+			}
+		}
+		
+		// Make a variable copy to filter types and account.
+		$filtered_feeds = $feeds;
+		
+		// Filter out feeds based on type.
+		if(isset($type))
+			foreach ($filtered_feeds as $name => $feed) if($feed->type != $type) unset($filtered_feeds[$name]);
+		
+		return $filtered_feeds;
+	}
+	
+	function ue_feeds_theme($existing = NULL, $type = NULL, $theme = NULL, $path = NULL)
+	{
+		return array(
+			'ue_feeds_admin_list_form' => array('arguments' => array('form' => NULL)),
+			'ue_feeds_admin_manage_form' => array('arguments' => array('form' => NULL)),
+			'ue_feeds_admin_adapters_form' => array('arguments' => array('form' => NULL)),
+			'ue_feeds_admin_test_form' => array('arguments' => array('form')),
+		);
+	}
+	
+	// returns neighborhood for zip, or full list when null.
+	function ue_feeds_get_neighborhoods($zip = NULL, $reset = false)
+	{
+		static $hoods;
+		
+		if(!isset($hoods) || $reset)
+		{
+			$hoods = array();
+			
+			$result = db_query('SELECT t.*, z.zip FROM {ue_feeds_zips} z INNER JOIN {term_data} t ON t.tid = z.tid');
+			
+			while ($row = db_fetch_object($result))
+			{
+				if (!isset($hoods[$row->zip]))
+					$hoods[$row->zip] = $row;
+			}
+		}
+		
+		if(isset($zip))
+			return $hoods[substr($zip, 0, 5)];
+		
+		return $hoods;
+	}
+	
+	function in_arrayi($needle, $haystack)
+	{
+		if(is_array($haystack))
+			return in_array(strtolower($needle), array_map('strtolower', $haystack));
+	}
+	
+	function ue_feeds_run($fid, $cron = FALSE)
+	{
+		global $user;
+		
+		$output = '';
+		
+		$GLOBALS['conf']['cache'] = FALSE;
+		
+		//if cron job then return text.
+		if($cron) header('Content-Type: text/plain');
+		
+		$start = microtime(true);
+		
+		$feed = ue_feeds_load($fid);
+		
+		//add additional 256M to memory limit for temporary workaround - google base feed is just too memory intensive.
+		if(intval(ini_get('memory_limit')) > 0)
+			ini_set('memory_limit', (intval(ini_get('memory_limit')) + 256) . 'M');
+		
+		if($feed->dir == 1)
+		{
+			$oldUser = $user;
+			$user = user_load(126);
+			
+			$data = ue_feeds_feed($feed);
+			
+			$user = $oldUser;
+			
+			//write errors to set_message. this will be logged to the database for reporting instead during cron runs.
+			foreach($feed->adapter->logMessages as $logMessage)
+			{
+				if($logMessage['type'] == ue_feeds_adapter::ADAPTER_LOGTYPE_INFO)
+					$level = 'status';
+				else if($logMessage['type'] == ue_feeds_adapter::ADAPTER_LOGTYPE_WARN)
+					$level = 'warning';
+				else if($logMessage['type'] == ue_feeds_adapter::ADAPTER_LOGTYPE_ERROR)
+					$level = 'error';
+				
+				if($logMessage['nid'])
+				{
+					$node = node_load($logMessage['nid']);
+					$vars['@node-title'] = $node->title;
+					$vars['@node-path'] = url($node->path);
+					drupal_set_message(t('<a href="@node-path">@node-title</a>: ' . $logMessage['message'], $vars), $level, false);
+				}
+				else
+					drupal_set_message(t($logMessage['message']), $level, false);
+			}
+				
+			$file = file_save_data($data, file_directory_path() . '/feeds/' . basename($feed->uri), FILE_EXISTS_REPLACE);
+			
+			db_query('UPDATE ue_feeds SET lastrun = UNIX_TIMESTAMP(NOW()) WHERE fid = %d', $fid);
+			
+			//print '<a href="/' . $file . '">' . $file . '</a>';
+			//print $data;
+		}
+		else
+		{
+			//set logged-in user to syndication.
+			$user = user_load(126);
+			
+			$output = ue_feeds_import($fid);
+		}
+		
+		$end = microtime(true);
+		$time = round($end - $start, 3);
+		
+		$vars['@fid'] = $fid;
+		$vars['@time'] = $time;
+		$vars['@name'] = $feed->name;
+		
+		$msg = "Finished running feed @fid (@name) in @time seconds.\n";
+		
+		if($feed->dir === 0)
+		{
+			$vars['@propsAdded'] = $propsAdded;
+			$vars['@propsUpdated'] = $propsUpdated;
+			$vars['@listingsAdded'] = $listingsAdded;
+			$vars['@listingsUpdated'] = $listingsUpdated;
+			
+			if($propsAdded)
+				$msg .= "Added @propsAdded properties.\n";
+			
+			if($propsUpdated)
+				$msg .= "Updated @propsUpdated properties.\n";
+			
+			if($listingsAdded)
+				$msg .= "Added @listingsAdded listings.\n";
+			
+			if($listingsUpdated)
+				$msg .= "Updated @listingsUpdated listings.\n";
+		}
+		else if($feed->dir === 1)
+		{
+			$vars['@listingsFed'] = $listingsFed;
+			
+			if($propsAdded)
+				$msg .= "Exported @listingsFed listings.\n";
+		}
+			
+		watchdog('ue feeds', $msg, $vars, WATCHDOG_NOTICE);
+		
+		$output .= 'Ran feed ' . $fid . ' (' . basename($feed->uri) . ') at ' . date('m/d/y h:i:s', $start) . ' in ' . $time . " seconds.\n";
+		
+		//if cron then print without returning to prevent drupal theming.
+		if($cron)
+			print $output;
+		else
+			return $output;
+	}
+	
+	function ue_feeds_download_images()
+	{
+		$start = microtime(true);
+		ue_feeds_download_files();
+		
+		$end = microtime(true);
+		
+		$time = round($end - $start, 3);
+		print 'Downloaded files at ' . date('m/d/y h:i:s', $start) . ' in ' . $time . " seconds.\n";
+	}
+	
+	function ue_feeds_theme_registry_alter(&$theme_registry)
+	{
+		$theme_registry['ue_feeds_admin_list_form']['preprocess functions'] = array(
+			'rubik_preprocess_form_buttons',
+			'rubik_preprocess_form_legacy',
+		);
+		
+		$theme_registry['ue_feeds_admin_list_form']['template'] = 'form-default';
+	}
+	
+	
+	
+	function ue_feeds_admin_edit_form_targets($nodeField, $default, $title, $description, $type = 'checkboxes')
+	{
+		$result = unserialize(db_result(db_query('SELECT global_settings FROM {content_node_field} WHERE field_name = \'%s\'', $nodeField)));
+		$values = explode("\n", $result['allowed_values']);
+		
+		foreach($values as $val)
+		{
+			$target = explode('|', $val);
+			$targets[$target[0]] = t($target[1]);
+		}
+		
+		$rtn = array(
+			'#type' => $type,
+			'#title' => t($title),
+			'#default_value' => $default,
+			'#options' => $targets,
+			'#description' => t($description),
+		);
+		return $rtn;
+	}
+	/**
+	 * Implementation of hook_views_api()
+	 */
+	function ue_feeds_views_api()
+	{
+	  return array(
+		'api' => 2,
+		'path' => drupal_get_path('module', 'ue_feeds') . '/includes',
+	  );
+	}
+	
+	function ue_feeds_targets($reset = false)
+	{
+		static $ue_feeds_targets;
+		
+		if(!isset($ue_feeds_targets) || $reset)
+		{
+			$target_terms_top = taxonomy_get_tree(variable_get('ue_feeds_target_taxonomy', 0), 0, 0, 2);
+			
+			foreach($target_terms_top as $term_top)
+			{
+				$target_terms = taxonomy_get_tree(variable_get('ue_feeds_target_taxonomy', 0), $term_top->tid, 0, 2);
+				
+				foreach($target_terms as $term_target)
+					$targets[$term_top->name][$term_target->tid] = $term_target->name;
+			}
+			
+			$ue_feeds_targets = $targets;
+		}
+		
+		return $ue_feeds_targets;
+	}
+	
+	function ue_feeds_targets_form($type = 'select', $options = array())
+	{
+		$target_top = ue_feeds_targets();
+		
+		/*
+		$i = 0;
+		
+		foreach($target_top as $top => $targets)
+		{
+			if($type == 'select')
+			{
+				$form["targets$i"] = array_merge(array(
+					'#type' => 'select',
+					'#multiple' => 'true',
+					'#size' => 6,
+					'#title' => $top,
+					'#options' => $targets,
+				), $options);
+			}
+			elseif($type == 'checkboxes')
+			{
+				$form["targets$i"] = array_merge(array(
+					'#type' => 'checkboxes',
+					'#title' => $top,
+					'#options' => $targets,
+				), $options);
+			}
+			
+			$i++;
+		}
+		*/
+		
+		$form = array_merge(array(
+			'#type' => 'select',
+			'#multiple' => 'true',
+			'#size' => 6,
+			'#title' => t('Syndication Targets'),
+			'#options' => $target_top
+		), $options);
+		
+		return $form;
+	}
+	
+	// form_alter - add syndication targets to listing forms, defaults to properties
+	function ue_feeds_form_alter(&$form, &$form_state, $form_id)
+	{
+		if ($form['#id'] == 'node-form' && !isset($form['#node']->cck_dummy_node_form) && in_array($form['#node']->type, array('listing', 'property')))
+		{
+			// This lets CCK adjust the weight of our element using ue_feeds_content_extra_fields().
+			$weight = module_exists('content') ? content_extra_field_weight($form['type']['#value'], 'syndication') : 1;
+			
+			if (user_access(UE_FEEDS_PERM_SET_TARGETS)) {
+				$form['syndication'] = array(
+					'#type' => 'fieldset',
+					'#title' => t('Syndication options'),
+					'#collapsible' => TRUE,
+					'#collapsed' => FALSE,
+					'#weight' => $weight,
+				);
+				
+				if(isset($form['#node']->targets))
+					$form['syndication']['targets'] = ue_feeds_targets_form('checkboxes', array('#default_value' => $form['#node']->targets));
+				
+				if($form['#node']->type == 'property')
+					$form['syndication']['#description'] = t('Select default syndication targets:');
+				else if($form['#node']->type == 'listing')
+					$form['syndication']['#description'] = t('Select syndication targets:');
+			}
+		}
+	}
+	
+	/**
+	 * Implement hook_content_extra_fields()
+	 *
+	 * CCK hook to allow sorting of the syndication options.
+	 */
+	function ue_feeds_content_extra_fields($type_name = NULL) {
+		if (!empty($type_name)) {
+				return array(
+					'syndication' => array(
+						'label' => t('Syndication options'),
+						'description' => t('UE Feeds options.'),
+						'weight' => 1,
+				),
+			);
+		}
+	}
+	
+	function ue_feeds_get_targets($nid)
+	{
+		$targets = array();
+		$result = db_query('SELECT * FROM {ue_feeds_targets} WHERE nid = %d', $nid);
+		while($target = db_fetch_object($result))
+			$targets[] = $target->tid;
+		
+		return $targets;
+	}
+	
+	function ue_feeds_delete_targets($nid)
+	{
+		db_query('DELETE FROM {ue_feeds_targets} WHERE nid = %d', $nid);
+	}
+	
+	function ue_feeds_update_targets(&$node)
+	{
+		ue_feeds_delete_targets($node->nid);
+		
+		if(count($node->targets))
+		{
+			$query = 'INSERT INTO {ue_feeds_targets} (nid, tid) VALUES';
+			
+			foreach($node->targets as $tid)
+			{
+				$query .= ' (%d, %d),';
+				$args[] = $node->nid;
+				$args[] = $tid;
+			}
+			
+			$result = db_query(rtrim($query, ','), $args);
+		}
+	}
+	
+	function ue_feeds_ordinal($n) {                                                                                                                                                   
+		return $n . gmdate("S", (((abs($n) + 9) % 10) + ((abs($n / 10) % 10) == 1) * 10) * 86400);                                                                           
+	}

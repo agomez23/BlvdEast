@@ -1,0 +1,235 @@
+<?php
+// $Id: apachesolr_ajax.module,v 1.9 2010/07/06 19:57:22 loganfsmyth Exp $
+
+/**
+ * @file
+ *
+ * AJAXifies the Apache Solr module.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function apachesolr_ajax_menu() {
+  $items = array();
+  $items['search/apachesolr_ajax'] = array(
+    'page callback' => 'apachesolr_ajax_proxy',
+    'access arguments' => array('search content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['search/apachesolr_ajax/%menu_tail'] = array(
+    'page callback' => 'apachesolr_ajax_proxy',
+    'access arguments' => array('search content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Performs the search request, and returns the page content and the block
+ * content of search-related blocks as JSON.
+ *
+ * <p>If the incoming request is not an AJAX request, behaves as though the
+ * request were to "search/apachesolr_search".</p>
+ *
+ * @see apachesolr_ajax_modules()
+ */
+function apachesolr_ajax_proxy() {
+  $return = menu_execute_active_handler('search/apachesolr_search/'. search_get_keys());
+
+  if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
+    return $return;
+  }
+
+  if (is_int($return)) {
+    switch ($return) {
+      case MENU_NOT_FOUND:
+        drupal_set_header('HTTP/1.1 404 Not Found');
+        break;
+      case MENU_ACCESS_DENIED:
+        drupal_set_header('HTTP/1.1 403 Forbidden');
+        break;
+      case MENU_SITE_OFFLINE:
+        drupal_set_header('HTTP/1.1 503 Service unavailable');
+        break;
+    }
+  }
+  elseif (isset($return)) {
+    global $theme;
+    if (!isset($theme)) {
+      init_theme();
+    }
+
+    $json = array('regions' => array('apachesolr_ajax' => $return));
+    $regions = system_region_list($theme);
+    $modules = apachesolr_ajax_modules();
+    foreach (array_keys($regions) as $region) {
+      if ($list = block_list($region)) {
+        foreach ($list as $block) {
+          if (in_array($block->module, $modules)) {
+            $json['regions'][$region][$block->module .'_'. $block->delta] = theme('block', $block);
+          }
+        }
+      }
+    }
+
+    $javascript = drupal_add_js(NULL, NULL, NULL);
+
+    $all_scopes = call_user_func_array('array_merge_recursive', $javascript); //merge all scopes
+    $json['settings'] = call_user_func_array('array_merge_recursive', $all_scopes['setting']); //merge all settings
+
+    $json['debug'] = apachesolr_ajax_debug();
+
+    header('Content-Type: application/json');
+    print json_encode($json);
+  }
+}
+
+/**
+ * Returns the list of modules whose blocks are search-related.
+ *
+ * <p>By default, the list includes the apachesolr, apachesolr_search, and
+ * apachesolr_og modules. To modify this list, define an implementation of
+ * hook_apachesolr_ajax_modules_alter(), e.g.:</p>
+ *
+ * <pre>
+ * function mymodule_apachesolr_ajax_modules_alter(&$modules) {
+ *   $modules[] = 'mymodule';
+ * }
+ * </pre>
+ *
+ * @see apachesolr_ajax_proxy()
+ */
+function apachesolr_ajax_modules() {
+  static $modules = NULL;
+  if (is_null($modules)) {
+    $modules = array('apachesolr', 'apachesolr_search', 'apachesolr_og');
+    drupal_alter('apachesolr_ajax_modules', $modules);
+  }
+  return $modules;
+}
+
+/**
+ * Implementation of hook_preprocess_page().
+ *
+ * <p>Adds JavaScript files and settings. To successfully configure this module,
+ * another module must implement hook_apachesolr_ajax_settings(), which must
+ * return an array with the required keys "content", "blocks", "regions" and
+ * the optional key "spinner".</p>
+ *
+ * <p>"content" must be the CSS selector for the HTML node in which the page
+ * content is displayed. In the Zen theme, this is '#content-area'.</p>
+ *
+ * <p>"blocks" must be a map between the block keys and the CSS selectors for
+ * the blocks. Block keys follow the pattern: MODULE_DELTA. In the Zen theme,
+ * this may be: array('node_0' => '#block-node-0', ...). You need only do this
+ * for search-related blocks. If you don't know your blocks, run:</p>
+ *
+ * <pre>
+ * $modules = apachesolr_ajax_modules();
+ * foreach ($modules as $module) {
+ *   if (module_exists($module)) {
+ *     if ($list = module_invoke($module, 'block', 'list')) {
+ *       foreach (array_keys($list) as $delta) {
+ *         print $module .'_'. $delta;
+ *       }
+ *     }
+ *   }
+ * }
+ * </pre>
+ *
+ * <p>"regions" must be a map between the theme regions and the CSS selectors
+ * for the regions. In the Zen theme, this may be: array('content_top' =>
+ * '.region-content-top'). If you don't know your theme's regions, run:
+ * <code>system_region_list('mytheme');</code></p>
+ *
+ * <p>(Optional) "spinner" is the path to an animated image to be displayed
+ * while content is loading via AJAX, e.g.: <code>base_path() .
+ * drupal_get_path('module', 'mymodule') .'/images/spinner.gif'</code></p>
+ *
+ * <p>Note that, for Internet Explorer, you must add markup right after the
+ * opening <tt>body</tt> tag. See theme_apachesolr_ajax_yui().</p>
+ *
+ * @see http://developer.yahoo.com/yui/history/
+ */
+function apachesolr_ajax_preprocess_page(&$vars, $hook) {
+  if (apachesolr_ajax_enabled()) {
+    $vars['apachesolr_ajax'] = theme('apachesolr_ajax_yui');
+    drupal_add_js(array('apachesolr_ajax' => module_invoke_all('apachesolr_ajax_settings')), 'setting');
+    if (strpos('jquery.livequery.js', drupal_get_js()) === FALSE) {
+      drupal_add_js(drupal_get_path('module', 'apachesolr_ajax') .'/jquery.livequery.js');
+    }
+    theme('apachesolr_ajax_js');
+  }
+}
+
+/**
+ * Using hook_apachesolr_ajax_enable() and hook_apachesolr_hook_disable(), it is
+ * possible to enable or disable this module on a per-request basis.
+ *
+ * @return bool TRUE if this module is enabled for this request.
+ */
+function apachesolr_ajax_enabled() {
+  return array_filter(module_invoke_all('apachesolr_ajax_enable')) && !array_filter(module_invoke_all('apachesolr_ajax_disable'));
+}
+
+/**
+ * Implementation of hook_apachesolr_ajax_enable().
+ */
+function apachesolr_ajax_apachesolr_ajax_enable() {
+  return arg(0) == 'search' && strpos(arg(1), 'apachesolr_') !== FALSE;
+}
+
+/**
+ * Collects debug data to send to the browser with the AJAX response.
+ *
+ * @param mixed $data Debug data you want to send to the browser.
+ */
+function apachesolr_ajax_debug($data = NULL) {
+  static $debug = array();
+  if (isset($data)) {
+    $debug[] = $data;
+  }
+  return $debug;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function apachesolr_ajax_theme($existing, $type, $theme, $path) {
+  return array(
+    'apachesolr_ajax_js' => array(
+      'arguments' => array(),
+    ),
+    'apachesolr_ajax_yui' => array(
+      'arguments' => array('src' => '/robots.txt')
+    ),
+  );
+}
+
+/**
+ * Override this function in your theme if you want to swap this module's
+ * JavaScript and CSS files for your own.
+ */
+function theme_apachesolr_ajax_js() {
+  $head = drupal_get_html_head();
+  foreach (array(
+    'http://yui.yahooapis.com/2.8.0r4/build/yahoo/yahoo-min.js',
+    'http://yui.yahooapis.com/2.8.0r4/build/event/event-min.js',
+    'http://yui.yahooapis.com/2.8.0r4/build/history/history-min.js') as $script) {
+    if (strpos('<script src="'. $script .'"></script>', $head) === FALSE) {
+      drupal_set_html_head('<script src="'. $script .'"></script>');
+    }
+  }
+  drupal_add_js(drupal_get_path('module', 'apachesolr_ajax') .'/apachesolr_ajax.js', 'module', 'footer');
+  drupal_add_css(drupal_get_path('module', 'apachesolr_ajax') .'/apachesolr_ajax.css');
+}
+
+/**
+ * You need only include this markup for Internet Explorer.
+ * @see http://developer.yahoo.com/yui/history/
+ */
+function theme_apachesolr_ajax_yui($src = '/robots.txt') {
+  return '<iframe id="yui-history-iframe" src="'. $src .'"></iframe><input id="yui-history-field" type="hidden">';
+}
+
