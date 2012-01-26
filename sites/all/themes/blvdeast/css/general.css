@@ -87,8 +87,8 @@ ul.tabs.secondary{margin-top:5px;clear:right}
 .view-featured.view-display-id-block_2 .row{clear:both;margin:0 0 5px}
 .panels-home .panel-middle .pane-title{}
 
-#tabs-mini-panel-search-middle ul.tabs, #tabs-mini-panel-homepage-map-middle ul.tabs { float:right }
-#tabs-mini-panel-search-middle h3, #tabs-mini-panel-homepage-map-middle h3 { float:left; margin:2px 0 0 10px;}
+#tabs-mini-panel-search-middle ul.tabs, #tabs-mini-panel-port-imperial-search-middle ul.tabs, #tabs-mini-panel-homepage-map-middle ul.tabs { float:right }
+#tabs-mini-panel-search-middle h3, #tabs-mini-panel-port-imperial-search-middle h3, #tabs-mini-panel-homepage-map-middle h3 { float:left; margin:2px 0 0 10px;}
 
 /* homepage streetview */
 #mini-panel-homepage_map .tabpage-container-inner{height:300px}
@@ -158,7 +158,7 @@ a.twt { float:left; background:url(../images/twitter_16.png) no-repeat; width:16
 .blvd-search .form-col{float:left;width:212px}
 .blvd-search .keyword{width:425px;width:412px;margin-bottom:0;color:#666; display:none}
 .blvd-search .keyword.dirty{color:#000}
-.blvd-search .form-item{float:left;margin:.2em 0}
+.blvd-search .form-item{float:left;margin:.2em 0; height: 22px;}
 .blvd-search .form-item label{float:left}
 .blvd-search .form-left label{width:83px}
 .blvd-search .form-right label{width:48px}
@@ -184,7 +184,7 @@ a.twt { float:left; background:url(../images/twitter_16.png) no-repeat; width:16
 /* right align addthis */
 .block-addthis{margin:10px auto 0; width:120px; float:none}
 
-.pane-block-15 .pane-content { text-align:center}
+.pane-block-15 .pane-content, .pane-block-19 .pane-content { text-align:center}
 
 /* community */
 .view-community-towns .town{clear:both}

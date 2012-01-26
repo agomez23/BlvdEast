@@ -1,0 +1,13 @@
+; $Id:
+name=Domain Solr Facet
+description=Lets facets be used on a per-domain basis.
+dependencies[]=domain
+dependencies[]=apachesolr
+package = Apache Solr
+core=6.x
+; Information added by drupal.org packaging script on 2011-10-15
+version = "6.x-1.0"
+core = "6.x"
+project = "domain_solr"
+datestamp = "1318688194"
+

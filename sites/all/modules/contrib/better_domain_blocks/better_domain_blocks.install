@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Installation file for domain_blocks_visibility module.
+ */
+
+function better_domain_blocks_install() {
+
+}
+
+
+/**
+ * Delete all of our variables
+ */
+function better_domain_blocks_uninstall() {
+  global $conf;
+  foreach ($conf as $item) {
+    if (substr($item, 0,21) == 'better_domain_blocks_') {
+      variable_del($item);
+    }
+  }
+}

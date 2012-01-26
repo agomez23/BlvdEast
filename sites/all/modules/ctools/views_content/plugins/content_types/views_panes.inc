@@ -78,6 +78,7 @@ function views_content_views_panes_content_type_content_type($subtype, $plugin) 
   $retval = _views_content_panes_content_type($view, $view->display[$display]);
 
   $view->destroy();
+  
   return $retval;
 }
 

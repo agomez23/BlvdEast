@@ -1,0 +1,13 @@
+; $Id: better_domain_blocks.info,v 1.1 2010/12/13 20:20:51 devkinetic Exp $
+name = Better Domain Blocks
+description = Allows advanced per domain visibility settings
+package = Domain Access
+core = 6.x
+dependencies[] = domain
+
+; Information added by drupal.org packaging script on 2011-01-06
+version = "6.x-1.1"
+core = "6.x"
+project = "better_domain_blocks"
+datestamp = "1294335265"
+

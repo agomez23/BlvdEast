@@ -1,0 +1,45 @@
+<?php
+/**
+ * Implementation of hook_token_list().
+ */
+function domain_source_token_list($type = 'all') {
+  // Current domain tokens.
+  $tokens['node']['domain-source-link'] = t('The source domain base link.');
+  $tokens['node']['domain-source-id'] = t('The source domain ID.');
+  $tokens['node']['domain-source-title'] = t('The title of the site per domain.');
+  $tokens['node']['domain-source-name'] = t('The source domain name, lowercased and with only alphanumeric characters.');
+  $tokens['node']['domain-source-name-raw'] = t('The source domain name. WARNING - raw user input. NOT path safe.');
+  $tokens['node']['domain-source-url'] = t('The source domain\'s URL, lowercased and with only alphanumeric characters.');
+  $tokens['node']['domain-source-url-raw'] = t('The source domain\'s URL. WARNING - raw user input. NOT path safe.');
+  
+  
+  return $tokens;
+}
+
+/**
+ * Implements hook_token_values().
+ */
+function domain_source_token_values($type, $object = NULL, $options = array()) {
+  //dpr($object); die();
+//dpr($type . ':' . empty($object->nid) . ':' . empty($object->domain_source)); die();
+//  if ($type != 'node' || empty($object->nid) || empty($object->domain_source)) {
+//    return;
+//  }
+
+  $domain = domain_lookup($object->domain_source);
+  $current_domain_id = domain_get_domain();
+  // Did the lookup succeed?
+//  if ($domain = -1) {
+//    return;
+//  }
+  
+  // Current domain tokens.
+  $tokens['domain-source-link'] = $domain['path'];
+  $tokens['domain-source-id'] = $domain['domain_id'];
+  $tokens['domain-source-title'] = $domain['sitename'];
+  $tokens['domain-source-name'] = domain_url_encode($domain['sitename']);
+  $tokens['domain-source-name-raw'] = check_plain($domain['sitename']);
+  $tokens['domain-source-url'] = domain_url_encode($domain['subdomain']);
+  $tokens['domain-source-url-raw'] = check_plain($domain['subdomain']);
+  return $tokens;
+}

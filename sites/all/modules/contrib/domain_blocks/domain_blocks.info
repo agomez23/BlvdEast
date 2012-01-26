@@ -1,0 +1,12 @@
+; $Id: domain_blocks.info,v 1.1.2.1 2009/01/06 06:23:37 nonsie Exp $
+name = Domain Blocks
+description = Provides domain specific visibility settings for blocks using publishing options in domain access module.
+package = Domain Access
+dependencies[] = domain
+core = 6.x
+; Information added by drupal.org packaging script on 2010-04-05
+version = "6.x-1.3"
+core = "6.x"
+project = "domain_blocks"
+datestamp = "1270489809"
+

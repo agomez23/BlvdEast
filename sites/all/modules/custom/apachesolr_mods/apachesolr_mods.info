@@ -1,0 +1,9 @@
+
+name = Apache Solr CUSTOM Modifications
+description = Apache Solr-specific modifications by Drupal Connect
+package = "Apache Solr"
+dependencies[] = panels
+dependencies[] = page_manager
+dependencies[] = apachesolr
+dependencies[] = apachesolr_search
+core = 6.x

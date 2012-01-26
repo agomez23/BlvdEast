@@ -1,0 +1,157 @@
+<?php
+// $Id:
+
+/**
+ * @file
+ *   Integrates Domain Access information with Apache Solr search application.
+ */
+
+/**
+ * Implementation of hook_apachesolr_update_index().
+ */
+function domain_solr_apachesolr_update_index(&$document, $node) {  
+  foreach($node->domains as $domain) {
+    // The gid in the {domain} table is unsigned, but the domain module
+    // makes it -1 for the deault domain. Also apache doesn't like it
+    // if we query for domain id -1.
+    if ($domain == -1) {
+      $domain = 0;
+    }
+    $document->setMultiValue(_domain_solr_index_key(), $domain);
+  }
+}
+
+function _domain_solr_index_key() {
+  $key = array(
+    'name'       => 'domain_id',
+    'multiple'   => TRUE,
+    'index_type' => 'integer',
+  );
+  return apachesolr_index_key($key);
+}
+
+/**
+ * Implementation of hook_apachesolr_modify_query().
+ */
+function domain_solr_apachesolr_modify_query(&$query, &$params, $caller) {
+  if ($caller == 'apachesolr_search') {
+    $params['fl'] .= ',' . _domain_solr_index_key();
+  }
+}
+
+/**
+ * Implementation of hook_apachesolr_process_results().
+ */
+function domain_solr_apachesolr_process_results(&$results) {
+  $key = _domain_solr_index_key();
+  $domains = array();
+  foreach ($results as $idx => $r) {
+    if (!is_array($r['node']->$key)) {
+      $results[$idx]['node']->$key = $r['node']->$key ? array($r['node']->$key) : array();
+    }
+    foreach ($results[$idx]['node']->$key as $domain_id) {
+      $domains[$domain_id] = $domain_id;
+    }
+  }
+
+  if ($domains) {
+    $accessible_domains = array();
+    $placeholders = db_placeholders($domains);
+    $result = db_query('SELECT * FROM {domain} d WHERE domain_id IN ('. $placeholders. ')', $domains);
+    while ($row = db_fetch_object($result)) {
+      $accessible_domains[] = $row->domain_id;
+    }
+    foreach ($results as $idx => $r) {
+      $accessible = array_intersect($results[$idx]['node']->$key, $accessible_domains);
+      if ($accessible) {
+        $results[$idx]['extra'][] = format_plural(count($accessible), '1 domain', '@count domains');
+      }
+    }
+  }
+}
+
+
+/**
+ * Implementation of hook_apachesolr_facets().
+ */
+function domain_solr_apachesolr_facets() {
+  $key = _domain_solr_index_key();
+  $facets[$key] = array(
+    'info' => t('Apache Solr Domain: Filter by Domain'),
+    'facet_field' => $key,
+  );
+  return $facets;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function domain_solr_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $enabled_facets = apachesolr_get_enabled_facets('domain_solr');
+      $facets = domain_solr_apachesolr_facets();
+      // Add the blocks
+      $blocks = array();
+      foreach ($enabled_facets as $delta => $facet_field) {
+        if (isset($facets[$delta])) {
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+        }
+      }
+      return $blocks;
+
+    case 'view':
+      if (apachesolr_has_searched()) {
+        if ($delta != _domain_solr_index_key()) {
+          return;
+        }
+
+        $response = apachesolr_static_response_cache();
+        if (empty($response)) {
+          return;
+        }
+        $query = apachesolr_current_query();
+        return apachesolr_facet_block($response, $query, 'domain_solr', $delta, $delta, t('Filter by Site'), 'domain_solr_domain_name');
+
+      }
+      break;
+
+    case 'configure':
+      return null;
+    case 'save':
+      break;
+  }
+}
+
+/**
+ * Callback function for the 'Filter by group' facet block.
+ */
+function domain_solr_domain_name($facet, &$options) {
+  if (!is_numeric($facet)) {
+    $options['html'] = TRUE;
+    return theme('placeholder', t('No domain'));
+  }
+
+  return db_result(db_query("SELECT sitename FROM {domain} WHERE domain_id = %d", $facet));
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function domain_solr_theme() {
+  return array(
+    'apachesolr_breadcrumb_im_domain_id' => array('arguments' => array('group_id' => NULL)),
+  );
+}
+
+/**
+ * Theme the breadcrumb.
+ */
+function theme_apachesolr_breadcrumb_im_domain_id($domain_id) {
+  if (!is_numeric($domain_id)) {
+    return t('No site');
+  }
+
+  return db_result(db_query("SELECT sitename FROM {domain} WHERE domain_id = %d", $domain_id));
+}
+

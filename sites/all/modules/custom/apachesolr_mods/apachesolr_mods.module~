@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file apachesolr_panel_results.module
+ *
+ * This module makes custom modifications/additions.
+ * by Drupal Connect
+ *
+ */
+
+function apachesolr_mods_apachesolr_update_index(&$document, $node) {
+  if (!empty($node->domains)) {
+    foreach($node->domains as $domain_id) {
+      $document->addField('sim_domain_id', $domain_id);
+    }
+  }
+}
+
+function apachesolr_mods_apachesolr_modify_query(&$query, &$params, $caller) {
+  //$params['fl'] .= ',ss_panels_result';
+  $params['fl'] .= ',sim_domain_id';
+}

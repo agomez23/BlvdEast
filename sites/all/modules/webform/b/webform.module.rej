@@ -1,0 +1,11 @@
+--- a/webform.module
++++ b/webform.module
+@@ -2376,7 +2376,7 @@
+   drupal_set_title(check_plain($node->title));
+   webform_set_breadcrumb($node);
+   if (empty($output)) {
+-    $output = theme(array('webform_confirmation_' . $node->nid, 'webform_confirmation'), array('node' => $node, 'sid' => $_GET['sid']));
++    $output = theme(array('webform_confirmation_' . $node->nid, 'webform_confirmation'), array('node' => $node, 'sid' => isset($_GET['sid']) ? $_GET['sid'] : FALSE));
+   }
+   return $output;
+ }

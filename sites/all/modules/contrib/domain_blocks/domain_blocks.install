@@ -1,0 +1,77 @@
+<?php
+// $Id: domain_blocks.install,v 1.1.2.3 2010/03/23 18:10:26 nonsie Exp $
+
+/**
+ * @file
+ * Provides domain specific visibility settings for blocks based on domain
+ * access settings.
+ */
+/**
+ * Implementation of hook_install().
+ */
+function domain_blocks_install() {
+  // Create database tables
+  drupal_install_schema('domain_blocks');
+  // Make all blocks accesible by all sites by default
+  // Since {blocks} stores a separate row for each theme a block will appear on,
+  // we'll use DISTINCT to make sure we're not getting doubles.
+  $existing_blocks = db_query('SELECT DISTINCT module, delta FROM {blocks}');
+  while ($block = db_fetch_object($existing_blocks)) {
+    db_query("INSERT INTO {domain_blocks}(module, delta, realm, domain_id) VALUES('%s', '%s', '%s', %d)", $block->module, $block->delta, 'domain_site', 0);
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function domain_blocks_uninstall() {
+  drupal_uninstall_schema('domain_blocks');
+}
+/**
+ * Implementation of hook_schema().
+ * Notice the length of domain_blocks.realm field is not the same as
+ * domain_access.realm. This is due to MySQL key length limitations
+ * (applies to UTF-8 only) - http://bugs.mysql.com/bug.php?id=4541
+ * Since Domain Access only uses grants with length < 14 characters this
+ * inconsistency is irrelevant.
+ */
+function domain_blocks_schema() {
+  $schema['domain_blocks'] = array(
+    'description' => t('Domain Access specific blocks'),
+    'fields' => array(
+      'module' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => t("The block's origin module, from {blocks}.module."),
+      ),
+      'delta' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => t('Unique ID for block within a module.'),
+      ),
+      'realm' => array(
+      'type' => 'varchar',
+      'length' => '20',
+      'not null' => TRUE,
+      'default' => '',
+      ),
+      'domain_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'description' => t("Block domain id"),
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('module', 'delta', 'realm', 'domain_id'),
+    'indexes' => array(
+    'domain_id' => array('domain_id'),
+    'domain_realm_grant' => array('domain_id', 'realm'),
+    ),
+  );
+
+  return $schema;
+}

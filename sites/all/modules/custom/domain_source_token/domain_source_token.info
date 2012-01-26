@@ -1,0 +1,4 @@
+name = Domain Source Token
+description = Custom functions for Boulevard East
+core = 6.x
+package = Boulevard East

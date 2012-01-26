@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Domain Menu Access module (un)installation functions.
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function domain_menu_access_uninstall() {
+  $res = db_query("SELECT mlid, options FROM {menu_links}");
+  while ($row = db_fetch_array($res)) {
+    $options = unserialize($row['options']);
+    if (isset($options['domain_menu_access'])) {
+      unset($options['domain_menu_access']);
+      db_query("UPDATE {menu_links} SET options = '%s' WHERE mlid = %d", serialize($options), $row['mlid']);
+    }
+  }
+}

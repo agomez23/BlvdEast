@@ -1,0 +1,127 @@
+<?php
+// $Id: apachesolr_panel_results.module,v 1.1.4.4 2010/06/15 23:38:47 gundalo Exp $
+
+/**
+ * @file apachesolr_panel_results.module
+ *
+ * This module allows you to handle Node Teaser layouts using Panels.
+ *
+ * Once enabled, visit Administer > Site Building > Teaser Panels
+ * [admin/build/teasers] to configure.
+ *
+ * To create different layouts for different content types, add a variant and
+ * add Node Type "Selection Rules".
+ *
+ */
+
+function apachesolr_panel_results_apachesolr_update_index(&$document, $node)
+{
+	$document->ss_panels_result = apachesolr_panel_results_build_node($node);
+}
+
+function apachesolr_panel_results_build_node(&$node){
+
+  // Bail out now if this isn't a teaser OR if this node is already being
+  // displayed as a panels_teaser.  This prevents infinite loops when you place
+  // "Node: Content" into your mini panel.
+  if ($node->apachesolr_panel_results)
+  {
+    return;
+  }
+
+  // Load the node into a context.
+  ctools_include('context');
+  ctools_include('context-task-handler');
+
+  //Set a $node variable to prevent infinite looping
+  $node->apachesolr_panel_results = TRUE;
+
+  //Get Task and bail if disabled.
+  $task = page_manager_get_task('solr_results');
+  if ($task['disabled'] == TRUE){
+    return;
+  }
+
+  //Load available $contexts and $args for this Task
+  $contexts = ctools_context_handler_get_task_contexts($task, '', array($node));
+  $args = array($node->nid);
+
+  // Load the handlers, choosing only enabled handlers.
+  $handlers = page_manager_load_sorted_handlers($task, '', TRUE);
+
+  // Try each handler.
+  foreach ($handlers as $handler) {
+    //If $info exists, variant passed selection rules.  Break handler loop.
+    if ($info = apachesolr_panel_results_render($handler, $contexts, $args)){
+      break;
+    }
+  }
+
+  return $info['content'];
+}
+
+/**
+ * Replacement for panel_context.inc's panels_panel_context_render()
+ * Check selection rules and, if passed, render the contexts.
+ */
+function apachesolr_panel_results_render($handler, $base_contexts, $args, $test = TRUE) {
+  // Go through arguments and see if they match.
+  ctools_include('context');
+  ctools_include('context-task-handler');
+  // Add my contexts
+  $contexts = ctools_context_handler_get_handler_contexts($base_contexts, $handler);
+
+  // Test.
+  if ($test && !ctools_context_handler_select($handler, $contexts)) {
+    return;
+  }
+
+  if (isset($handler->handler)) {
+    ctools_context_handler_pre_render($handler, $contexts, $args);
+  }
+
+  // Load the display
+  $display = panels_panel_context_get_display($handler);
+
+  $display->context = $contexts;
+  $display->args = $args;
+  $display->template_replace = $handler->conf['template_replace'];
+
+  // With an argument, this actually sets the display.
+  panels_get_current_page_display($display);
+
+  $info = array(
+    'content' => panels_render_display($display),
+    'template_replace' => !empty($handler->conf['template_replace']),
+  );
+
+  //$info['title'] = panels_display_get_title($display);
+  $info['title'] = $display->get_title();
+
+  return $info;
+}
+
+
+function apachesolr_panel_results_apachesolr_process_results(&$results)
+{
+	for($i = 0; $i < count($results); $i++)
+	{
+		$results[$i]['snippet'] = $results[$i]['node']->ss_panels_result;
+		$results[$i]['snippet_only'] = true;
+	}
+}
+
+function apachesolr_panel_results_apachesolr_modify_query(&$query, &$params, $caller)
+{
+	$params['fl'] .= ',ss_panels_result';
+}
+
+/**
+ * Implementation of hook_ctools_plugin_dierctory() to let the system know
+ * we implement task and task_handler plugins.
+ */
+function apachesolr_panel_results_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'page_manager') {
+    return 'plugins/' . $plugin;
+  }
+}

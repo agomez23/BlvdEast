@@ -7,7 +7,10 @@
 	function blvdeast_preprocess_page(&$variables)
 	{
 		//drupal_add_css(path_to_theme() . '/fonts/aller_rg.css', 'theme', 'all');
-		$variables['styles'] = drupal_get_css(); 
+		$variables['styles'] = drupal_get_css();
+		$host = $_SERVER['HTTP_HOST'];
+		$domain = str_replace(array('www.', 'dev.', '.com'), '', $host);
+		$variables['body_classes'] .= ' ' . $domain;
 	}
 	
 	function blvdeast_login_block()

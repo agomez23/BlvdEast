@@ -49,6 +49,7 @@ jQuery(function(){
 	
 	jQuery('#tabs-mini-panel-search-middle').prepend(jQuery('.pane-panels-mini.pane-search h3'));
 	jQuery('#tabs-mini-panel-homepage-map-middle').prepend(jQuery('.pane-panels-mini.pane-homepage-map h3'));
+	jQuery('#tabs-mini-panel-port-imperial-search-middle').prepend(jQuery('.pane-panels-mini.pane-port-imperial-search h3'));
 	
 	//jQuery('.blvd-search #edit-parking--wrapper label').html('Available');
 	
@@ -92,5 +93,4 @@ jQuery(function(){
 	jQuery('.facet-checkbox').click(function(){
 		jQuery('.panels-search .pane-beast-result .view-availabilities').addClass('opacity2');	
 	});
-	
 });

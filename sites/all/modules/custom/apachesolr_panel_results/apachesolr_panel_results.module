@@ -44,6 +44,7 @@ function apachesolr_panel_results_build_node(&$node){
 
   //Load available $contexts and $args for this Task
   $contexts = ctools_context_handler_get_task_contexts($task, '', array($node));
+  dpm($contexts);
   $args = array($node->nid);
 
   // Load the handlers, choosing only enabled handlers.

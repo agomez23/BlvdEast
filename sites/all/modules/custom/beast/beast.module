@@ -80,7 +80,7 @@
 			for ($i=1;$i<=6;$i++) $form['body_field']['format'][$i]['#description'] = '';
 			
 			//hide property except for new nodes.
-			if($form['#node']->nid) $form['group_unit']['field_propertyid']['#type'] = 'value';
+			//if($form['#node']->nid) $form['group_unit']['field_propertyid']['#type'] = 'value';
 			
 			if (isset($form['register'])) { 
 				$form['register']['#weight'] = '100';

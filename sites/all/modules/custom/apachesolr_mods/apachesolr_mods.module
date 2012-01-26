@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file apachesolr_panel_results.module
+ *
+ * This module makes custom modifications/additions.
+ * by Drupal Connect
+ *
+ */
+
+function apachesolr_mods_apachesolr_update_index(&$document, $node) {
+  if ($node->subdomains) {
+    foreach($node->subdomains as $subid => $subname) {
+      $document->addField('sim_subdomain', $subid);
+      //dpr($document); die();
+    }
+  }
+}
+
+function apachesolr_mods_apachesolr_modify_query(&$query, &$params, $caller) {
+  $params['fl'] .= ',sim_subdomain';
+//  $current_domain_id = domain_get_domain();
+//  //dpr($current_domain_id);
+//  $params['bq'][] = 'sim_subdomain:' . $current_domain_id['domain_id'] . '^10.0';
+}
+
+function apachesolr_mods_apachesolr_prepare_query(&$query, &$params) {
+  $current_domain_id = domain_get_domain();
+  //$params['fl'] .= ',sim_subdomain'; 
+  //dpr($current_domain_id);
+  //$params['bq'][] = 'sim_subdomain:' . $current_domain_id['domain_id'] . '^10.0';
+  //dpr($params['bq']);
+//  $query->set_available_sort('tis_hit_count', array(
+//    'title' => t('Number of Views'),
+//    'default' => 'asc',
+//  ));
+ 
+}

@@ -1,0 +1,11 @@
+name = Keys
+description = "API Key manager. Allows management of keys dependent on domain, modules can access the correct key based on the domain. Helpful when using a version control system."
+package = Keys
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-08-29
+version = "6.x-2.1"
+core = "6.x"
+project = "keys"
+datestamp = "1314639417"
+

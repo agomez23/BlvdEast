@@ -1,0 +1,99 @@
+<?php
+
+function better_domain_blocks_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'block_admin_configure':
+      drupal_add_js(drupal_get_path('module', 'better_domain_blocks') . '/js/better_domain_blocks.js');
+      // Alter the form to give us a trigger, we set this to 999 because blocks.module uses a < operator and its a unused number
+      $form['page_vis_settings']['visibility']['#options'][124] = "Show domain specific settings";
+      $form['submit']['#weight'] = 2;
+      // add a fieldset for the settings
+      $form['dsv'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Domain Specific Visibility'),
+        '#weight' => 1,
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#attributes' => array('id' => 'better_domain_blocks_fieldset'),
+      );
+      // get the active domains and loop over them
+      $domains = domain_domains();
+      foreach ($domains as $domain) {
+        $options = array(
+          t('Show on every page except the listed pages.'),
+          t('Show on only the listed pages.'),
+          // not including php options at this point, to complicated (PATCHES WELCOME!)
+        );
+        $description = t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>'));
+        $fieldset = $domain['domain_id'] . '_page_vis_settings';
+        $form_item = 'better_domain_blocks_' . $domain['domain_id'] . '_' . $form['module']['#value'] . '_' . $form['delta']['#value'];
+        
+        $form['dsv'][$fieldset] = array(
+          '#type' => 'fieldset',
+          '#title' => $domain['sitename'],
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+        );
+        // these should really be getting data from a table, time restrictions :(
+        $form['dsv'][$fieldset][$form_item . '_visibility'] = array(
+          '#type' => 'radios',
+          '#title' => t('Show block on specific pages'),
+          '#options' => $options,
+          '#default_value' => variable_get($form_item . '_visibility', ''),
+        );
+        $form['dsv'][$fieldset][$form_item . '_pages'] = array(
+          '#type' => 'textarea',
+          '#title' => t('Pages'),
+          '#default_value' => variable_get($form_item . '_pages', ''),
+          '#description' => $description,
+        );
+      }
+      // modify the submit handler
+      $form['#submit'][] = '_better_domain_blocks_submit_handler';
+      break;
+  }
+}
+
+/*
+ * Check to see if the user selected to use the better blocks settings
+ * If they did we need to set the function that will be eval()'d by the blocks module
+ */
+function _better_domain_blocks_submit_handler(&$form, &$form_state) {
+  if ($form_state['values']['visibility'] == "124") {
+    // this is terrible but we are limited to the sql passsed into core block_list function
+    $function = "<?php if (function_exists('_better_domain_blocks_visibility')) { return _better_domain_blocks_visibility('" . $form_state['values']['module'] . "', '" . $form_state['values']['delta'] . "'); } ?>";
+    $form_state['values']['pages'] = $function;
+    db_query("UPDATE {blocks} SET pages = '%s' WHERE module = '%s' AND delta = '%s'", trim($form_state['values']['pages']), $form_state['values']['module'], $form_state['values']['delta']);
+    // set our variables
+    foreach ($form_state['values'] as $item => $value) {
+      if (substr($item, 0,21) == 'better_domain_blocks_') {
+        variable_set($item, $value);
+      }
+    }
+  }
+}
+
+function _better_domain_blocks_visibility($module, $bid) {
+  // load the current domain
+  global $_domain;
+  // load the variables for this block
+  $visibility = variable_get('better_domain_blocks_' . $_domain['domain_id'] . '_' . $module . '_' . $bid . '_visibility', '');
+  $pages = variable_get('better_domain_blocks_' . $_domain['domain_id'] . '_' . $module . '_' . $bid . '_pages', '');
+  // evaluate
+  if ($pages) {
+    $path = drupal_get_path_alias($_GET['q']);
+    // Compare with the internal and path alias (if any).
+    $page_match = drupal_match_path($path, $pages);
+    if ($path != $_GET['q']) {
+      $page_match = $page_match || drupal_match_path($_GET['q'], $pages);
+    }
+    // When $block->visibility has a value of 0, the block is displayed on
+    // all pages except those listed in $block->pages. When set to 1, it
+    // is displayed only on those pages listed in $block->pages.
+    $page_match = !($visibility xor $page_match);
+  }
+  else {
+    $page_match = TRUE;
+  }
+  return $page_match;
+}
