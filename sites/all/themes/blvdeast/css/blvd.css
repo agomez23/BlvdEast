@@ -6,11 +6,14 @@ p { line-height:1.5;}
 .header-bar-group { background: #3391D8; border-bottom: 1px solid #2B77AF; }
 .header-bar-group .primary-menu a { font-size:14px;text-shadow: #1F567F 1px 1px 2px; }
 .header-bar-group .primary-menu a:hover { text-shadow:none; }
+.njportimperialrentals .header-bar-group #logo img { margin-bottom:10px; }
 .header-right #secondary-menu li { margin:0; }
 
 /*.header-right.auth li.first { display:none; }*/
 .header-right .global-social { clear:none; padding:5px 0 0 15px; width:60px;}
-
+.header-right .block-addthis { clear:none; padding:5px 0 0 15px; width:115px;}
+.header-right .block-addthis #___plusone_0 { width:50px !important;}
+.header-right .block-addthis h2 { display: none;}
 /* secondary-menu */
 header .secondary-menu { white-space:nowrap; padding:4px 0; text-align:right; }
 header .secondary-menu a { margin-left:20px; color:#FFF; text-shadow:1px 1px 1px #0a2233; font-size:12px; text-decoration:underline }
@@ -21,6 +24,8 @@ header .secondary-menu h2 { display:none}
 
 .panels-home .panel-center { margin-bottom:20px;}
 
+#pid-user-login .content-inner h1.title { margin-bottom: 0; }
+#fbconnect_button-wrapper { margin-bottom: 20px; }
 /* owner/renter tips, icons */
 .renter-tip, .owner-tip { margin-top:20px; background-position:15px 0; background-repeat:no-repeat; padding-left: 80px; min-height:64px; }
 .renter-tip.communication { background-image:url('../images/icons/people.png');}
@@ -56,6 +61,10 @@ header .secondary-menu h2 { display:none}
 
 .header-bar-group .menu li, .header-bar-group .links li { margin:0 4px 0.4em; list-style:none }
 
+.linkback { display: block; padding: 0 !important; text-align: center; }
+.linkback p { margin: 0; }
+.linkback h3 { display: none; }
+.linkback img { display:block; text-align:center; border-radius: 20px;-moz-border-radius: 20px; }
 a.signup-button { display:block; text-align:center; border-radius: 15px;-moz-border-radius: 15px; background-color:#89D833; padding:10px 20px; margin:30px 0 0 50px; font-weight:bold; font-size:18px; color:#fff; text-shadow:1px 1px 2px #8CAF36; border:1px solid #95BF2F; width:150px; }
 a.signup-button:hover { text-decoration:none; background-color:#AEEF68; text-shadow:1px 1px 1px #7C9F27; }
 
@@ -69,12 +78,21 @@ a.signup-button:hover { text-decoration:none; background-color:#AEEF68; text-sha
 .front .panel-topright .pane-benefits li { font-size:13px;}
 .right .pane-benefits.without-ul ul, .panel-topright .pane-benefits.without-action .form-button { display:none}
 .page-post-listing .panel-topright .panel-region-separator { height:0;}
-
+.page-post-listing ul.tips {
+	display: none;
+}
+.page-post-listing .body-field-wrapper a {
+	display: none;
+}
+.page-post-listing .home-post {
+	color: #57ab0b;
+	font-weight: bold;
+}
 /* post listing header */
 div.panel-pane h3.pane-title { margin-bottom: 19px; }
 
 /* tools alignment */
-div.pane-block-14 h3.pane-title { margin-left: 20px; }
+div.pane-block-14 h3.pane-title {  }
 
 /* social block */
 .pane-social{text-align:center}
@@ -167,6 +185,13 @@ ul.tabs a:link, #content-tabs ul.tabs li a:link, #content-tabs ul.tabs li a:visi
 .njportimperialrentals #footer p.copyright,
 .portimperialblvdrentals #footer p.copyright { background:url('../images/portimperial_footer-logo2.png') 100% 100% no-repeat; padding-top:50px;}
 
+.blvdeastrentals #cboxContent {
+  background: #fff url('../images/blvdeast_footer-logo.png') bottom left no-repeat;
+}
+
+.portimperialblvdrentals #cboxContent {
+  background: #fff url('../images/portimperial_footer-logo-contact.png') bottom left no-repeat;
+}
 /* search green */
 #primary-menu-inner ul.menu li.search a { color: #a6e463; }
 
@@ -178,4 +203,32 @@ a.home-post { font-size: 16px; }
 h2.title {
     margin-left: 40px; 
     margin-top:  40px;
+}
+
+/* Member Logi Text for Add Listing Form */
+
+.panel-pane.pane-custom.pane-1 {
+	left: 0;
+    position: absolute;
+    top: -50px;
+}
+
+h3.member-login {
+	font-size:14px;
+}
+
+span.member-login {
+	color:#000;
+}
+
+.panel-pane.pane-post-listing {
+    margin-top: 50px;
+}
+
+.pane-post-listing fieldset .description {
+	display:none;
+}
+
+.pane-post-listing #fbconnect_button-wrapper.form-item {
+	float:none;
 }

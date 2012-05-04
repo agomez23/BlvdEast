@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="<?php print $language->language; ?>">
+<html xmlns:fb="http://www.facebook.com/2008/fbml" xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $language->language ?>" 
+                    lang="<?php print $language->language ?>" dir="<?php print $language->dir ?>">
 	<head>
         <title><?php print $head_title; ?></title>
 		<meta property="og:image" content="<?php print file_create_url(file_directory_path() . '/imagecache/homepage_feature_sm/NKN_0594_edited.jpg'); ?>" />
@@ -85,7 +86,21 @@
       <div id="main-group" class="main-group row nested <?php print $main_group_width; ?>">
         <div id="content-group" class="content-group row nested <?php print $content_group_width; ?>">
           <?php print theme('grid_block', $breadcrumb, 'breadcrumbs'); ?>
-          <?php print theme('grid_block', $tabs, 'content-tabs'); ?>
+          
+
+<?php
+//echo $_SERVER['SERVER_NAME'];
+?>
+
+ <?php if($_SERVER['SERVER_NAME']=='blvd.sjackson.dev2.drupalconnect.com' || $_SERVER['SERVER_NAME']=='http://blvdeastrentals.com') {
+    				print theme('grid_block', preg_replace('/Homes/', 'Other Apts', $tabs), 'content-tabs');
+    		}elseif($_SERVER['SERVER_NAME']=='imp.sjackson.dev2.drupalconnect.com' || $_SERVER['SERVER_NAME']=='http://blvdeastrentals.com') {
+    				print theme('grid_block', preg_replace('/Homes/', 'Other Apts', $tabs), 'content-tabs');
+    		}
+		  ?>
+          <?php //print theme('grid_block', preg_replace('/Homes/', 'Off Blvd East', $tabs), 'content-tabs'); ?>
+          
+          
 			<?php if ($tools): ?>
 				<div id="tools" class="row grid16-5 right clear_right"><?php print $tools; ?></div>
 			<?php endif; ?>
@@ -95,7 +110,19 @@
 
           <div id="content-inner" class="content-inner block">
               <?php if ($title): ?>
-              <h1 class="title"><?php print $title; ?></h1>
+                <h1 class="title">
+                  <?php if (arg(0) == 'user' && arg(1) == 'register') : ?>
+                    Sign Up
+                  <?php elseif (arg(0) == 'user' && arg(1) == 'password') : ?>
+                    Retrieve lost password
+                  <?php elseif (arg(0) == 'user' && strstr($body_classes, 'not-logged-in')) : ?>
+                    Login
+                  <?php elseif (arg(0) == 'user') : ?>
+                    User Account
+                  <?php else : ?>
+                    <?php print $title ?>
+                  <?php endif ; ?>        
+                </h1>
               <?php endif; ?>
     
               <?php if ($content): ?>
@@ -124,6 +151,7 @@
       <?php print theme('grid_block', $footer_message, 'footer-message-text'); ?>
     </div><!-- /footer-message -->
     <?php endif; ?>
+
   <?php print $closure; ?>
 </body>
 </html>
