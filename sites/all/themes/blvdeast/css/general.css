@@ -83,7 +83,8 @@ ul.tabs.secondary{margin-top:5px;clear:right}
 
 .view-featured.view-display-id-block_2, .view-featured.view-display-id-block_2 h4{line-height:1.4em}
 .view-featured.view-display-id-block_2 h4{font-size:1em;font-weight:bold;margin:0}
-.view-featured.view-display-id-block_2 .photo{float:left;margin:0 5px 0 0}
+.view-featured.view-display-id-block_2 .photo, .view-featured.view-display-id-block_3 .photo {float:left;margin:0 5px 15px 0}
+.view-featured.view-display-id-block_3 .photo img {float:left;margin:0 5px 0 0}
 .view-featured.view-display-id-block_2 .row{clear:both;margin:0 0 5px}
 .panels-home .panel-middle .pane-title{}
 
@@ -101,6 +102,7 @@ ul.tabs.secondary{margin-top:5px;clear:right}
 a.remax { display:block; background:url(../images/remax_32.png) no-repeat; width:193px; height:32px; margin-bottom:3px; }
 a.fb { float:left; background:url(../images/facebook_16.png) no-repeat; width:16px; height:16px;}
 a.twt { float:left; background:url(../images/twitter_16.png) no-repeat; width:16px; height:16px; margin:0 4px; }
+a.google_plus { float:left; background:url(../images/g-plus-icon-16x16.png) no-repeat; width:16px; height:16px;}
 .addthis_default_style .at300m { float:left; margin-right:0; width:16px; height:16px;}
 .addthis_default_style .at15t_compact { margin-right:2px;}
 #primary-menu{ display:block;position:absolute;bottom:0;right:18px;margin:0; width:auto}
@@ -312,6 +314,7 @@ p {margin:0 0 1.52em;}
 form fieldset, .single_building {-webkit-border-radius: 16px; -moz-border-radius: 16px; border-radius:16px; padding:5px; border:8px solid #E6E6DC; }
 #user-register { margin:10px;}
 #user-register div fieldset { border:none; }
+.no-borders { border:none; }
 form fieldset legend, form fieldset h3, .single_building h3, 
 .pane-post-listing #edit-body-wrapper label, .pane-post-home #edit-body-wrapper label, 
 .pane-post-listing #field_b_photos_values th, .pane-post-home #field_b_photos_values th 
@@ -381,3 +384,15 @@ code 			{	background-color:#d5d2d8; display:block; padding:0px 2px 4px 26px; bac
 pre 			{	margin:1.5em 0;white-space:pre;}
 
 
+/* Custom padding for facebook signup */
+#pid-user legend {
+	padding-bottom: 10px;
+}
+
+#pid-user-login legend {
+	padding-bottom: 10px;
+}
+
+#pid-user-register legend {
+	padding-bottom: 10px;
+}
