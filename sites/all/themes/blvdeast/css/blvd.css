@@ -209,8 +209,8 @@ h2.title {
 
 .panel-pane.pane-custom.pane-1 {
 	left: 0;
-    position: absolute;
-    top: -50px;
+  /*position: absolute;
+  top: -50px;*/
 }
 
 h3.member-login {
