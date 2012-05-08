@@ -106,18 +106,27 @@ textarea, .form-item input, .form-item select, #content-region input.form-text {
 fieldset fieldset { border:none}
 fieldset legend { clear:both }
 fieldset fieldset legend { font-weight:bold; padding-left:0; }
-.page-post-listing #node-form .form-item .form-text,
+/*.page-post-listing #node-form .form-item .form-text,
 .page-post-listing #node-form .form-item .form-select,
 .page-post-home #node-form .form-item .form-text,
 .page-post-home #node-form .form-item .form-select
 	{margin-bottom:0}
-#edit-field-address-line-1-0-value { background:url('../images/home-post-addr-bg.gif') right center no-repeat; width:57px; padding-right:150px; text-align:right }
-#edit-field-sqft-0-value { float:left; margin-right:10px;}
+*/
+
+#edit-field-address-line-1-0-value {  width:207px; padding-left:5px; text-align:left }
+#edit-field-sqft-0-value { float:left; margin-right:10px; margin-bottom: 10px;}
 .page-post-listing .form-select { float:left; margin-top:.4em; margin-right:1em;}
-.page-post-listing #node-form .form-item .description{margin:.2em 0 1em 0; }
+.page-post-listing #node-form .form-item .description{margin:.2em 0 1em 0; width: 350px;}
 .page-post-listing #node-form #edit-field-date-0-value-wrapper.form-item .description{margin:0; font-weight:bold}
 .page-post-listing #node-form #edit-field-date-0-value-wrapper.form-item .form-item .description{margin:0; font-weight:normal}
 
+#edit-field-long-description-0-value-wrapper {
+	display: none;
+}
+.page-post-listing #node-form #edit-field-lease-term-value-wrapper { margin-top: 20px; margin-bottom: 20px; }
+.page-post-listing #node-form #edit-field-lease-term-value-wrapper .description { width: 400px; }
+.page-post-listing #node-form #edit-field-rent-0-wrapper .description { width: 600px; }
+.page-post-listing #node-form #edit-body-wrapper .description { width: 600px; }
 #edit-name-1-wrapper, #edit-mail-wrapper, #edit-conf-mail-wrapper, 
 #edit-profile-firstname-wrapper, #edit-profile-lastname-wrapper, #edit-profile-phone-wrapper { width:220px; float:left; margin-right:10px; margin-bottom:15px;}
 #edit-pass-pass1-wrapper, #edit-pass-pass2-wrapper { width:220px;float:left; margin-right:10px;}
@@ -135,6 +144,18 @@ fieldset fieldset legend { font-weight:bold; padding-left:0; }
 #field_b_photos_values tr.even, #field_b_photos_values tr.odd { background:none; border-width:0 0 0 0; }
 #field_b_photos_values thead th { border-width:0 0 0 0;}
 
+.page-post-listing .standard p {
+	display: none;
+}
+
+.page-post-listing .standard a.ckeditor_links {
+	display: none !important;
+}
+
+.page-post-listing .standard .body-field-wrapper a.ckeditor_links {
+	display: block;
+}
+
 .group-unit-details .form-item,
 .body-field-wrapper,
 #field-b-photos-items {clear:float; margin-top:10px; }
@@ -142,6 +163,7 @@ fieldset fieldset legend { font-weight:bold; padding-left:0; }
 #edit-field-bedroom-value-wrapper,#edit-field-bathrooms-value-wrapper, #edit-field-sqft-0-value-wrapper { margin-top:0; margin-right:10px;}
 #field-b-photos-items, .body-field-wrapper {border: 8px solid #E6E6DC; border-radius: 16px; padding: 10px; height:auto; overflow:hidden; }
 
+.page-post-home #node-form #edit-field-sqft-0-value-wrapper .form-text { margin-bottom: 10px !important; }
 .group-unit .form-item { margin-right:0; margin-top:0}
 #edit-field-unit-number-0-value-wrapper { border-left-width:0; }
 #edit-field-bedroom-value-wrapper, #field-b-photos-items, #edit-field-unit-parking-value-wrapper, #edit-field-home-parking-value-wrapper, .group-fee { clear:left}
