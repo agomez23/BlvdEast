@@ -92,9 +92,9 @@
 //echo $_SERVER['SERVER_NAME'];
 ?>
 
- <?php if($_SERVER['SERVER_NAME']=='blvd.sjackson.dev2.drupalconnect.com' || $_SERVER['SERVER_NAME']=='http://blvdeastrentals.com') {
+ <?php if($_SERVER['SERVER_NAME']=='blvd.sjackson.dev2.drupalconnect.com' || $_SERVER['SERVER_NAME']=='blvdeastrentals.com') {
     				print theme('grid_block', preg_replace('/Homes/', 'Other Apts', $tabs), 'content-tabs');
-    		}elseif($_SERVER['SERVER_NAME']=='imp.sjackson.dev2.drupalconnect.com' || $_SERVER['SERVER_NAME']=='http://blvdeastrentals.com') {
+    		}elseif($_SERVER['SERVER_NAME']=='imp.sjackson.dev2.drupalconnect.com' || $_SERVER['SERVER_NAME']=='blvdeastrentals.com') {
     				print theme('grid_block', preg_replace('/Homes/', 'Other Apts', $tabs), 'content-tabs');
     		}
 		  ?>
