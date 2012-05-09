@@ -58,6 +58,9 @@
 	 * Implementation of hook_form_alter().
 	 */
 	function beast_form_alter(&$form, $form_state, $form_id) {
+	    
+        global $user;
+        
 		if($form_id == 'listing_node_form' || $form_id == 'home_node_form')
 		{
 			//print_r($form);
@@ -93,13 +96,26 @@
 				$form['register']['form']['account']['conf_mail']['#description'] = '';
 				$form['register']['form']['account']['pass']['#description'] = '';
 			}
+		
+    	    if($user->uid != 1 && $form_id == 'listing_node_form')
+    		{
+    		  $form['domain']['#prefix'] = '<div class="hide">';
+    		  $form['domain']['#suffix'] = '</div>';
+    		  $form['field_domain_source']['#prefix'] = '<div class="hide">';
+    		  $form['field_domain_source']['#suffix'] = '</div>';
+    		  $form['field_featured']['#prefix'] = '<div class="hide">';
+    		  $form['field_featured']['#suffix'] = '</div>';
+    		  $form['domain']['domain_site']['#default_value'] = 0;
+    		  $form['domain']['domains']['#required'] = 0;
+    		  $form['domain']['domain_source']['#default_value'] = -5;
+    		}
 		}
 		
 		if($form_id == 'user_register')
 		{
 			if (isset($form['account'])) { 
 				//$form['account']['#weight'] = '100';
-				$form['account']['#title'] = 'Create a free account or login to post a listing';
+				$form['account']['#title'] = 'Create a FREE account or login to post a listing';
 				$form['account']['mail']['#description'] = '';
 				$form['account']['conf_mail']['#description'] = '';
 				$form['account']['pass']['#description'] = '';
@@ -191,16 +207,32 @@
 		
 		if(!$results)
 			return;
+
+		$nids = implode(',', array_filter(beast_solr_nids_current_domain($results)));
+		$output = views_embed_view('availabilities', 'panel_pane_1', $nids);
 		
-		$nids = implode(',', beast_solr_nids($results));
+		$nids = implode(',', array_filter(beast_solr_nids_not_current_domain($results)));
+		$output .= views_embed_view('availabilities', 'panel_pane_1', $nids);
 		
-		return views_embed_view('availabilities', 'panel_pane_1', $nids);
+		return $output;
 	}
 	
 	// breaks down a solr $results array and returns the node IDs in an array.
 	function beast_solr_nids($results)
 	{
 		return array_map('beast_solr_nid', $results);
+	}
+	
+	// breaks down a solr $results array and returns the node IDs in an array.
+	function beast_solr_nids_current_domain($results)
+	{
+		return array_map('beast_solr_nid_current_domain', $results);
+	}
+	
+	// breaks down a solr $results array and returns the node IDs in an array.
+	function beast_solr_nids_not_current_domain($results)
+	{
+		return array_map('beast_solr_nid_not_current_domain', $results);
 	}
 	
 	// array_map callback function, returns node ID from apache solr result.
@@ -210,6 +242,44 @@
 			return $result->nid;
 		else
 			return $result['fields']['nid']['value'];
+	}
+
+	// array_map callback function, returns node ID from apache solr result.
+	function beast_solr_nid_current_domain($result)
+	{
+	  $source = domain_source_lookup($node->nid, $node->domains, $node->domain_site);
+      $node->domain_source = $source['domain_id'];
+      
+	  if(is_object($result)) {
+	    return $result->nid;
+	  }
+	  else {
+	    if($result['fields']['sim_domain_source']['value'] == $node->domain_source) {
+	      return $result['fields']['nid']['value'];
+	    }
+	    else {
+	      return;
+	    }
+	  }
+	}
+	
+	// array_map callback function, returns node ID from apache solr result.
+	function beast_solr_nid_not_current_domain($result)
+	{
+	  $source = domain_source_lookup($node->nid, $node->domains, $node->domain_site);
+      $node->domain_source = $source['domain_id'];
+      
+	  if(is_object($result)) {
+	    return $result->nid;
+	  }
+	  else {
+	    if($result['fields']['sim_domain_source']['value'] != $node->domain_source) {
+	      return $result['fields']['nid']['value'];
+	    }
+	    else {
+	      return;
+	    }
+	  }
 	}
 	
 	function beast_terms_to_options($tree, $optional = true)
