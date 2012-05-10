@@ -207,10 +207,16 @@ h2.title {
 
 /* Member Logi Text for Add Listing Form */
 
-#pid-post-listing-apartment .panel-pane.pane-custom.pane-1, #pid-post-listing-home .panel-pane.pane-custom.pane-1 {
+#pid-post-listing-apartment .panel-pane.pane-custom.pane-1 {
 	left: 0;
   	position: absolute;
   	top: -50px;
+}
+
+#pid-post-listing-home .panel-pane.pane-custom.pane-1 {
+	left: 0;
+  	position: absolute;
+  	top: -40px;
 }
 
 h3.member-login {
@@ -235,4 +241,8 @@ span.member-login {
 
 #pid-post-listing-apartment #edit-field-domain-source-0-value-wrapper, #pid-post-listing-home #edit-field-domain-source-0-value-wrapper {
 	display:none;
+}
+
+#pid-post-listing-apartment #fbconnect_button-wrapper, #pid-post-listing-home #fbconnect_button-wrapper {
+	float:none;
 }

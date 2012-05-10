@@ -97,7 +97,7 @@
 				$form['register']['form']['account']['pass']['#description'] = '';
 			}
 		
-    	    if($user->uid != 1 && $form_id == 'listing_node_form')
+    	    if($user->uid != 1 && $form_id == 'listing_node_form' || 'home_node_form')
     		{
     		  $form['domain']['#prefix'] = '<div class="hide">';
     		  $form['domain']['#suffix'] = '</div>';
