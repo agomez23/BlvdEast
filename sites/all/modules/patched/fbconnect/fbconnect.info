@@ -1,0 +1,4 @@
+name = Fbconnect
+description = Allows users to connect with Facebook account.
+package = Authentication
+core = 6.x
