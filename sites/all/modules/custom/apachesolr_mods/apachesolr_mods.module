@@ -10,6 +10,8 @@
 
 function apachesolr_mods_apachesolr_update_index(&$document, $node) {
   if ($node->subdomains) {
+      $document->addField('sim_domain_source', $node->domain_source);
+    //dpr($node); die();
     foreach($node->subdomains as $subid => $subname) {
       $document->addField('sim_subdomain', $subid);
       //dpr($document); die();
@@ -19,6 +21,8 @@ function apachesolr_mods_apachesolr_update_index(&$document, $node) {
 
 function apachesolr_mods_apachesolr_modify_query(&$query, &$params, $caller) {
   $params['fl'] .= ',sim_subdomain';
+  
+  $params['fl'] .= ',sim_domain_source';
 //  $current_domain_id = domain_get_domain();
 //  //dpr($current_domain_id);
 //  $params['bq'][] = 'sim_subdomain:' . $current_domain_id['domain_id'] . '^10.0';

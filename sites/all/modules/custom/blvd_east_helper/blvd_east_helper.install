@@ -1,0 +1,5 @@
+<?php
+
+function blvd_east_helper_install() {
+  db_query("UPDATE {system} SET weight = 100 WHERE name = 'blvd_east_helper'");
+}

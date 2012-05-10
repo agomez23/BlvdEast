@@ -1,0 +1,4 @@
+name = BLVD Helper module
+description = Helper module to provide some tweaks.
+core = 6.x
+dependencies[] = fbconnect

@@ -207,7 +207,7 @@ h2.title {
 
 /* Member Logi Text for Add Listing Form */
 
-#pid-post-listing-apartment .panel-pane.pane-custom.pane-1 {
+#pid-post-listing-apartment .panel-pane.pane-custom.pane-1, #pid-post-listing-home .panel-pane.pane-custom.pane-1 {
 	left: 0;
   	position: absolute;
   	top: -50px;
@@ -221,18 +221,18 @@ span.member-login {
 	color:#000;
 }
 
-#pid-post-listing-apartment .panel-pane.pane-post-listing {
+#pid-post-listing-apartment .panel-pane.pane-post-listing, #pid-post-listing-home .panel-pane.pane-post-listing {
     margin-top: 50px;
 }
 
-#pid-post-listing-apartment .pane-post-listing fieldset .description {
+#pid-post-listing-apartment .pane-post-listing fieldset .description, #pid-post-listing-home .pane-post-listing fieldset .description {
 	display:none;
 }
 
-#pid-post-listing-apartment .pane-post-listing #fbconnect_button-wrapper.form-item {
+#pid-post-listing-apartment .pane-post-listing #fbconnect_button-wrapper.form-item, #pid-post-listing-home .pane-post-listing #fbconnect_button-wrapper.form-item {
 	float:none;
 }
 
-#pid-post-listing-apartment #edit-field-domain-source-0-value-wrapper {
+#pid-post-listing-apartment #edit-field-domain-source-0-value-wrapper, #pid-post-listing-home #edit-field-domain-source-0-value-wrapper {
 	display:none;
 }

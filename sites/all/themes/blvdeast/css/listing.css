@@ -124,6 +124,7 @@ fieldset fieldset legend { font-weight:bold; padding-left:0; }
 	display: none;
 }
 .page-post-listing #node-form #edit-field-lease-term-value-wrapper { margin-top: 20px; margin-bottom: 20px; }
+#pid-post-listing-apartment.page-post-listing #node-form #edit-field-lease-term-value-wrapper { margin-top: 10px; margin-left:10px; }
 .page-post-listing #node-form #edit-field-lease-term-value-wrapper .description { width: 400px; }
 .page-post-listing #node-form #edit-field-rent-0-wrapper .description { width: 600px; }
 .page-post-listing #node-form #edit-body-wrapper .description { width: 600px; }
