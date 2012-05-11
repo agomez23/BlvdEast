@@ -12,7 +12,7 @@ function blvd_east_helper_form_alter(&$form, $form_state, $form_id) {
         '#value' => t('<fieldset class=\'no-borders\'><legend>OR</legend></fieldset>'),
         '#weight' => '-99',
       );
-      $form['account']['#title'] = t('Create a free account or ' . l(t('login'), 'user/login') . ' to post a listing');
+      $form['account']['#title'] = t('Create a FREE account or ' . l(t('login'), 'user/login') . ' to post a listing');
       break;
   }
 }
