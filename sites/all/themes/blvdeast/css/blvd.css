@@ -246,3 +246,7 @@ span.member-login {
 #pid-post-listing-apartment #fbconnect_button-wrapper, #pid-post-listing-home #fbconnect_button-wrapper {
 	float:none;
 }
+
+input#edit-profile-terms.form-checkbox {
+	display:none;
+}
