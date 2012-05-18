@@ -205,7 +205,7 @@ function fbconnect_form_alter(&$form, $form_state, $form_id) {
           '#type' => 'item',
           '#description' => t('Sign in using Facebook'),
           '#value' => fbconnect_render_button($attr),
-          '#weight' => 1,
+          '#weight' => -100,
           '#id' => 'fbconnect_button',
         );
       }

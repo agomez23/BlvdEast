@@ -250,3 +250,7 @@ span.member-login {
 input#edit-profile-terms.form-checkbox {
 	display:none;
 }
+
+#edit-profile-terms-wrapper label {
+	display:none;
+}
